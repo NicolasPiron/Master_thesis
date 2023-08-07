@@ -126,13 +126,23 @@ def extract_conditions(epochs_list : list):
         a list of strings containing the conditions.
     '''
     conditions = []
+    string_conditions = []
 
     for i in epochs_list:
 
         cond = list(i.event_id.keys())
-        conditions.append(cond[0])
+        conditions.append(cond)
+        
+    for index, cond in enumerate(conditions):
+        
+        if len(cond) == 2 and 'target_l' in conditions[index][0]:
+            conditions[index] = ['dis_mid/target_l']
+        elif len(cond) == 2 and 'target_r' in conditions[index][0]:
+            conditions[index] = ['dis_mid/target_r']
+            
+    string_conditions = [cond[0] for cond in conditions]
     
-    return conditions
+    return string_conditions
 
 def alpha_power_df(conditions : list, right_power_list: list, left_power_list : list):
     ''' Takes a list of conditions, a list of alpha power values for the right side of the head and a list of alpha power values for the left side of the head and 
@@ -169,12 +179,12 @@ def alpha_power_df(conditions : list, right_power_list: list, left_power_list : 
                             df.iloc[row_number, 1] = 'right'
                         
                         # add distractor side
-                        if 'dis_top' in df.iloc[row_number, 0] or 'no_dis' in df.iloc[row_number, 0]:
+                        if 'dis_mid' in df.iloc[row_number, 0]:
+                            df.iloc[row_number, 2] = 'mid'
+                        elif 'dis_right' in df.iloc[row_number, 0] or 'dis_left' in df.iloc[row_number, 0]:
+                            df.iloc[row_number, 2] = 'lat'
+                        elif 'no_dis' in df.iloc[row_number, 0]:
                             df.iloc[row_number, 2] = 'nodis'
-                        elif 'dis_right' in df.iloc[row_number, 0]:
-                            df.iloc[row_number, 2] = 'right'
-                        elif 'dis_left' in df.iloc[row_number, 0]:
-                            df.iloc[row_number, 2] = 'left'
 
                         # add alpha side
                         if row_number <= 5:
