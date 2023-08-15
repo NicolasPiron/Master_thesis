@@ -84,8 +84,8 @@ def compute_alpha_by_side(sorted_epochs : list):
         a list of alpha band mean power values (8-12Hz) for the left side of the head for each epochs object in sorted_epochs (condition)
     '''
     freqs = np.arange(8, 13)
-    right_elecs=[ 'P8', 'P10', 'PO8']
-    left_elecs=['P7', 'P9', 'PO7']
+    right_elecs=[ 'O2', 'PO4', 'PO8']
+    left_elecs=['O1', 'PO3', 'PO7']
 
     n_cycles = freqs / 2.
     time_bandwidth = 4.
