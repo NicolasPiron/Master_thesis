@@ -148,7 +148,7 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
              }
         
         # Epoch the data
-        epochs = mne.Epochs(raw, mne_events, event_id=event_dict, tmin=-0.2, tmax=0.4, 
+        epochs = mne.Epochs(raw, mne_events, event_id=event_dict, tmin=-0.2, tmax=0.8, 
                     baseline=(-0.2,0), event_repeated='drop', preload=True)
         
         # Set the EEG reference and resample the data
