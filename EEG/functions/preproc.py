@@ -199,7 +199,7 @@ def automated_epochs_rejection(subject_id, epochs, output_path):
     if os.path.exists(os.path.join(output_path, 'ar_epochs')) == False:
         os.makedirs(os.path.join(output_path, 'ar_epochs'))
         print('Directory created')
-    ar_epochs.save(os.path.join(output_path, 'epochs', f'sub-{subject_id}_ar_epochs.fif'), overwrite=True)
+    ar_epochs.save(os.path.join(output_path, 'ar_epochs', f'sub-{subject_id}_ar_epochs.fif'), overwrite=True)
 
     log_plot = reject_log.plot('horizontal')
     if os.path.exists(os.path.join(output_path, 'plots', 'dropped_epochs')) == False:
