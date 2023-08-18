@@ -231,6 +231,8 @@ def alpha_power_per_epoch(epochs):
     right_power_list = []
     left_power_list = []
 
+    print('========================= Computing alpha power, might take a while...')
+
     for i in range(len(epochs)):
 
         right_power = mne.time_frequency.tfr_morlet(epochs[i], freqs=freqs, n_cycles=n_cycles, picks=right_elecs,
@@ -302,12 +304,15 @@ def alpha_df_epoch(epochs=None, right_power_list=None, left_power_list=None):
     
     return df    
 
-def alpha_assymetry_all_subj():
+def alpha_assymetry_all_subj(input_dir='/Users/nicolaspiron/Documents/PULSATION/Data/EEG/N2pc/data-preproc-n2pc/total_epochs/', output_dir='/Users/nicolaspiron/Documents/PULSATION/Python_MNE/preproc/n2pc_out/dataframes/'):
     ''' Create a dataframe for all subjects with the alpha score for each side
     
     Parameters:
     ----------
-    None
+    Input_dir : str
+        The path to the directory containing the epochs objects for each subject
+    output_dir : str
+        The path to the directory where the dataframe will be saved
     
     Returns
     ----------
@@ -316,8 +321,7 @@ def alpha_assymetry_all_subj():
         
     '''
     big_df = pd.DataFrame()
-    root_dir = '/Users/nicolaspiron/Documents/PULSATION/Data/EEG/N2pc/data-preproc-n2pc/total_epochs/'
-    all_subj_files = glob.glob(root_dir + '*')
+    all_subj_files = glob.glob(input_dir + '*')
     all_subj_files.sort()
     
     for subject in all_subj_files:
@@ -341,16 +345,19 @@ def alpha_assymetry_all_subj():
         
         print(f'========================= data from {subj_id} added to the dataframe :D')
     
-    big_df.to_csv('/Users/nicolaspiron/Documents/PULSATION/Python_MNE/preproc/n2pc_out/dataframes/alpha_power_assymetry.csv')
+    big_df.to_csv(output_dir + 'alpha_power_assymetry.csv')
     
     return big_df
 
-def alpha_by_epoch():
+def alpha_by_epoch_all_subj(input_dir='/Users/nicolaspiron/Documents/PULSATION/Data/EEG/N2pc/data-preproc-n2pc/total_epochs/', output_dir='/Users/nicolaspiron/Documents/PULSATION/Python_MNE/preproc/n2pc_out/dataframes/'):
     ''' Create a dataframe for all subjects with the alpha score for each side and for each epoch
     
     Parameters:
     ----------
-    None
+    Input_dir : str
+        The path to the directory containing the epochs objects for each subject
+    output_dir : str
+        The path to the directory where the dataframe will be saved
 
     Returns
     ----------
@@ -358,8 +365,7 @@ def alpha_by_epoch():
         A dataframe with the alpha power score for each side for each subject
     '''
     big_df = pd.DataFrame()
-    root_dir = '/Users/nicolaspiron/Documents/PULSATION/Data/EEG/N2pc/data-preproc-n2pc/total_epochs/'
-    all_subj_files = glob.glob(root_dir + '*')
+    all_subj_files = glob.glob(input_dir + '*')
     all_subj_files.sort()
 
     for subject in all_subj_files:
@@ -376,6 +382,6 @@ def alpha_by_epoch():
 
         big_df = pd.concat([big_df, subj_df], ignore_index=True)
         
-    big_df.to_csv('/Users/nicolaspiron/Documents/PULSATION/Python_MNE/preproc/n2pc_out/dataframes/alpha_power_per_epoch.csv')
+    big_df.to_csv(output_dir + 'alpha_power_per_epoch.csv')
 
     return big_df
