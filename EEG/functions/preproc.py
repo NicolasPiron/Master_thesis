@@ -102,8 +102,8 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
         raw.plot(scalings='auto')
 
     # Save the raw data
-    if os.path.exists(os.path.join(output_path, 'raw')) == False:
-        os.makedirs(os.path.join(output_path, 'raw'))
+    if os.path.exists(os.path.join(output_path, 'raw', f'sub-{subject_id}')) == False:
+        os.makedirs(os.path.join(output_path, 'raw', f'sub-{subject_id}'))
         print('Directory created')
     raw.save(os.path.join(output_path, 'raw', f'sub-{subject_id}-raw-{task}.fif'), overwrite=True)
 
@@ -158,15 +158,15 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
         epochs.resample(512)
         
         # Save the event list and the epochs
-        if os.path.exists(os.path.join(output_path, 'event_lists')) == False:
-            os.makedirs(os.path.join(output_path, 'event_lists'))
+        if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'event_lists')) == False:
+            os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'event_lists'))
             print('Directory created')
-        df.to_csv(os.path.join(output_path, 'event_lists', f'sub-{subject_id}-elist-{task}.csv'), index=False)
+        df.to_csv(os.path.join(output_path, f'sub-{subject_id}', 'event_lists', f'sub-{subject_id}-elist-{task}.csv'), index=False)
 
-        if os.path.exists(os.path.join(output_path, 'epochs')) == False:
-            os.makedirs(os.path.join(output_path, 'epochs'))
+        if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'epochs')) == False:
+            os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'epochs'))
             print('Directory created')
-        epochs.save(os.path.join(output_path, 'epochs', f'sub-{subject_id}-epochs-{task}.fif'), overwrite=True)
+        epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'epochs', f'sub-{subject_id}-epochs-{task}.fif'), overwrite=True)
 
     elif task == 'Alpheye':
         pass
@@ -200,10 +200,10 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     ar_epochs, reject_log = ar.fit_transform(epochs, return_log=True)
 
     # Save the epochs and the log
-    if os.path.exists(os.path.join(output_path, 'ar_epochs')) == False:
-        os.makedirs(os.path.join(output_path, 'ar_epochs'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'ar_epochs')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'ar_epochs'))
         print('Directory created')
-    ar_epochs.save(os.path.join(output_path, 'ar_epochs', f'sub-{subject_id}-ar_epochs-{task}.fif'), overwrite=True)
+    ar_epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'ar_epochs', f'sub-{subject_id}-ar_epochs-{task}.fif'), overwrite=True)
 
     log_plot = reject_log.plot('horizontal')
     if os.path.exists(os.path.join(output_path, 'plots', 'dropped_epochs')) == False:
@@ -291,10 +291,10 @@ def clean_by_ICA(subject_id, task, ar_epochs, epochs, reject_log, output_path):
     #    os.makedirs(os.path.join(output_path, 'ICA'))
      #   print('Directory created')
     #ica.save(os.path.join(output_path, 'ICA', f'sub-{subject_id}_ICA.fif'), overwrite=True)
-    if os.path.exists(os.path.join(output_path, 'cleaned_epochs')) == False:
-        os.makedirs(os.path.join(output_path, 'cleaned_epochs'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs'))
         print('Directory created')
-    epochs_clean.save(os.path.join(output_path, 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-{task}.fif'), overwrite=True)
+    epochs_clean.save(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-{task}.fif'), overwrite=True)
     if os.path.exists(os.path.join(output_path, 'plots', 'IC_removal')) == False:
         os.makedirs(os.path.join(output_path, 'plots', 'IC_removal'))
         print('Directory created')
