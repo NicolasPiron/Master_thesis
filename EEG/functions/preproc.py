@@ -102,10 +102,10 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
         raw.plot(scalings='auto')
 
     # Save the raw data
-    if os.path.exists(os.path.join(output_path, 'raw', f'sub-{subject_id}')) == False:
-        os.makedirs(os.path.join(output_path, 'raw', f'sub-{subject_id}'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'raw')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'raw'))
         print('Directory created')
-    raw.save(os.path.join(output_path, 'raw', f'sub-{subject_id}-raw-{task}.fif'), overwrite=True)
+    raw.save(os.path.join(output_path, f'sub-{subject_id}', 'raw', f'sub-{subject_id}-raw-{task}.fif'), overwrite=True)
 
     return raw
 
@@ -291,7 +291,7 @@ def clean_by_ICA(subject_id, task, ar_epochs, epochs, reject_log, output_path):
     #    os.makedirs(os.path.join(output_path, 'ICA'))
      #   print('Directory created')
     #ica.save(os.path.join(output_path, 'ICA', f'sub-{subject_id}_ICA.fif'), overwrite=True)
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs')) == False:
+    if os.path.exists(os.path.join(output_path , f'sub-{subject_id}', 'cleaned_epochs')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs'))
         print('Directory created')
     epochs_clean.save(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-{task}.fif'), overwrite=True)

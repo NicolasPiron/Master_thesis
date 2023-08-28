@@ -22,7 +22,7 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
     None
     '''
     # Load subject data
-    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
 
     # Create output directory if it doesn't exist
     if os.path.exists(os.path.join(output_dir,'n2pc_plots', f'sub-{subject_id}')) == False:
