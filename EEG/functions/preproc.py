@@ -52,7 +52,7 @@ def load_data(subject_id : str, task='N2pc', input_path='/Users/nicolaspiron/Doc
 
     return raw, e_list
 
-def filter_and_interpolate(subject_id, raw, output_path, plot_data=True):
+def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
     ''' Drops useless channels, sets the channel types and the montage, filters the data and interpolates bad channels. 
         Saves the raw data and the PSD plot.
     
@@ -60,13 +60,15 @@ def filter_and_interpolate(subject_id, raw, output_path, plot_data=True):
     ----------
     subject_id : str
         The subject ID.
+    task : str
+        The task name.
     raw : mne.io.Raw 
        The raw data.
     output_path : str
         The path to the output folder.
     plot_data : bool
         Whether to plot the raw data or not. Default is True.
-
+    
     Returns
     -------
     raw : mne.io.Raw
@@ -92,7 +94,7 @@ def filter_and_interpolate(subject_id, raw, output_path, plot_data=True):
     if os.path.exists(os.path.join(output_path, 'plots', 'psd')) == False:
         os.makedirs(os.path.join(output_path, 'plots', 'psd'))
         print('Directory created')
-    psd_fig.savefig(os.path.join(output_path, 'plots', 'psd', f'sub-{subject_id}_psd.png'))
+    psd_fig.savefig(os.path.join(output_path, 'plots', 'psd', f'sub-{subject_id}-psd-{task}.png'))
     
     # Interpolate bad channels
     mne.io.Raw.interpolate_bads(raw, reset_bads=False)
@@ -103,7 +105,7 @@ def filter_and_interpolate(subject_id, raw, output_path, plot_data=True):
     if os.path.exists(os.path.join(output_path, 'raw')) == False:
         os.makedirs(os.path.join(output_path, 'raw'))
         print('Directory created')
-    raw.save(os.path.join(output_path, 'raw', f'sub-{subject_id}_raw.fif'), overwrite=True)
+    raw.save(os.path.join(output_path, 'raw', f'sub-{subject_id}-raw-{task}.fif'), overwrite=True)
 
     return raw
 
@@ -159,25 +161,27 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
         if os.path.exists(os.path.join(output_path, 'event_lists')) == False:
             os.makedirs(os.path.join(output_path, 'event_lists'))
             print('Directory created')
-        df.to_csv(os.path.join(output_path, 'event_lists', f'sub-{subject_id}_elist.csv'), index=False)
+        df.to_csv(os.path.join(output_path, 'event_lists', f'sub-{subject_id}-elist-{task}.csv'), index=False)
 
         if os.path.exists(os.path.join(output_path, 'epochs')) == False:
             os.makedirs(os.path.join(output_path, 'epochs'))
             print('Directory created')
-        epochs.save(os.path.join(output_path, 'epochs', f'sub-{subject_id}_epochs.fif'), overwrite=True)
+        epochs.save(os.path.join(output_path, 'epochs', f'sub-{subject_id}-epochs-{task}.fif'), overwrite=True)
 
     elif task == 'Alpheye':
         pass
 
     return epochs
 
-def automated_epochs_rejection(subject_id, epochs, output_path):
+def automated_epochs_rejection(subject_id, task, epochs, output_path):
     ''' Performs automated epochs rejection and saves the epochs. Save plots of the rejected epochs and the cleaned average signal.
     
     Parameters
     ----------
     subject_id : str
         The subject ID.
+    task : str
+        The task name.
     epochs : mne.Epochs
         The epoched data.
     output_path : str
@@ -199,13 +203,13 @@ def automated_epochs_rejection(subject_id, epochs, output_path):
     if os.path.exists(os.path.join(output_path, 'ar_epochs')) == False:
         os.makedirs(os.path.join(output_path, 'ar_epochs'))
         print('Directory created')
-    ar_epochs.save(os.path.join(output_path, 'ar_epochs', f'sub-{subject_id}_ar_epochs.fif'), overwrite=True)
+    ar_epochs.save(os.path.join(output_path, 'ar_epochs', f'sub-{subject_id}-ar_epochs-{task}.fif'), overwrite=True)
 
     log_plot = reject_log.plot('horizontal')
     if os.path.exists(os.path.join(output_path, 'plots', 'dropped_epochs')) == False:
         os.makedirs(os.path.join(output_path, 'plots', 'dropped_epochs'))
         print('Directory created')
-    log_plot.savefig(os.path.join(output_path, 'plots', 'dropped_epochs', f'sub-{subject_id}_dropped_epochs.png'))
+    log_plot.savefig(os.path.join(output_path, 'plots', 'dropped_epochs', f'sub-{subject_id}-dropped_epochs-{task}.png'))
 
     # Plot the average signal before and after cleaning and save the plot
     evoked_bad = epochs[reject_log.bad_epochs].average()
@@ -214,17 +218,19 @@ def automated_epochs_rejection(subject_id, epochs, output_path):
     if os.path.exists(os.path.join(output_path, 'plots', 'ar_average')) == False:
         os.makedirs(os.path.join(output_path, 'plots', 'ar_average'))
         print('Directory created')
-    clean_plot.savefig(os.path.join(output_path, 'plots', 'ar_average', f'sub-{subject_id}_ar_average.png'))
+    clean_plot.savefig(os.path.join(output_path, 'plots', 'ar_average', f'sub-{subject_id}-ar_average-{task}.png'))
 
     return ar_epochs, reject_log
 
-def clean_by_ICA(subject_id, ar_epochs, epochs, reject_log, output_path):
+def clean_by_ICA(subject_id, task, ar_epochs, epochs, reject_log, output_path):
     ''' Applies ICA to the data and saves the cleaned epochs and the ICA plots.
     
     Parameters
     ----------
     subject_id : str
         The subject ID.
+    task : str
+        The task name.
     ar_epochs : mne.Epochs
         The epoched data with rejected epochs.
     epochs : mne.Epochs
@@ -288,21 +294,23 @@ def clean_by_ICA(subject_id, ar_epochs, epochs, reject_log, output_path):
     if os.path.exists(os.path.join(output_path, 'cleaned_epochs')) == False:
         os.makedirs(os.path.join(output_path, 'cleaned_epochs'))
         print('Directory created')
-    epochs_clean.save(os.path.join(output_path, 'cleaned_epochs', f'sub-{subject_id}_cleaned_epochs.fif'), overwrite=True)
+    epochs_clean.save(os.path.join(output_path, 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-{task}.fif'), overwrite=True)
     if os.path.exists(os.path.join(output_path, 'plots', 'IC_removal')) == False:
         os.makedirs(os.path.join(output_path, 'plots', 'IC_removal'))
         print('Directory created')
-    IC_removal.savefig(os.path.join(output_path, 'plots', 'IC_removal', f'sub-{subject_id}_IC_removal.png'))
+    IC_removal.savefig(os.path.join(output_path, 'plots', 'IC_removal', f'sub-{subject_id}-IC_removal-{task}.png'))
     
     return epochs_clean
 
-def quality_check_plots(subject_id, epochs, epochs_clean, output_path):
+def quality_check_plots(subject_id, task, epochs, epochs_clean, output_path):
     ''' Plots the data before and after cleaning and the topography of the evoked signal.
     
     Parameters
     ----------
     subject_id : str
         The subject ID.
+    task : str
+        The task name.
     epochs : mne.Epochs
         The epoched data.
     epochs_clean : mne.Epochs
@@ -323,11 +331,11 @@ def quality_check_plots(subject_id, epochs, epochs_clean, output_path):
     if os.path.exists(os.path.join(output_path, 'plots', 'first_step_epochs')) == False:
         os.makedirs(os.path.join(output_path, 'plots', 'first_step_epochs'))
         print('Directory created')
-    first_step_epochs.savefig(os.path.join(output_path, 'plots', 'first_step_epochs', f'sub-{subject_id}_first_step_epochs.png'))
+    first_step_epochs.savefig(os.path.join(output_path, 'plots', 'first_step_epochs', f'sub-{subject_id}-first_step_epochs-{task}.png'))
     if os.path.exists(os.path.join(output_path, 'plots', 'last_step_epochs')) == False:
         os.makedirs(os.path.join(output_path, 'plots', 'last_step_epochs'))
         print('Directory created')
-    last_step_epochs.savefig(os.path.join(output_path, 'plots', 'last_step_epochs', f'sub-{subject_id}_last_step_epochs.png'))
+    last_step_epochs.savefig(os.path.join(output_path, 'plots', 'last_step_epochs', f'sub-{subject_id}-last_step_epochs-{task}.png'))
 
     # Target on the right, look at the alpha power
     target_r_epochs = epochs_clean["target_r"]
@@ -338,6 +346,6 @@ def quality_check_plots(subject_id, epochs, epochs_clean, output_path):
     if os.path.exists(os.path.join(output_path, 'plots', 'evoked_topo')) == False:
         os.makedirs(os.path.join(output_path, 'plots', 'evoked_topo'))
         print('Directory created')
-    evoked_topo.savefig(os.path.join(output_path, 'plots', 'evoked_topo', f'sub-{subject_id}_evoked_topo.png'))
+    evoked_topo.savefig(os.path.join(output_path, 'plots', 'evoked_topo', f'sub-{subject_id}-evoked_topo-{task}.png'))
 
 
