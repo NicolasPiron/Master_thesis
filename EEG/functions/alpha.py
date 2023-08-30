@@ -6,6 +6,12 @@ import mne
 import os
 import re
 
+### ================================================================================================
+
+### ======================================= ALPHA POWER PER CONDITION ==============================
+
+### ================================================================================================
+
 def sort_epochs(subject_id : str, input_dir : str):
     ''' Takes the epochs object and returns a list of epochs objects sorted by condition.
         
@@ -210,6 +216,95 @@ def alpha_power_df(conditions : list, right_power_list: list, left_power_list : 
         
     return df
 
+def single_subj_alpha_assymetry(subject_id : str, input_dir : str, output_dir : str):
+
+    # Use the functions defined above to create a dataframe with the alpha power score for each side for each condition
+    sorted_epochs = sort_epochs(subject_id, input_dir)
+    right, left = compute_alpha_by_side(sorted_epochs)
+    conditions = extract_conditions(sorted_epochs)
+    df = alpha_power_df(conditions, right, left)
+
+    df.insert(0, 'ID', subject_id)
+
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df'))
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df', f'sub-{subject_id}-alpha-power-assymetry.csv'))
+
+    return df
+
+### ======================================== ALL SUBJECTS ==========================================
+
+def alpha_assymetry_all_subj(input_dir, output_dir):
+    ''' Create a dataframe for all subjects with the alpha score for each side
+    
+    Parameters:
+    ----------
+    Input_dir : str
+        The path to the directory containing the epochs objects for each subject
+    output_dir : str
+        The path to the directory where the dataframe will be saved
+    
+    Returns
+    ----------
+    big_df : pandas.DataFrame
+        A dataframe with the alpha power score for each side for each subject
+        
+    '''
+    big_df = pd.DataFrame()
+
+    # Empty list to store the files
+    all_subj_files = []
+
+    # Loop over the directories to access the files
+    directories = glob.glob(os.path.join(input_dir, 'sub*'))
+    for directory in directories:
+        file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*N2pc.fif'))
+        all_subj_files.append(file[0])
+    all_subj_files.sort()
+
+    # Pattern to extract the subject ID
+    pattern = r'sub-(\d{2})-cleaned'
+    
+    for subject in all_subj_files:
+        
+        # Extract the subject ID
+        match = re.search(pattern, subject)
+        if match:
+            subj_id = match.group(1)
+        else:
+            print("No match found in:", subject)
+        
+        print(f'========================= working on {subj_id}')
+        
+        epochs = sort_epochs(subj_id, input_dir)
+    
+        right_power_list, left_power_list = compute_alpha_by_side(epochs)
+        
+        conditions = extract_conditions(epochs)
+        
+        subj_df = alpha_power_df(conditions, right_power_list, left_power_list)
+        
+        subj_df.insert(0, 'ID', str(subj_id))
+        
+        big_df = pd.concat([big_df, subj_df], ignore_index=True)
+        
+        print(f'========================= data from {subj_id} added to the dataframe :D')
+    
+    if not os.path.exists(os.path.join(output_dir, 'alpha-power-df')):
+        os.makedirs(os.path.join(output_dir, 'alpha-power-df'))
+    big_df.to_csv(os.path.join(output_dir, 'alpha-power-df', 'all_subj_alpha_power_assymetry.csv'))
+    
+    return big_df
+
+
+
+### ================================================================================================
+
+### ======================================= ALPHA POWER PER EPOCH ==================================
+
+### ================================================================================================
+
+
 def alpha_power_per_epoch(subject_id : str, input_dir : str):
     ''' Compute the alpha power for each epoch and return a list of alpha power values for the right side of the head and a list of alpha power values for the left side of the head.
 
@@ -317,69 +412,23 @@ def alpha_df_epoch(subject_id : str, input_dir, right_power_list, left_power_lis
     
     return df    
 
-def alpha_assymetry_all_subj(input_dir, output_dir):
-    ''' Create a dataframe for all subjects with the alpha score for each side
-    
-    Parameters:
-    ----------
-    Input_dir : str
-        The path to the directory containing the epochs objects for each subject
-    output_dir : str
-        The path to the directory where the dataframe will be saved
-    
-    Returns
-    ----------
-    big_df : pandas.DataFrame
-        A dataframe with the alpha power score for each side for each subject
-        
-    '''
-    big_df = pd.DataFrame()
+def single_subj_alpha_epoch(subject_id : str, input_dir : str, output_dir : str):
 
-    # Empty list to store the files
-    all_subj_files = []
+    # Uses the functions defined above to create a dataframe with the alpha power score for each side for each epoch
+    right_power_list, left_power_list = alpha_power_per_epoch(subject_id, input_dir)
+    df = alpha_df_epoch(subject_id, input_dir, right_power_list, left_power_list)
 
-    # Loop over the directories to access the files
-    directories = glob.glob(os.path.join(input_dir, 'sub*'))
-    for directory in directories:
-        file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*N2pc.fif'))
-        all_subj_files.append(file[0])
-    all_subj_files.sort()
+    df.insert(0, 'ID', subject_id)
 
-    # Pattern to extract the subject ID
-    pattern = r'sub-(\d{2})-cleaned'
-    
-    for subject in all_subj_files:
-        
-        # Extract the subject ID
-        match = re.search(pattern, subject)
-        if match:
-            subj_id = match.group(1)
-        else:
-            print("No match found in:", subject)
-        
-        print(f'========================= working on {subj_id}')
-        
-        epochs = sort_epochs(subj_id, input_dir)
-    
-        right_power_list, left_power_list = compute_alpha_by_side(epochs)
-        
-        conditions = extract_conditions(epochs)
-        
-        subj_df = alpha_power_df(conditions, right_power_list, left_power_list)
-        
-        subj_df.insert(0, 'ID', str(subj_id))
-        
-        big_df = pd.concat([big_df, subj_df], ignore_index=True)
-        
-        print(f'========================= data from {subj_id} added to the dataframe :D')
-    
-    if not os.path.exists(os.path.join(output_dir, 'alpha-power-df')):
-        os.makedirs(os.path.join(output_dir, 'alpha-power-df'))
-    big_df.to_csv(os.path.join(output_dir, 'alpha-power-df', 'all_subj_alpha_power_assymetry.csv'))
-    
-    return big_df
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df'))
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df', f'sub-{subject_id}-alpha-power-per-epoch.csv'))
 
-def alpha_by_epoch_all_subj(input_dir, output_dir):
+    return df
+    
+# ======================================== ALL SUBJECTS ==========================================
+
+def all_subj_alpha_epoch(input_dir, output_dir):
     ''' Create a dataframe for all subjects with the alpha score for each side and for each epoch
     
     Parameters:
