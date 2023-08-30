@@ -21,9 +21,11 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
     -------
     None
     '''
-    # Load subject data
+    # Load subject data and crop to the relevant time window
     epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
-
+    tmin = -0.2
+    tmax = 0.4
+    epochs.crop(tmin=tmin, tmax=tmax)
     # Create output directory if it doesn't exist
     if os.path.exists(os.path.join(output_dir,'n2pc_plots', f'sub-{subject_id}')) == False:
         os.makedirs(os.path.join(output_dir,'n2pc_plots', f'sub-{subject_id}'))
