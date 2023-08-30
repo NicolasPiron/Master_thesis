@@ -54,7 +54,7 @@ def load_data(subject_id : str, task='N2pc', input_path='/Users/nicolaspiron/Doc
 
 def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
     ''' Drops useless channels, sets the channel types and the montage, filters the data and interpolates bad channels. 
-        Saves the raw data and the PSD plot.
+        Saves the raw data and the PSD plot. Also saves a list with the bad channels that were interpolated.
     
     Parameters
     ----------
@@ -95,6 +95,15 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
         os.makedirs(os.path.join(output_path, 'plots', 'psd'))
         print('Directory created')
     psd_fig.savefig(os.path.join(output_path, 'plots', 'psd', f'sub-{subject_id}-psd-{task}.png'))
+    
+    # save the list of bad channels
+    bad_channels = raw.info['bads']
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'bad_channels')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'bad_channels'))
+        print('Directory created')
+    with open(os.path.join(output_path, f'sub-{subject_id}', 'bad_channels', f'sub-{subject_id}-bad_channels-{task}.txt'), 'w') as f:
+        for item in bad_channels:
+            f.write("%s\n" % item)
     
     # Interpolate bad channels
     mne.io.Raw.interpolate_bads(raw, reset_bads=False)
