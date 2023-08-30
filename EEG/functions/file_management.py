@@ -2,14 +2,14 @@ import glob
 import os
 import mne
 
-def concat_all_subj(task='n2pc', population='control'):
+def concat_all_subj(task='N2pc', population='control', input_dir=None, output_dir=None):
     ''' Concatenate the files of all the subjects that have been preprocessed.
     
     Parameters
     ---------- 
-    task : 'alpheye' or 'n2pc'
+    task : 'N2pc' or 'Alpheye'
         The name of the task
-    population : 'control' or 'patient'
+    population : 'control' or 'stroke'
         The type of population
     
     Returns
@@ -17,61 +17,98 @@ def concat_all_subj(task='n2pc', population='control'):
     Nothing
     '''
 
-    if task == 'alpheye':
-
-        data_path = '/Users/nicolaspiron/Documents/PULSATION/Data/EEG/Alpheye/data-preproc-alpheye/total_epochs/'
-        out_path = '/Users/nicolaspiron/Documents/PULSATION/Data/EEG/Alpheye/data-preproc-alpheye/epochs_all/'
-        
-        files = glob.glob(data_path+'*')
-        files.sort()
-        total_epoch_files = []
+    if task == 'N2pc':
 
         if population == 'control':
+            
+            # Empty list to store the files
+            control_files = []
 
-            for file in files:
-                if data_path + 'S' in file:
-                    i = mne.read_epochs(file)
-                    total_epoch_files.append(i)
-        
-            all_subj = mne.concatenate_epochs(total_epoch_files)
-            all_subj.save(os.path.join(out_path,'S_all_subj_alpheye_.fif'), overwrite=True)
-        
-        elif population == 'patient':
+            # Loop over the directories to access the control files
+            # The controls are the subjects with a number below 50
+            directories = glob.glob(os.path.join(input_dir, 'sub*'))
+            for directory in directories:
+                if int(directory[-2:]) < 51:
+                    file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*N2pc.fif'))
+                    control_files.append(file[0])
 
-            for file in files:
-                if data_path + 'P' in file:
-                    i = mne.read_epochs(file)
-                    total_epoch_files.append(i)
+            # Concatenate the files
+            epochs_list = []
+            for file in control_files:
+                epochs = mne.read_epochs(file)
+                epochs_list.append(epochs)
+            all_subj = mne.concatenate_epochs(epochs_list)
+            if not os.path.exists(os.path.join(output_dir, f'{population}-allsubj')):
+                os.makedirs(os.path.join(output_dir, f'{population}-allsubj'))
+            all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}.fif'), overwrite=True) 
+                
+        elif population == 'stroke':
 
-            all_subj = mne.concatenate_epochs(total_epoch_files)
-            all_subj.save(os.path.join(out_path,'P_all_subj_alpheye_.fif'), overwrite=True)
+             # Empty list to store the files
+            stroke_files = []
 
+            # Loop over the directories to access the control files
+            # The stroke patients are sub-51 and above
+            directories = glob.glob(os.path.join(input_dir, 'sub*'))
+            for directory in directories:
+                if int(directory[-2:]) >= 51:
+                    file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*N2pc.fif'))
+                    stroke_files.append(file[0])
 
-    elif task == 'n2pc':
+            # Concatenate the files
+            epochs_list = []
+            for file in control_files:
+                epochs = mne.read_epochs(file)
+                epochs_list.append(epochs)
+            all_subj = mne.concatenate_epochs(epochs_list)
+            if not os.path.exists(os.path.join(output_dir, f'{population}-allsubj')):
+                os.makedirs(os.path.join(output_dir, f'{population}-allsubj'))
+            all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}.fif'), overwrite=True)                  
 
-        data_path = '/Users/nicolaspiron/Documents/PULSATION/Data/EEG/N2pc/data-preproc-n2pc/total_epochs/'
-        out_path = '/Users/nicolaspiron/Documents/PULSATION/Data/EEG/N2pc/data-preproc-n2pc/epochs_all/'
-        
-        files = glob.glob(data_path+'*')
-        files.sort()
-        total_epoch_files = []
+    elif task == 'Alpheye':
 
         if population == 'control':
+            
+            # Empty list to store the files
+            control_files = []
 
-            for file in files:
-                if data_path + 'S' in file:
-                    i = mne.read_epochs(file)
-                    total_epoch_files.append(i)
-                        
-            all_subj = mne.concatenate_epochs(total_epoch_files)
-            all_subj.save(os.path.join(out_path,'S_all_subj_n2pc_.fif'), overwrite=True)                        
-        
-        elif population == 'patient':
+            # Loop over the directories to access the control files
+            # The controls are the subjects with a number below 50
+            directories = glob.glob(os.path.join(input_dir, 'sub*'))
+            for directory in directories:
+                if int(directory[-2:]) < 51:
+                    file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*Alpheye.fif'))
+                    control_files.append(file[0])
 
-            for file in files:
-                if data_path + 'P' in file:
-                    i = mne.read_epochs(file)
-                    total_epoch_files.append(i)
+            # Concatenate the files
+            epochs_list = []
+            for file in control_files:
+                epochs = mne.read_epochs(file)
+                epochs_list.append(epochs)
+            all_subj = mne.concatenate_epochs(epochs_list)
+            if not os.path.exists(os.path.join(output_dir, f'{population}-allsubj')):
+                os.makedirs(os.path.join(output_dir, f'{population}-allsubj'))
+            all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}.fif'), overwrite=True) 
+                
+        elif population == 'stroke':
 
-        all_subj = mne.concatenate_epochs(total_epoch_files)
-        all_subj.save(os.path.join(out_path,'P_all_subj_n2pc_.fif'), overwrite=True)
+             # Empty list to store the files
+            stroke_files = []
+
+            # Loop over the directories to access the control files
+            # The stroke patients are sub-51 and above
+            directories = glob.glob(os.path.join(input_dir, 'sub*'))
+            for directory in directories:
+                if int(directory[-2:]) >= 51:
+                    file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*Alpheye.fif'))
+                    stroke_files.append(file[0])
+
+            # Concatenate the files
+            epochs_list = []
+            for file in control_files:
+                epochs = mne.read_epochs(file)
+                epochs_list.append(epochs)
+            all_subj = mne.concatenate_epochs(epochs_list)
+            if not os.path.exists(os.path.join(output_dir, f'{population}-allsubj')):
+                os.makedirs(os.path.join(output_dir, f'{population}-allsubj'))
+            all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}.fif'), overwrite=True) 
