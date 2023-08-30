@@ -3,15 +3,13 @@ import numpy as np
 import pandas as pd
 import glob
 import mne
+import os
+import re
 
-def sort_epochs(epochs : mne.Epochs):
+def sort_epochs(subject_id : str, input_dir : str):
     ''' Takes the epochs object and returns a list of epochs objects sorted by condition.
-
-    Parameters
-    ----------
-    epochs : mne.Epochs
-        The epochs object to be sorted.
-        the order of the epochs is as follows: 
+        
+        the original order of the epochs is as follows: 
         'dis_top/target_l': 1,
         'dis_top/target_r': 2,
         'no_dis/target_l': 3,
@@ -20,7 +18,14 @@ def sort_epochs(epochs : mne.Epochs):
         'dis_bot/target_r': 6,
         'dis_right/target_l': 7,
         'dis_left/target_r': 8
-    
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID.
+    input_dir : str
+        The path to the directory containing all the subject directories
+
     Returns
     -------
     sorted_epochs : list of mne.Epochs
@@ -32,6 +37,9 @@ def sort_epochs(epochs : mne.Epochs):
         'dis_mid/target_l',
         'dis_mid/target_r']
     '''
+
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+
     event_ids = epochs.event_id
     
     sorted_epochs = []
@@ -202,8 +210,7 @@ def alpha_power_df(conditions : list, right_power_list: list, left_power_list : 
         
     return df
 
-
-def alpha_power_per_epoch(epochs):
+def alpha_power_per_epoch(subject_id : str, input_dir : str):
     ''' Compute the alpha power for each epoch and return a list of alpha power values for the right side of the head and a list of alpha power values for the left side of the head.
 
     Parameters:
@@ -219,6 +226,9 @@ def alpha_power_per_epoch(epochs):
     left_power_list : list of float
         a list of alpha band mean power values (8-12Hz) for the left side of the head for each epoch
     '''
+
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs',f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+
     freqs = np.arange(8, 13)
     right_elecs=['O2', 'PO4', 'PO8']
     left_elecs=['O1', 'PO3', 'PO7']
@@ -249,7 +259,7 @@ def alpha_power_per_epoch(epochs):
 
     return right_power_list, left_power_list
 
-def alpha_df_epoch(epochs=None, right_power_list=None, left_power_list=None):
+def alpha_df_epoch(subject_id : str, input_dir, right_power_list, left_power_list):
     ''' Create a dataframe with the alpha power for each epoch
 
     Parameters:
@@ -269,6 +279,9 @@ def alpha_df_epoch(epochs=None, right_power_list=None, left_power_list=None):
         A dataframe with the alpha power score for each side for each epoch
 
     '''
+    # Load the epochs
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+
     # Initiate the df
     df = pd.DataFrame(columns=[['epoch_index','condition','target_side', 'distractor_position', 'alpha_power_right', 'alpha_power_left']])
     
@@ -304,7 +317,7 @@ def alpha_df_epoch(epochs=None, right_power_list=None, left_power_list=None):
     
     return df    
 
-def alpha_assymetry_all_subj(input_dir='/Users/nicolaspiron/Documents/PULSATION/Data/EEG/N2pc/data-preproc-n2pc/total_epochs/', output_dir='/Users/nicolaspiron/Documents/PULSATION/Python_MNE/preproc/n2pc_out/dataframes/'):
+def alpha_assymetry_all_subj(input_dir, output_dir):
     ''' Create a dataframe for all subjects with the alpha score for each side
     
     Parameters:
@@ -321,17 +334,32 @@ def alpha_assymetry_all_subj(input_dir='/Users/nicolaspiron/Documents/PULSATION/
         
     '''
     big_df = pd.DataFrame()
-    all_subj_files = glob.glob(input_dir + '*')
+
+    # Empty list to store the files
+    all_subj_files = []
+
+    # Loop over the directories to access the files
+    directories = glob.glob(os.path.join(input_dir, 'sub*'))
+    for directory in directories:
+        file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*N2pc.fif'))
+        all_subj_files.append(file[0])
     all_subj_files.sort()
+
+    # Pattern to extract the subject ID
+    pattern = r'sub-(\d{2})-cleaned'
     
     for subject in all_subj_files:
         
-        subj_id = subject[-25:-22]
+        # Extract the subject ID
+        match = re.search(pattern, subject)
+        if match:
+            subj_id = match.group(1)
+        else:
+            print("No match found in:", subject)
         
         print(f'========================= working on {subj_id}')
         
-        epochs = mne.read_epochs(subject)
-        epochs = sort_epochs(epochs)
+        epochs = sort_epochs(subj_id, input_dir)
     
         right_power_list, left_power_list = compute_alpha_by_side(epochs)
         
@@ -345,11 +373,13 @@ def alpha_assymetry_all_subj(input_dir='/Users/nicolaspiron/Documents/PULSATION/
         
         print(f'========================= data from {subj_id} added to the dataframe :D')
     
-    big_df.to_csv(output_dir + 'alpha_power_assymetry.csv')
+    if not os.path.exists(os.path.join(output_dir, 'alpha-power-df')):
+        os.makedirs(os.path.join(output_dir, 'alpha-power-df'))
+    big_df.to_csv(os.path.join(output_dir, 'alpha-power-df', 'all_subj_alpha_power_assymetry.csv'))
     
     return big_df
 
-def alpha_by_epoch_all_subj(input_dir='/Users/nicolaspiron/Documents/PULSATION/Data/EEG/N2pc/data-preproc-n2pc/total_epochs/', output_dir='/Users/nicolaspiron/Documents/PULSATION/Python_MNE/preproc/n2pc_out/dataframes/'):
+def alpha_by_epoch_all_subj(input_dir, output_dir):
     ''' Create a dataframe for all subjects with the alpha score for each side and for each epoch
     
     Parameters:
@@ -365,23 +395,41 @@ def alpha_by_epoch_all_subj(input_dir='/Users/nicolaspiron/Documents/PULSATION/D
         A dataframe with the alpha power score for each side for each subject
     '''
     big_df = pd.DataFrame()
-    all_subj_files = glob.glob(input_dir + '*')
+
+    # Empty list to store the files
+    all_subj_files = []
+
+    # Loop over the directories to access the files
+    directories = glob.glob(os.path.join(input_dir, 'sub*'))
+    for directory in directories:
+        file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*N2pc.fif'))
+        all_subj_files.append(file[0])
     all_subj_files.sort()
+
+    # Pattern to extract the subject ID
+    pattern = r'sub-(\d{2})-cleaned'
 
     for subject in all_subj_files:
 
-        subj_id = subject[-25:-22]
+        # Extract the subject ID
+        match = re.search(pattern, subject)
+        if match:
+            subj_id = match.group(1)
+        else:
+            print("No match found in:", subject)
 
         print(f'========================= working on {subj_id}')
 
-        epochs = mne.read_epochs(subject)
-        right, left = alpha_power_per_epoch(epochs)
-        subj_df = alpha_df_epoch(epochs, right, left)
+        # Load the epochs
+        right, left = alpha_power_per_epoch(subject_id=subj_id, input_dir=input_dir)
+        subj_df = alpha_df_epoch(subject_id=subj_id, input_dir=input_dir, right_power_list=right, left_power_list=left)
 
-        subj_df.insert(0, 'ID', str(subj_id))
+        subj_df.insert(0, 'ID', subj_id)
 
         big_df = pd.concat([big_df, subj_df], ignore_index=True)
-        
-    big_df.to_csv(output_dir + 'alpha_power_per_epoch.csv')
+    
+    if not os.path.exists(os.path.join(output_dir, 'alpha-power-df')):
+        os.makedirs(os.path.join(output_dir, 'alpha-power-df'))
+    big_df.to_csv(os.path.join(output_dir, 'alpha-power-df', 'allsubj_alpha_power_per_epoch.csv'))
 
     return big_df
