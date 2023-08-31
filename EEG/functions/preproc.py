@@ -173,7 +173,7 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
         df.to_csv(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'event_lists', f'sub-{subject_id}-elist-{task}.csv'), index=False)
 
         if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs')) == False:
-            os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'epochs'))
+            os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs'))
             print('Directory created')
         epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs', f'sub-{subject_id}-epochs-{task}.fif'), overwrite=True)
 
