@@ -34,12 +34,14 @@ def load_data(subject_id : str, task='N2pc', input_path='/Users/nicolaspiron/Doc
     # Load the data and concatenate the two runs
     files = glob.glob(input_path+path+'*.bdf')
     files.sort()
-    raw1 = mne.io.read_raw_bdf(files[0])
-    raw2 = mne.io.read_raw_bdf(files[1])
-    raw1.load_data()
-    raw2.load_data()
-
-    raw = mne.concatenate_raws([raw1, raw2])
+    
+    # Other option / should work with both tasks
+    raws = []
+    for file in files:
+        raw = mne.io.read_raw_bdf(file)
+        raw.load_data()
+        raws.append(raw)
+    raw = mne.concatenate_raws(raws)
 
     # Find the events and create annotations
     e_list = mne.find_events(raw, stim_channel='Status')
@@ -143,7 +145,6 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
 
         # Convert the event list to a dataframe and select the events of interest
         df = pd.DataFrame(e_list, columns=['timepoint', 'duration', 'stim'])
-        print(df)
         mask = (df['stim'].isin(range(1, 9))) & (df['stim'].shift(-1) == 128) | (df['stim'] == 128) & (df['stim'].shift(1).isin(range(1,9)))
         correct_df = df[mask]
         mne_events = correct_df.values
@@ -159,26 +160,34 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
              }
         
         # Epoch the data
-        epochs = mne.Epochs(raw, mne_events, event_id=event_dict, tmin=-0.2, tmax=0.8, 
-                    baseline=(-0.2,0), event_repeated='drop', preload=True)
+        epochs = mne.Epochs(raw, mne_events, event_id=event_dict, tmin=-0.2, tmax=0.8, baseline=(-0.2,0), event_repeated='drop', preload=True)
         
-        # Set the EEG reference and resample the data
-        epochs.set_eeg_reference(ref_channels='average')
-        epochs.resample(512)
-        
-        # Save the event list and the epochs
-        if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'event_lists')) == False:
-            os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'event_lists'))
-            print('Directory created')
-        df.to_csv(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'event_lists', f'sub-{subject_id}-elist-{task}.csv'), index=False)
-
-        if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs')) == False:
-            os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs'))
-            print('Directory created')
-        epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs', f'sub-{subject_id}-epochs-{task}.fif'), overwrite=True)
-
     elif task == 'Alpheye':
-        pass
+        
+        df = pd.DataFrame(e_list, columns=['timepoint', 'duration', 'stim'])
+        df_stim = df[(df['stim'] == 2) | (df['stim'] == 4)].reset_index()
+        df_stim = df_stim.add_prefix('img_')
+        mne_events = df_stim[['img_timepoint', 'img_duration', 'img_stim']].values
+        
+        event_dict = {'Landscape':2,
+                    'Human':4}
+
+        epochs = mne.Epochs(raw, mne_events, event_id=event_dict, tmin=-0.2, tmax=6, baseline=(-0.2, 0), event_repeated='drop', preload=True)
+
+    # Set the EEG reference and resample the data
+    epochs.set_eeg_reference(ref_channels='average')
+    epochs.resample(512)
+    
+    # Save the event list and the epochs
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'event_lists')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'event_lists'))
+        print('Directory created')
+    df.to_csv(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'event_lists', f'sub-{subject_id}-elist-{task}.csv'), index=False)
+
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs'))
+        print('Directory created')
+    epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs', f'sub-{subject_id}-epochs-{task}.fif'), overwrite=True)
 
     return epochs
 
@@ -346,10 +355,19 @@ def quality_check_plots(subject_id, task, epochs, epochs_clean, output_path):
         print('Directory created')
     last_step_epochs.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'last_step_epochs', f'sub-{subject_id}-last_step_epochs-{task}.png'))
 
-    # Target on the right, look at the alpha power
-    target_r_epochs = epochs_clean["target_r"]
-    target_r_evoked = target_r_epochs.average()
-    evoked_topo = target_r_evoked.plot_topomap(times=[0.0, 0.1, 0.2, 0.25, 0.3, 0.4], ch_type="eeg")
+    if task == 'N2pc':
+
+        # Target on the right, look at the alpha power
+        target_r_epochs = epochs_clean["target_r"]
+        target_r_evoked = target_r_epochs.average()
+        evoked_topo = target_r_evoked.plot_topomap(times=[0.0, 0.1, 0.2, 0.25, 0.3, 0.4], ch_type="eeg")
+    
+    elif task == 'Alpheye':
+
+        # Topo for human condition
+        human_epochs = epochs_clean["Human"]
+        human_evoked = human_epochs.average()
+        evoked_topo = human_evoked.plot_topomap(times=[0.0, 0.2, 0.5, 1, 2, 3], ch_type="eeg")
 
     # Save the plots
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'evoked_topo')) == False:
