@@ -27,8 +27,8 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
     tmax = 0.4
     epochs.crop(tmin=tmin, tmax=tmax)
     # Create output directory if it doesn't exist
-    if os.path.exists(os.path.join(output_dir,'n2pc_plots', f'sub-{subject_id}')) == False:
-        os.makedirs(os.path.join(output_dir,'n2pc_plots', f'sub-{subject_id}'))
+    if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots')) == False:
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots'))
     
     # Define the channel indices for left (Lch) and right (Rch) channels
     Lch = np.concatenate([np.arange(0, 27)])
@@ -124,7 +124,7 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
     plt.title('Signal from Electrodes PO7 - Dis_Mid Condition')
     plt.legend()
     plt.grid()
-    plt.savefig(os.path.join(output_dir, 'n2pc_plots',f'sub-{subject_id}',f'sub-{subject_id}-PO7_Dis_Mid.png'))
+    plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots',f'sub-{subject_id}-PO7_Dis_Mid.png'))
     plt.show()
 
     # Plot for No_Dis
@@ -138,7 +138,7 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
     plt.title('Signal from Electrodes PO7 - No_Dis Condition')
     plt.legend()
     plt.grid()
-    plt.savefig(os.path.join(output_dir, 'n2pc_plots', f'sub-{subject_id}', f'sub-{subject_id}-PO7_No_Dis.png'))
+    plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots', f'sub-{subject_id}-PO7_No_Dis.png'))
     plt.show()
 
     # Plot for Dis_Contra
@@ -152,7 +152,7 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
     plt.title('Signal from Electrodes PO7 - Dis_Contra Condition')
     plt.legend()
     plt.grid()
-    plt.savefig(os.path.join(output_dir, 'n2pc_plots', f'sub-{subject_id}', f'sub-{subject_id}-PO7_Dis_Contra.png'))
+    plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots', f'sub-{subject_id}-PO7_Dis_Contra.png'))
     plt.show()
 
 
