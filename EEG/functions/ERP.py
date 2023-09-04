@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import mne
 
-def plot_n2pc(subject_id, input_dir, output_dir=None):
-    ''' This function plots the N2pc ERP for a given subject.
+def get_bins_baseline(subject_id, input_dir):
+    ''' This function extracts the N2pc ERP for a given subject.
 
     Parameters
     ----------
@@ -14,21 +14,29 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
         The subject ID to plot.
     input_dir : str
         The path to the directory containing the input data.
-    output_dir : str
-        The path to the directory where the output will be saved.
     
     Returns
     -------
-    None
+    PO7_data_nbin1_baseline : numpy.ndarray
+        The N2pc ERP data for the Dis_Mid contra condition.
+    PO7_data_nbin2_baseline : numpy.ndarray
+        The N2pc ERP data for the Dis_Mid ipsi condition.
+    PO7_data_nbin3_baseline : numpy.ndarray
+        The N2pc ERP data for the No_Dis contra condition.
+    PO7_data_nbin4_baseline : numpy.ndarray
+        The N2pc ERP data for the No_Dis ipsi condition.
+    PO7_data_nbin5_baseline : numpy.ndarray
+        The N2pc ERP data for the Dis_Contra contra condition.
+    PO7_data_nbin6_baseline : numpy.ndarray
+        The N2pc ERP data for the Dis_Contra ipsi condition.
+    time : numpy.ndarray
+        The time axis for the ERP data.
     '''
     # Load subject data and crop to the relevant time window
     epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
     tmin = -0.2
     tmax = 0.4
     epochs.crop(tmin=tmin, tmax=tmax)
-    # Create output directory if it doesn't exist
-    if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots')) == False:
-        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots'))
     
     # Define the channel indices for left (Lch) and right (Rch) channels
     Lch = np.concatenate([np.arange(0, 27)])
@@ -111,6 +119,30 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
     PO7_data_nbin5_baseline = mne.baseline.rescale(PO7_data_nbin5, times=time, baseline=baseline)
     PO7_data_nbin6_baseline = mne.baseline.rescale(PO7_data_nbin6, times=time, baseline=baseline)
 
+    return PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time
+
+def plot_n2pc(subject_id, input_dir, output_dir=None):
+    ''' This function plots the N2pc ERP for a given subject.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot.
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+    
+    Returns
+    -------
+    None
+    '''
+    PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir)
+
+    # Create output directory if it doesn't exist
+    if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots')) == False:
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots'))
+
     # Create three separate plots for each condition
 
     # Plot for Dis_Mid
@@ -174,104 +206,21 @@ def get_n2pc_values(subject_id, input_dir, output_dir):
         A dataframe containing the N2pc values for each condition and side.
     '''
 
-    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
-    tmin = -0.2
-    tmax = 0.4
-    epochs.crop(tmin=tmin, tmax=tmax)
-    # Create output directory if it doesn't exist
-    if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','n2pc-values')) == False:
-        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','n2pc-values'))
-       
-        # Define the channel indices for left (Lch) and right (Rch) channels
-    Lch = np.concatenate([np.arange(0, 27)])
-    Rch = np.concatenate([np.arange(33, 36), np.arange(38, 46), np.arange(48, 64)])
+    PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir)
 
-    # Define functions to create the new bin operations
-    def bin_operator(data1, data2):
-        return 0.5 * data1 + 0.5 * data2
+    bin_list = [PO7_data_nbin1_baseline,
+                PO7_data_nbin2_baseline,
+                PO7_data_nbin3_baseline,
+                PO7_data_nbin4_baseline,
+                PO7_data_nbin5_baseline,
+                PO7_data_nbin6_baseline]
     
-    bin1 = ['dis_top/target_l','dis_bot/target_l']
-    bin2 = ['dis_top/target_r','dis_bot/target_r']
-    bin3 = ['no_dis/target_l']
-    bin4 = ['no_dis/target_r']
-    bin5 = ['dis_right/target_l']
-    bin6 = ['dis_left/target_r']
-
-    # Create evoked objects for each bin
-    evk_bin1_R = epochs[bin1].average(picks=Rch)
-    evk_bin1_L = epochs[bin1].average(picks=Lch)
-    evk_bin2_R = epochs[bin2].average(picks=Rch)
-    evk_bin2_L = epochs[bin2].average(picks=Lch)
-    evk_bin3_R = epochs[bin3].average(picks=Rch)
-    evk_bin3_L = epochs[bin3].average(picks=Lch)
-    evk_bin4_R = epochs[bin4].average(picks=Rch)
-    evk_bin4_L = epochs[bin4].average(picks=Lch)
-    evk_bin5_R = epochs[bin5].average(picks=Rch)
-    evk_bin5_L = epochs[bin5].average(picks=Lch)
-    evk_bin6_R = epochs[bin6].average(picks=Rch)
-    evk_bin6_L = epochs[bin6].average(picks=Lch)
-
-    evk_bin1 = epochs[bin1].average()
-    evk_bin2 = epochs[bin2].average()
-    evk_bin3 = epochs[bin3].average()
-    evk_bin4 = epochs[bin4].average()
-    evk_bin5 = epochs[bin5].average()
-    evk_bin6 = epochs[bin6].average()
-
-    # Prepare Contra and Ipsi bins
-    nbin1 = bin_operator(evk_bin1_R.data, evk_bin2_L.data)
-    nbin2 = bin_operator(evk_bin1_L.data, evk_bin2_R.data)
-    nbin3 = bin_operator(evk_bin3_R.data, evk_bin4_L.data)
-    nbin4 = bin_operator(evk_bin3_L.data, evk_bin4_R.data)
-    nbin5 = bin_operator(evk_bin5_R.data, evk_bin6_L.data)
-    nbin6 = bin_operator(evk_bin5_L.data, evk_bin6_R.data)
-
-    # Define the baseline period in milliseconds
-    baseline = (-200, 0)  
-
-    # Define the time axis
-    time = evk_bin1.times * 1000  # Convert to milliseconds
-
-    # Define the channel indices for P7, P9, and PO7
-    #P7_idx = evk_bin1.info['ch_names'].index('P7')
-    #P9_idx = evk_bin1.info['ch_names'].index('P9')
-    PO7_idx = evk_bin1.info['ch_names'].index('PO7')
-
-    # Extract the data for P7, P9, and PO7 electrodes
-    PO7_data_nbin1 = nbin1[PO7_idx]
-    PO7_data_nbin2 = nbin2[PO7_idx]
-    PO7_data_nbin3 = nbin3[PO7_idx]
-    PO7_data_nbin4 = nbin4[PO7_idx]
-    PO7_data_nbin5 = nbin5[PO7_idx]
-    PO7_data_nbin6 = nbin6[PO7_idx]
-
-    # Apply baseline correction to the ERP data
-    PO7_data_nbin1_baseline = mne.baseline.rescale(PO7_data_nbin1, times=time, baseline=baseline)
-    PO7_data_nbin2_baseline = mne.baseline.rescale(PO7_data_nbin2, times=time, baseline=baseline)
-    PO7_data_nbin3_baseline = mne.baseline.rescale(PO7_data_nbin3, times=time, baseline=baseline)
-    PO7_data_nbin4_baseline = mne.baseline.rescale(PO7_data_nbin4, times=time, baseline=baseline)
-    PO7_data_nbin5_baseline = mne.baseline.rescale(PO7_data_nbin5, times=time, baseline=baseline)
-    PO7_data_nbin6_baseline = mne.baseline.rescale(PO7_data_nbin6, times=time, baseline=baseline)
-    
-    # Create starting and stoping points for each time window : 200-300ms ; 300-400ms ; 200-400ms. 
-    # Note that the sampling rate is 512Hz so 100ms = 51 data points
-    # Remember that it starts at -200ms
-
-    # Check if baseline changes the results
-
-    #bin_list = [PO7_data_nbin1_baseline,
-     #           PO7_data_nbin2_baseline,
-      #          PO7_data_nbin3_baseline,
-       #         PO7_data_nbin4_baseline,
-        #        PO7_data_nbin5_baseline,
-         #       PO7_data_nbin6_baseline]
-    
-    bin_list = [PO7_data_nbin1,
-                PO7_data_nbin2,
-                PO7_data_nbin3,
-                PO7_data_nbin4,
-                PO7_data_nbin5,
-                PO7_data_nbin6]
+    #bin_list = [PO7_data_nbin1,
+     #           PO7_data_nbin2,
+      #          PO7_data_nbin3,
+       #         PO7_data_nbin4,
+        #        PO7_data_nbin5,
+         #       PO7_data_nbin6]
 
     early_window_slices = []
     late_window_slices = []
@@ -310,6 +259,6 @@ def get_n2pc_values(subject_id, input_dir, output_dir):
     # Save the dataframe
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values')):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values'))
-    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values', f'sub-{subject_id}-n2pc_values_no_baseline.csv'))
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values', f'sub-{subject_id}-n2pc_values.csv'))
     
     return df
