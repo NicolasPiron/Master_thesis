@@ -32,7 +32,7 @@ def load_data(subject_id : str, task='N2pc', input_path='/Users/nicolaspiron/Doc
     path = fr"sub-{subject_id}/ses-01/eeg/sub-{subject_id}_ses-01_task-{task}_run-"
 
     # Load the data and concatenate the two runs
-    files = glob.glob(input_path+path+'*.bdf')
+    files = glob.glob(os.path.join(input_path,path+'*.bdf'))
     files.sort()
     
     # Other option / should work with both tasks
@@ -93,17 +93,17 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
     psd_fig = raw.plot_psd(fmin=0, fmax=50, dB=True, average=True)
 
     # Save the PSD plot
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'psd')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'plots', 'psd'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-01-psd')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'plots', 'step-01-psd'))
         print('Directory created')
-    psd_fig.savefig(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'plots', 'psd', f'sub-{subject_id}-psd-{task}.png'))
+    psd_fig.savefig(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'plots', 'step-01-psd', f'sub-{subject_id}-psd-{task}.png'))
     
     # save the list of bad channels
     bad_channels = raw.info['bads']
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'bad_channels')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'bad_channels'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-01-bad_channels')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-01-bad_channels'))
         print('Directory created')
-    with open(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'bad_channels', f'sub-{subject_id}-bad_channels-{task}.txt'), 'w') as f:
+    with open(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-01-bad_channels', f'sub-{subject_id}-bad_channels-{task}.txt'), 'w') as f:
         for item in bad_channels:
             f.write("%s\n" % item)
     
@@ -113,10 +113,10 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
         raw.plot(scalings='auto')
 
     # Save the raw data
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'raw')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'raw'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-02-raw')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-02-raw'))
         print('Directory created')
-    raw.save(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'raw', f'sub-{subject_id}-raw-{task}.fif'), overwrite=True)
+    raw.save(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-02-raw', f'sub-{subject_id}-raw-{task}.fif'), overwrite=True)
 
     return raw
 
@@ -179,15 +179,15 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
     epochs.resample(512)
     
     # Save the event list and the epochs
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'event_lists')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'event_lists'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-03-event_lists')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-03-event_lists'))
         print('Directory created')
-    df.to_csv(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'event_lists', f'sub-{subject_id}-elist-{task}.csv'), index=False)
+    df.to_csv(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-03-event_lists', f'sub-{subject_id}-elist-{task}.csv'), index=False)
 
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-04-epochs')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-04-epochs'))
         print('Directory created')
-    epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'epochs', f'sub-{subject_id}-epochs-{task}.fif'), overwrite=True)
+    epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-04-epochs', f'sub-{subject_id}-epochs-{task}.fif'), overwrite=True)
 
     return epochs
 
@@ -218,25 +218,25 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     ar_epochs, reject_log = ar.fit_transform(epochs, return_log=True)
 
     # Save the epochs and the log
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'ar_epochs')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'ar_epochs'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs'))
         print('Directory created')
-    ar_epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'ar_epochs', f'sub-{subject_id}-ar_epochs-{task}.fif'), overwrite=True)
+    ar_epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs', f'sub-{subject_id}-ar_epochs-{task}.fif'), overwrite=True)
 
     log_plot = reject_log.plot('horizontal')
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'dropped_epochs')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'dropped_epochs'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs'))
         print('Directory created')
-    log_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'dropped_epochs', f'sub-{subject_id}-dropped_epochs-{task}.png'))
+    log_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs', f'sub-{subject_id}-dropped_epochs-{task}.png'))
 
     # Plot the average signal before and after cleaning and save the plot
     evoked_bad = epochs[reject_log.bad_epochs].average()
     plt.plot(evoked_bad.times, evoked_bad.data.T * 1e6, 'r', zorder=-1)
     clean_plot = ar_epochs.average().plot(axes=plt.gca())
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'ar_average')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'ar_average'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-ar_average')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-ar_average'))
         print('Directory created')
-    clean_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'ar_average', f'sub-{subject_id}-ar_average-{task}.png'))
+    clean_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-ar_average', f'sub-{subject_id}-ar_average-{task}.png'))
 
     return ar_epochs, reject_log
 
@@ -313,10 +313,10 @@ def clean_by_ICA(subject_id, task, ar_epochs, epochs, reject_log, output_path):
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs'))
         print('Directory created')
     epochs_clean.save(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-{task}.fif'), overwrite=True)
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'IC_removal')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'IC_removal'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-IC_removal')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-IC_removal'))
         print('Directory created')
-    IC_removal.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'IC_removal', f'sub-{subject_id}-IC_removal-{task}.png'))
+    IC_removal.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-IC_removal', f'sub-{subject_id}-IC_removal-{task}.png'))
     
     return epochs_clean
 
@@ -346,14 +346,14 @@ def quality_check_plots(subject_id, task, epochs, epochs_clean, output_path):
     last_step_epochs = epochs_clean.average().plot(ylim=ylim, spatial_colors=True)
 
     # Save the plots
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'first_step_epochs')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'first_step_epochs'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-03-epochs')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-03-epochs'))
         print('Directory created')
-    first_step_epochs.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'first_step_epochs', f'sub-{subject_id}-first_step_epochs-{task}.png'))
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'last_step_epochs')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'last_step_epochs'))
+    first_step_epochs.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-03-epochs', f'sub-{subject_id}-epochs-{task}.png'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-cleaned_epochs')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-cleaned_epochs'))
         print('Directory created')
-    last_step_epochs.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'last_step_epochs', f'sub-{subject_id}-last_step_epochs-{task}.png'))
+    last_step_epochs.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-{task}.png'))
 
     if task == 'N2pc':
 
@@ -370,9 +370,9 @@ def quality_check_plots(subject_id, task, epochs, epochs_clean, output_path):
         evoked_topo = human_evoked.plot_topomap(times=[0.0, 0.2, 0.5, 1, 2, 3], ch_type="eeg")
 
     # Save the plots
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'evoked_topo')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'evoked_topo'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-evoked_topo')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-evoked_topo'))
         print('Directory created')
-    evoked_topo.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'evoked_topo', f'sub-{subject_id}-evoked_topo-{task}.png'))
+    evoked_topo.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-evoked_topo', f'sub-{subject_id}-evoked_topo-{task}.png'))
 
 
