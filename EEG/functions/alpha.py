@@ -376,40 +376,61 @@ def alpha_df_epoch(subject_id : str, input_dir, right_power_list, left_power_lis
     '''
     # Load the epochs
     epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+    # Load the reject log
+    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log', f'sub-{subject_id}-reject_log-N2pc.npz'))
+    # Define the epochs status (rejected or not)
+    epochs_status = reject_log['bad_epochs']
 
     # Initiate the df
-    df = pd.DataFrame(columns=[['epoch_index','condition','target_side', 'distractor_position', 'alpha_power_right', 'alpha_power_left']])
+    df = pd.DataFrame(columns=[['epoch_index', 'epoch_dropped', 'condition','target_side', 'distractor_position', 'alpha_power_right', 'alpha_power_left']])
     
     # Create row for each epoch
-    df['epoch_index'] = range(1,len(epochs)+1) 
+    df['epoch_index'] = range(1,len(epochs_status)+1)
+    df['epoch_dropped'] = epochs_status
+
+    # Add aa column that store the reset index of the epochs
+    index_val = 0
+    index_list = []
+
+    # Iterate through the 'epoch_dropped' column to create the reset index column
+    for row_number in range(len(df)):
+        if df.iloc[row_number, 1] == False:
+            index_list.append(index_val)
+            index_val += 1
+        else:
+            index_list.append(np.nan)
+    # Add the index column to the DataFrame
+    df['index_reset'] = index_list
     
     for row_number in range(len(df)):
-        
-        # add condition
-        df.iloc[row_number, 1] = epochs.events[row_number,2]
-        
-        # add target side
-        if df.iloc[row_number, 1] % 2 == 0:
-            df.iloc[row_number, 2] = 'right'
-        elif df.iloc[row_number, 1] % 2 != 0:
-            df.iloc[row_number,2] = 'left'
-            
-        # add dis position
-        if df.iloc[row_number, 1] in [1,2,5,6]:
-            df.iloc[row_number, 3] = 'mid'
-        elif df.iloc[row_number, 1] in [3,4]:
-            df.iloc[row_number, 3] = 'nodis'
-        elif df.iloc[row_number, 1] in [7,8]:
-            df.iloc[row_number, 3] = 'lat'
-            
-        # add alpha power right
-        df.iloc[row_number, 4] = right_power_list[row_number]
-        # add alpha power left
-        df.iloc[row_number, 5] = left_power_list[row_number]
+
+        if df.iloc[row_number, 1] == False:
+
+            # add condition
+            df.iloc[row_number, 2] = epochs.events[int(df['index_reset'].loc[row_number]),2]
+
+            # add target side
+            if df.iloc[row_number, 2] % 2 == 0:
+                df.iloc[row_number, 3] = 'right'
+            elif df.iloc[row_number, 2] % 2 != 0:
+                df.iloc[row_number,3] = 'left'
+
+            # add dis position
+            if df.iloc[row_number, 2] in [1,2,5,6]:
+                df.iloc[row_number, 4] = 'mid'
+            elif df.iloc[row_number, 2] in [3,4]:
+                df.iloc[row_number, 4] = 'nodis'
+            elif df.iloc[row_number, 2] in [7,8]:
+                df.iloc[row_number, 4] = 'lat'
+                
+            # add alpha power right
+            df.iloc[row_number, 5] = right_power_list[int(df['index_reset'].loc[row_number])]
+            # add alpha power left
+            df.iloc[row_number, 6] = left_power_list[int(df['index_reset'].loc[row_number])]
     
     # Scientific notification because very small values
-    pd.options.display.float_format = '{:.10e}'.format
-    
+    pd.options.display.float_format = '{:.5e}'.format
+
     return df    
 
 def single_subj_alpha_epoch(subject_id : str, input_dir : str, output_dir : str):
