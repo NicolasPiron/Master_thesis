@@ -217,11 +217,16 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
                            n_jobs=2, verbose=True)
     ar_epochs, reject_log = ar.fit_transform(epochs, return_log=True)
 
-    # Save the epochs and the log
+    # Save the epochs, the log and plot
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs'))
         print('Directory created')
     ar_epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs', f'sub-{subject_id}-ar_epochs-{task}.fif'), overwrite=True)
+
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log'))
+        print('Directory created')
+    reject_log.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log', f'sub-{subject_id}-reject_log-{task}.npz'), overwrite=True)
 
     log_plot = reject_log.plot('horizontal')
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs')) == False:
