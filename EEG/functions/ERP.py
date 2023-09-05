@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 import mne
+import math
 
 def get_bins_baseline(subject_id, input_dir):
     ''' This function extracts the N2pc ERP for a given subject.
@@ -222,25 +223,49 @@ def get_n2pc_values(subject_id, input_dir, output_dir):
         #        PO7_data_nbin5,
          #       PO7_data_nbin6]
 
-    early_window_slices = []
-    late_window_slices = []
-    total_window_slices = []
+    # Define 50ms windows lists
+    slices_150_200 = []
+    slices_200_250 = []
+    slices_250_300 = []
+    slices_300_350 = []
+    slices_350_400 = []
+    # Define 100ms and 200ms windows lists
+    slices_200_300 = []
+    slices_300_400 = []
+    slices_200_400 = []
 
-    early_window_start = 51*4
-    early_window_end = 51*5
-    late_window_start = 51*5
-    late_window_end = 51*6
+    t_150 = 51*3.5
+    t_150 = math.ceil(t_150)
+    t_200 = 51*4
+    t_250 = 51*4.5
+    t_250 = math.ceil(t_250)
+    t_300 = 51*5
+    t_350 = 51*5.5
+    t_350 = math.ceil(t_350)
+    t_400 = 51*6
 
     for bin_ in bin_list:
 
-        early_window = bin_[early_window_start:early_window_end].mean()
-        late_window = bin_[late_window_start:late_window_end].mean()
-        total_window = bin_[early_window_start:late_window_end].mean()
+        # Slice the data into 50ms windows
+        window_150_200 = bin_[t_150:t_200].mean()
+        window_200_250 = bin_[t_200:t_250].mean()
+        window_250_300 = bin_[t_250:t_300].mean()
+        window_300_350 = bin_[t_300:t_350].mean()
+        window_350_400 = bin_[t_350:t_400].mean()
+       # Slice the data into 100ms and 200ms windows
+        window_200_300 = bin_[t_200:t_300].mean()
+        window_300_400 = bin_[t_300:t_400].mean()
+        window_200_400 = bin_[t_200:t_400].mean()
         
         # Append the slices to the respective lists
-        early_window_slices.append(early_window)
-        late_window_slices.append(late_window)
-        total_window_slices.append(total_window)
+        slices_150_200.append(window_150_200)
+        slices_200_250.append(window_200_250)
+        slices_250_300.append(window_250_300)
+        slices_300_350.append(window_300_350)
+        slices_350_400.append(window_350_400)
+        slices_200_300.append(window_200_300)
+        slices_300_400.append(window_300_400)
+        slices_200_400.append(window_200_400)
         
     # Create the dataframe and store the values
     bin_names = ['Dis_mid (Contra)',
@@ -251,9 +276,15 @@ def get_n2pc_values(subject_id, input_dir, output_dir):
                 'Dis_contra (Ipsi)']
     
     df = pd.DataFrame({'ID':subject_id,'condition and side':bin_names,
-                  'ealry 200-300ms':early_window_slices,
-                  'late 300-400ms':late_window_slices,
-                  'total 200-400ms':total_window_slices})
+                       '150-200ms':slices_150_200,
+                        '200-250ms':slices_200_250,
+                        '250-300ms':slices_250_300,
+                        '300-350ms':slices_300_350,
+                        '350-400ms':slices_350_400,
+                        '200-300ms':slices_200_300,
+                        '300-400ms':slices_300_400,
+                        'total 200-400ms':slices_200_400})
+    
     pd.options.display.float_format = '{:.5e}'.format
     
     # Save the dataframe
