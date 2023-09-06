@@ -7,7 +7,7 @@ from mne.preprocessing import ICA
 import pandas as pd
 import autoreject
 
-def load_data(subject_id : str, task='N2pc', input_path='/Users/nicolaspiron/Documents/Master_thesis/EEG/toBIDS/BIDS_data/sourcedata/', plot_data=True):
+def load_data(subject_id, task, input_path, plot_data=True):
     ''' Loads the data from the BIDS folder and concatenates the two runs.
 
     Parameters
@@ -52,6 +52,11 @@ def load_data(subject_id : str, task='N2pc', input_path='/Users/nicolaspiron/Doc
     if plot_data == True:
         raw.plot(scalings='auto')
 
+        # Pause the script until you press a key
+        plt.show(block=False)
+        input("Press Enter when all the bad channels have been defined...")
+        print('bad channels defined')
+
     return raw, e_list
 
 def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
@@ -76,6 +81,7 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
     raw : mne.io.Raw
         The filtered and interpolated raw data.            
         '''
+    subject_id = str(subject_id)
     # Drop channels if they are present
     channels_to_drop = ['EXG7', 'EXG8']
     channels_present = [channel for channel in channels_to_drop if channel in raw.info['ch_names']]
@@ -141,6 +147,7 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
     epochs : mne.Epochs
         The epoched data.
     '''
+    subject_id = str(subject_id)
     if task == 'N2pc':
 
         # Convert the event list to a dataframe and select the events of interest
@@ -212,6 +219,7 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     reject_log : autoreject.RejectLog
         The log of the rejected epochs.
     '''
+    subject_id = str(subject_id)
     # Perform automated epochs rejection
     ar = autoreject.AutoReject(n_interpolate=[1, 2, 3, 4], random_state=11,
                            n_jobs=2, verbose=True)
@@ -264,7 +272,7 @@ def clean_by_ICA(subject_id, task, ar_epochs, epochs, reject_log, output_path):
     epochs_clean : mne.Epochs
         The epoched data after cleaning.
     '''
-    
+    subject_id = str(subject_id)
     # Define a function that allows the user to chose the component to exclude
     def get_user_inputs():
     
@@ -345,6 +353,7 @@ def quality_check_plots(subject_id, task, epochs, epochs_clean, output_path):
     -------
     None
     '''
+    subject_id = str(subject_id)
     # Plot the data before and after cleaning
     ylim = dict(eeg=(-15, 15))
     first_step_epochs = epochs.average().plot(ylim=ylim, spatial_colors=True)
