@@ -25,12 +25,12 @@ def preproc_pipeline(subject_id):
     raw = pp.filter_and_interpolate(subject_id=subject_id, task=task, raw=raw, output_path=output_path, plot_data=False)
     # Epoch data
     epochs = pp.epoch_data(subject_id=subject_id, task=task, raw=raw, e_list=e_list, output_path=output_path)
-    # Reject bad epochs
-    ar_epochs, reject_log = pp.automated_epochs_rejection(subject_id=subject_id, task=task, epochs=epochs, output_path=output_path)
-    # Clean data using ICA
-    epochs_clean = pp.clean_by_ICA(subject_id=subject_id, task=task, ar_epochs=ar_epochs, epochs=epochs, reject_log=reject_log, output_path=output_path)
+    # Apply ICA and reject bad epochs
+    epochs_clean = pp.automated_epochs_rejection(subject_id=subject_id, task=task, epochs=epochs, output_path=output_path)
     # Plot cleaned data
     pp.quality_check_plots(subject_id=subject_id, task=task, epochs=epochs, epochs_clean=epochs_clean, output_path=output_path)
+
+    print('Preprocessing pipeline completed for subject ' + subject_id + '! :)')
 
 if __name__ == "__main__":
     # Check if at least one command-line argument is provided

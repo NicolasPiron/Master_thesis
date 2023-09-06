@@ -119,10 +119,10 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
         raw.plot(scalings='auto')
 
     # Save the raw data
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-02-raw')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-02-raw'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-02-raw-interpolated')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-02-raw-interpolated'))
         print('Directory created')
-    raw.save(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-02-raw', f'sub-{subject_id}-raw-{task}.fif'), overwrite=True)
+    raw.save(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-02-raw-interpolated', f'sub-{subject_id}-raw-interpolated-{task}.fif'), overwrite=True)
 
     return raw
 
@@ -225,78 +225,65 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
                            n_jobs=2, verbose=True)
     ar_epochs, reject_log = ar.fit_transform(epochs, return_log=True)
 
-    # Save the epochs, the log and plot
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs'))
+    # Save the rejected epochs, the log and plot
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs-before-ica')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs-before-ica'))
         print('Directory created')
-    ar_epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs', f'sub-{subject_id}-ar_epochs-{task}.fif'), overwrite=True)
+    ar_epochs.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs-before-ica', f'sub-{subject_id}-ar_epochs-before-ica-{task}.fif'), overwrite=True)
 
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log-before-ica')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log-before-ica'))
         print('Directory created')
-    reject_log.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log', f'sub-{subject_id}-reject_log-{task}.npz'), overwrite=True)
+    reject_log.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log-before-ica', f'sub-{subject_id}-reject_log-before-ica-{task}.npz'), overwrite=True)
 
     log_plot = reject_log.plot('horizontal')
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs'))
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs-for-ica')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs-for-ica'))
         print('Directory created')
-    log_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs', f'sub-{subject_id}-dropped_epochs-{task}.png'))
+    log_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs-for-ica', f'sub-{subject_id}-dropped_epochs-for-ica-{task}.png'))
 
-    # Plot the average signal before and after cleaning and save the plot
-    evoked_bad = epochs[reject_log.bad_epochs].average()
-    plt.plot(evoked_bad.times, evoked_bad.data.T * 1e6, 'r', zorder=-1)
-    clean_plot = ar_epochs.average().plot(axes=plt.gca())
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-ar_average')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-ar_average'))
-        print('Directory created')
-    clean_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-ar_average', f'sub-{subject_id}-ar_average-{task}.png'))
 
-    return ar_epochs, reject_log
+    #return ar_epochs, reject_log
 
-def clean_by_ICA(subject_id, task, ar_epochs, epochs, reject_log, output_path):
-    ''' Applies ICA to the data and saves the cleaned epochs and the ICA plots.
+#def clean_by_ICA(subject_id, task, epochs, reject_log, output_path):
+ #   ''' Applies ICA to the data and saves the cleaned epochs and the ICA plots.
+  #  IMPORTANT : we run the Autoreject again, after the ICA was applied. 
+   # The first Autoreject is run on the data before ICA, only to fit the ICA. 
     
-    Parameters
-    ----------
-    subject_id : str
-        The subject ID.
-    task : str
-        The task name.
-    ar_epochs : mne.Epochs
-        The epoched data with rejected epochs.
-    epochs : mne.Epochs
-        The epoched data without rejection
+    #Parameters
+    #----------
+    #subject_id : str
+    #    The subject ID.
+    #task : str
+    #    The task name.
+    #ar_epochs : mne.Epochs
+    #    The epoched data with rejected epochs.
+    #epochs : mne.Epochs
+    #    The epoched data without rejection
 
-    Returns
-    -------
-    epochs_clean : mne.Epochs
-        The epoched data after cleaning.
-    '''
-    subject_id = str(subject_id)
+    #Returns
+    #-------
+    #epochs_clean : mne.Epochs
+     #   The epoched data after cleaning.
+    #'''
+    #subject_id = str(subject_id)
     # Define a function that allows the user to chose the component to exclude
     def get_user_inputs():
-    
         user_inputs = []
-
         while True:
-            user_input = input("Chose a component to exclude (or 'done' to finish): ")
-
-            if user_input.lower() == 'done':
+            user_input = input("Chose a component to exclude (or 'ok' to finish): ")
+            if user_input.lower() == 'ok':
                 break
-
             try:
                 value = float(user_input)
                 user_inputs.append(value)
             except ValueError:
-                print("Invalid input. Please enter a valid number or 'done'.")
-
+                print("Invalid input. Please enter a valid number or 'ok'.")
         return user_inputs
     
     ica = ICA(random_state=99)
     ica.fit(epochs[~reject_log.bad_epochs])
-
     ica.plot_components(picks=np.arange(0,10,1))
-    
     # Get the user inputs
     user_inputs = get_user_inputs()
     
@@ -306,30 +293,56 @@ def clean_by_ICA(subject_id, task, ar_epochs, epochs, reject_log, output_path):
     else:
             print("No user inputs.")
       
-    # Exclude components and apply ICA
+    # Exclude components and apply ICA to the epochs (no rejection yet)
     ica.exclude = user_inputs
     IC_removal = ica.plot_overlay(epochs.average(), exclude=ica.exclude)
-    epochs_clean = ica.apply(ar_epochs, exclude=ica.exclude)
+    epochs_clean = ica.apply(epochs, exclude=ica.exclude)
+
+    # Fit transform the cleaned epochs to remove the bad epochs that are still bad after ICA
+    ar = autoreject.AutoReject(n_interpolate=[1, 2, 3, 4], random_state=11,
+                            n_jobs=2, verbose=True)
+    epochs_clean, final_reject_log = ar.fit_transform(epochs_clean, return_log=True)
 
     # Apply baseline correction again because ICA changes the data
     epochs_clean = epochs_clean.apply_baseline(baseline=(-0.2,0), verbose=True)
 
-    # Save the ICA, the new cleaned epochs, and the plots 
+    # Plot the average signal before and after rejecting the epochs and save the plot
+    evoked_bad = epochs[reject_log.bad_epochs].average()
+    plt.plot(evoked_bad.times, evoked_bad.data.T * 1e6, 'r', zorder=-1)
+    clean_plot = ar_epochs.average().plot(axes=plt.gca())
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-wo_bad_epochs')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-wo_bad_epochs'))
+        print('Directory created')
+    clean_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-wo_bad_epochs', f'sub-{subject_id}-wo_bad_epochs-{task}.png'))
     
     # For some reason, the ICA cannot be saved
-
-    #if os.path.exists(os.path.join(output_path, 'ICA')) == False:
-    #    os.makedirs(os.path.join(output_path, 'ICA'))
-     #   print('Directory created')
-    #ica.save(os.path.join(output_path, 'ICA', f'sub-{subject_id}_ICA.fif'), overwrite=True)
+    # The ICA
+    
+    if os.path.exists(os.path.join(output_path, 'preprocessing', 'step-06-ica')) == False:
+        os.makedirs(os.path.join(output_path, 'preprocessing', 'step-06-ica'))
+        print('Directory created')
+    # ica.save(os.path.join(output_path, 'preprocessing', 'step-06-ica', f'sub-{subject_id}-ica.fif'), overwrite=True)
+    # The final epochs we will use for further analysis
     if os.path.exists(os.path.join(output_path , f'sub-{subject_id}', 'cleaned_epochs')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs'))
         print('Directory created')
     epochs_clean.save(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-{task}.fif'), overwrite=True)
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-IC_removal')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-IC_removal'))
+    # plot to see how it looks with and without the IC removal
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal'))
         print('Directory created')
-    IC_removal.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-IC_removal', f'sub-{subject_id}-IC_removal-{task}.png'))
+    IC_removal.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal', f'sub-{subject_id}-ic_removal-{task}.png'))
+    # plot the final reject log - it shows what epochs were rejected after the ICA was applied
+    final_log_plot = final_reject_log.plot('horizontal')
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-final-dropped_epochs')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-final-dropped_epochs'))
+        print('Directory created')
+    final_log_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-final-dropped_epochs', f'sub-{subject_id}-final-dropped_epochs-{task}.png'))
+    # save the final reject log for further analysis (alpha power df)
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-06-final-reject_log')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-06-final-reject_log'))
+        print('Directory created')
+    final_reject_log.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-{task}.npz'), overwrite=True)
     
     return epochs_clean
 
