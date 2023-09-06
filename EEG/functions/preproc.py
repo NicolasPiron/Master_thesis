@@ -167,7 +167,7 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
              }
         
         # Epoch the data
-        epochs = mne.Epochs(raw, mne_events, event_id=event_dict, tmin=-0.2, tmax=0.8, baseline=(-0.2,0), event_repeated='drop', preload=True)
+        epochs = mne.Epochs(raw, mne_events, event_id=event_dict, tmin=-0.2, tmax=0.8, baseline=None, event_repeated='drop', preload=True)
         
     elif task == 'Alpheye':
         
@@ -295,6 +295,13 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
       
     # Exclude components and apply ICA to the epochs (no rejection yet)
     ica.exclude = user_inputs
+
+    # try to save ICA at this point because it will not work later
+    if os.path.exists(os.path.join(output_path, 'preprocessing', 'step-06-ica')) == False:
+        os.makedirs(os.path.join(output_path, 'preprocessing', 'step-06-ica'))
+        print('Directory created')
+    ica.save(os.path.join(output_path, 'preprocessing', 'step-06-ica', f'sub-{subject_id}-ica.fif'), overwrite=True)
+
     IC_removal = ica.plot_overlay(epochs.average(), exclude=ica.exclude)
     epochs_clean = ica.apply(epochs, exclude=ica.exclude)
 
