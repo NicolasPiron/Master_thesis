@@ -219,11 +219,15 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     reject_log : autoreject.RejectLog
         The log of the rejected epochs.
     '''
+    # To be able to continue running the script when something is plotted
+    plt.show(block=False)
+
     subject_id = str(subject_id)
     # Perform automated epochs rejection
     ar = autoreject.AutoReject(n_interpolate=[1, 2, 3, 4], random_state=11,
                            n_jobs=2, verbose=True)
-    ar_epochs, reject_log = ar.fit_transform(epochs, return_log=True)
+    ar.fit(epochs[:20]) 
+    ar_epochs, reject_log = ar.transform(epochs, return_log=True)
 
     # Save the rejected epochs, the log and plot
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs-before-ica')) == False:
@@ -281,9 +285,19 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
                 print("Invalid input. Please enter a valid number or 'ok'.")
         return user_inputs
     
-    ica = ICA(random_state=99)
-    ica.fit(epochs[~reject_log.bad_epochs])
+    ica = ICA(n_components=24, random_state=98)
+    print('=============== object created')
+    ica.fit(epochs[~reject_log.bad_epochs], decim=10)
+
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-06-ica')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-06-ica'))
+        print('Directory created')
+    ica.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-06-ica', f'sub-{subject_id}-ica.fif.gz'), overwrite=True)
+
+
+    print('=============== fit done')
     ica.plot_components(picks=np.arange(0,10,1))
+    print('=============== plot done')
     # Get the user inputs
     user_inputs = get_user_inputs()
     
@@ -296,21 +310,16 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     # Exclude components and apply ICA to the epochs (no rejection yet)
     ica.exclude = user_inputs
 
-    # try to save ICA at this point because it will not work later
-    if os.path.exists(os.path.join(output_path, 'preprocessing', 'step-06-ica')) == False:
-        os.makedirs(os.path.join(output_path, 'preprocessing', 'step-06-ica'))
-        print('Directory created')
-    ica.save(os.path.join(output_path, 'preprocessing', 'step-06-ica', f'sub-{subject_id}-ica.fif'), overwrite=True)
-
     IC_removal = ica.plot_overlay(epochs.average(), exclude=ica.exclude)
     epochs_clean = ica.apply(epochs, exclude=ica.exclude)
 
     # Fit transform the cleaned epochs to remove the bad epochs that are still bad after ICA
     ar = autoreject.AutoReject(n_interpolate=[1, 2, 3, 4], random_state=11,
                             n_jobs=2, verbose=True)
-    epochs_clean, final_reject_log = ar.fit_transform(epochs_clean, return_log=True)
+    ar.fit(epochs[:20]) 
+    ar_epochs, final_reject_log = ar.transform(epochs, return_log=True)
 
-    # Apply baseline correction again because ICA changes the data
+    # Apply baseline correction AFTER ICA
     epochs_clean = epochs_clean.apply_baseline(baseline=(-0.2,0), verbose=True)
 
     # Plot the average signal before and after rejecting the epochs and save the plot
@@ -323,12 +332,8 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     clean_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-after-ar', f'sub-{subject_id}-after-ar-{task}.png'))
     
     # For some reason, the ICA cannot be saved
-    # The ICA
     
-    if os.path.exists(os.path.join(output_path, 'preprocessing', 'step-06-ica')) == False:
-        os.makedirs(os.path.join(output_path, 'preprocessing', 'step-06-ica'))
-        print('Directory created')
-    # ica.save(os.path.join(output_path, 'preprocessing', 'step-06-ica', f'sub-{subject_id}-ica.fif'), overwrite=True)
+
     # The final epochs we will use for further analysis
     if os.path.exists(os.path.join(output_path , f'sub-{subject_id}', 'cleaned_epochs')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs'))
