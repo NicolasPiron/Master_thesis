@@ -81,6 +81,8 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
     raw : mne.io.Raw
         The filtered and interpolated raw data.            
         '''
+    raw.load_data()
+
     subject_id = str(subject_id)
     # Drop channels if they are present
     channels_to_drop = ['EXG7', 'EXG8']
@@ -97,13 +99,15 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
     raw.notch_filter([50, 100, 150])
     raw.filter(1.,30., phase='zero-double')
     psd_fig = raw.plot_psd(fmin=0, fmax=50, dB=True, average=True)
+    plt.close()
 
     # Save the PSD plot
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-01-psd')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'plots', 'step-01-psd'))
         print('Directory created')
     psd_fig.savefig(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'plots', 'step-01-psd', f'sub-{subject_id}-psd-{task}.png'))
-    
+    print('====================== PSD plot saved')
+
     # save the list of bad channels
     bad_channels = raw.info['bads']
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-01-bad_channels')) == False:
@@ -112,6 +116,7 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
     with open(os.path.join(output_path, f'sub-{subject_id}','preprocessing', 'step-01-bad_channels', f'sub-{subject_id}-bad_channels-{task}.txt'), 'w') as f:
         for item in bad_channels:
             f.write("%s\n" % item)
+    print('====================== bad channels saved')
     
     # Interpolate bad channels
     mne.io.Raw.interpolate_bads(raw, reset_bads=False)
@@ -199,7 +204,8 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
     return epochs
 
 def automated_epochs_rejection(subject_id, task, epochs, output_path):
-    ''' Performs automated epochs rejection and saves the epochs. Save plots of the rejected epochs and the cleaned average signal.
+    ''' Performs ICA and automated epochs rejection and saves the epochs. Save plots of the rejected epochs and the cleaned average signal.
+    There is a first use of Autoreject to fit the ICA to less noisy signal, and a second after the signal has been cleaned with ICA.
     
     Parameters
     ----------
@@ -214,14 +220,9 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     
     Returns
     -------
-    epochs : mne.Epochs
-        The epoched data with rejected epochs.
-    reject_log : autoreject.RejectLog
-        The log of the rejected epochs.
+    epochs_clean : mne.Epochs
+        The epoched data after cleaning.
     '''
-    # To be able to continue running the script when something is plotted
-    plt.show(block=False)
-
     subject_id = str(subject_id)
     # Perform automated epochs rejection
     ar = autoreject.AutoReject(n_interpolate=[1, 2, 3, 4], random_state=11,
@@ -240,37 +241,14 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
         print('Directory created')
     reject_log.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log-before-ica', f'sub-{subject_id}-reject_log-before-ica-{task}.npz'), overwrite=True)
 
+    plt.draw()
     log_plot = reject_log.plot('horizontal')
+    plt.close(log_plot)
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs-for-ica')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs-for-ica'))
         print('Directory created')
     log_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs-for-ica', f'sub-{subject_id}-dropped_epochs-for-ica-{task}.png'))
 
-
-    #return ar_epochs, reject_log
-
-#def clean_by_ICA(subject_id, task, epochs, reject_log, output_path):
- #   ''' Applies ICA to the data and saves the cleaned epochs and the ICA plots.
-  #  IMPORTANT : we run the Autoreject again, after the ICA was applied. 
-   # The first Autoreject is run on the data before ICA, only to fit the ICA. 
-    
-    #Parameters
-    #----------
-    #subject_id : str
-    #    The subject ID.
-    #task : str
-    #    The task name.
-    #ar_epochs : mne.Epochs
-    #    The epoched data with rejected epochs.
-    #epochs : mne.Epochs
-    #    The epoched data without rejection
-
-    #Returns
-    #-------
-    #epochs_clean : mne.Epochs
-     #   The epoched data after cleaning.
-    #'''
-    #subject_id = str(subject_id)
     # Define a function that allows the user to chose the component to exclude
     def get_user_inputs():
         user_inputs = []
@@ -407,7 +385,7 @@ def quality_check_plots(subject_id, task, epochs, epochs_clean, output_path):
         human_epochs = epochs_clean["Human"]
         human_evoked = human_epochs.average()
         evoked_topo = human_evoked.plot_topomap(times=[0.0, 0.2, 0.5, 1, 2, 3], ch_type="eeg")
-
+    
     # Save the plots
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-evoked_topo')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-evoked_topo'))
