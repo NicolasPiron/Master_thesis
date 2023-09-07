@@ -326,17 +326,17 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
             print('Directory created')
         for i, fig in enumerate(ICs_properties):
             fig.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties', f'sub-{subject_id}-IC0{user_inputs[i]}_properties-{task}.png'))
+        # plot to see how it looks with and without the IC removal
+        if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal')) == False:
+            os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal'))
+            print('Directory created')
+        IC_removal.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal', f'sub-{subject_id}-ic_removal-{task}.png'))
     #ICs_properties.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties', f'sub-{subject_id}-ICs_properties-{task}.png'))
     # The final epochs we will use for further analysis
     if os.path.exists(os.path.join(output_path , f'sub-{subject_id}', 'cleaned_epochs')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs'))
         print('Directory created')
     epochs_clean.save(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-{task}.fif'), overwrite=True)
-    # plot to see how it looks with and without the IC removal
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal'))
-        print('Directory created')
-    IC_removal.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal', f'sub-{subject_id}-ic_removal-{task}.png'))
     # plot the final reject log - it shows what epochs were rejected after the ICA was applied
     final_log_plot = final_reject_log.plot('horizontal')
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-final-dropped_epochs')) == False:
