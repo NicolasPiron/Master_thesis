@@ -12,6 +12,8 @@ import re
 
 ### ================================================================================================
 
+### NOT USED ANYMORE : MIGHT HAVE PROBLEMS WITH THE NEW FILE ORGANIZATION!!
+
 def sort_epochs(subject_id : str, input_dir : str):
     ''' Takes the epochs object and returns a list of epochs objects sorted by condition.
         
@@ -433,8 +435,9 @@ def alpha_df_epoch(subject_id : str, input_dir, right_power_list, left_power_lis
 
     return df    
 
-def single_subj_alpha_epoch(subject_id : str, input_dir : str, output_dir : str):
+def single_subj_alpha_epoch(subject_id, input_dir, output_dir):
 
+    subject_id = str(subject_id)
     # Uses the functions defined above to create a dataframe with the alpha power score for each side for each epoch
     right_power_list, left_power_list = alpha_power_per_epoch(subject_id, input_dir)
     df = alpha_df_epoch(subject_id, input_dir, right_power_list, left_power_list)
@@ -464,6 +467,11 @@ def all_subj_alpha_epoch(input_dir, output_dir):
     big_df : pandas.DataFrame
         A dataframe with the alpha power score for each side for each subject
     '''
+    print('========================= WARNING')
+    print('THIS FUNCTION SHOULD NOT BE USED, IT DOES NOT TRACK THE DROPPED EPOCHS')
+    print('USE THE FUNCTION alpha_power_per_epoch INSTEAD - SEE THE FILE compute_alpha_epoch.py')
+    print('========================= WARNING')
+
     big_df = pd.DataFrame()
 
     # Empty list to store the files
