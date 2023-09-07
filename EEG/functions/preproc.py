@@ -284,16 +284,19 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     else:
             print("No user inputs.")
       
-    # Exclude components and apply ICA to the epochs (no rejection yet)
-    ica.exclude = user_inputs
+    if user_inputs == []:
+        print('No components excluded')
+    else:
+        # Exclude components and apply ICA to the epochs (no rejection yet)
+        ica.exclude = user_inputs
 
-    # Plot the difference with and without the IC removal
-    IC_removal = ica.plot_overlay(epochs.average(), exclude=ica.exclude)
-    # Plot the ICs properties
-    ICs_properties = ica.plot_properties(epochs, picks=user_inputs)
+        # Plot the difference with and without the IC removal
+        IC_removal = ica.plot_overlay(epochs.average(), exclude=ica.exclude)
+        # Plot the ICs properties
+        ICs_properties = ica.plot_properties(epochs, picks=user_inputs)
 
-    # Apply ICA to the epochs
-    epochs_clean = ica.apply(epochs, exclude=ica.exclude)
+        # Apply ICA to the epochs
+        epochs_clean = ica.apply(epochs, exclude=ica.exclude)
 
     # Fit transform the cleaned epochs to remove the bad epochs that are still bad after ICA
     ar = autoreject.AutoReject(n_interpolate=[1, 2, 3, 4], random_state=11,
@@ -314,11 +317,13 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     clean_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-after-ar', f'sub-{subject_id}-after-ar-{task}.png'))
     
     # Save the ICs properties
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties'))
-        print('Directory created')
-    for i, fig in enumerate(ICs_properties):
-        fig.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties', f'sub-{subject_id}-IC0{user_inputs[i]}_properties-{task}.png'))
+    if user_inputs == []:
+        print('No components excluded ------ no plots saved about ICs properties')
+        if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties')) == False:
+            os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties'))
+            print('Directory created')
+        for i, fig in enumerate(ICs_properties):
+            fig.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties', f'sub-{subject_id}-IC0{user_inputs[i]}_properties-{task}.png'))
     #ICs_properties.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties', f'sub-{subject_id}-ICs_properties-{task}.png'))
     # The final epochs we will use for further analysis
     if os.path.exists(os.path.join(output_path , f'sub-{subject_id}', 'cleaned_epochs')) == False:
