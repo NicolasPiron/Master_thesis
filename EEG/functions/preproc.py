@@ -286,6 +286,7 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
       
     if user_inputs == []:
         print('No components excluded')
+        epochs_clean = epochs
     else:
         # Exclude components and apply ICA to the epochs (no rejection yet)
         ica.exclude = user_inputs
