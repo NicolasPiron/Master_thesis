@@ -55,7 +55,7 @@ def load_data(subject_id, task, input_path, plot_data=True):
         # Pause the script until you press a key
         plt.show(block=False)
         input("Press Enter when all the bad channels have been defined...")
-        print('bad channels defined')
+        print('====================== Bad channels defined')
 
     return raw, e_list
 
@@ -257,14 +257,14 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
             if user_input.lower() == 'ok':
                 break
             try:
-                value = float(user_input)
+                value = int(user_input)
                 user_inputs.append(value)
             except ValueError:
                 print("Invalid input. Please enter a valid number or 'ok'.")
         return user_inputs
     
     ica = ICA(n_components=24, random_state=98)
-    print('=============== object created')
+    print('====================== ICA object created')
     ica.fit(epochs[~reject_log.bad_epochs], decim=10)
 
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-06-ica')) == False:
@@ -272,10 +272,9 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
         print('Directory created')
     ica.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-06-ica', f'sub-{subject_id}-ica.fif.gz'), overwrite=True)
 
-
-    print('=============== fit done')
+    print('====================== fit done')
     ica.plot_components(picks=np.arange(0,10,1))
-    print('=============== plot done')
+    print('====================== plot done')
     # Get the user inputs
     user_inputs = get_user_inputs()
     
@@ -288,7 +287,12 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     # Exclude components and apply ICA to the epochs (no rejection yet)
     ica.exclude = user_inputs
 
+    # Plot the difference with and without the IC removal
     IC_removal = ica.plot_overlay(epochs.average(), exclude=ica.exclude)
+    # Plot the ICs properties
+    ICs_properties = ica.plot_properties(epochs, picks=user_inputs)
+
+    # Apply ICA to the epochs
     epochs_clean = ica.apply(epochs, exclude=ica.exclude)
 
     # Fit transform the cleaned epochs to remove the bad epochs that are still bad after ICA
@@ -309,9 +313,13 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
         print('Directory created')
     clean_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-after-ar', f'sub-{subject_id}-after-ar-{task}.png'))
     
-    # For some reason, the ICA cannot be saved
-    
-
+    # Save the ICs properties
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties'))
+        print('Directory created')
+    for i, fig in enumerate(ICs_properties):
+        fig.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties', f'sub-{subject_id}-IC0{user_inputs[i]}_properties-{task}.png'))
+    #ICs_properties.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties', f'sub-{subject_id}-ICs_properties-{task}.png'))
     # The final epochs we will use for further analysis
     if os.path.exists(os.path.join(output_path , f'sub-{subject_id}', 'cleaned_epochs')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs'))
