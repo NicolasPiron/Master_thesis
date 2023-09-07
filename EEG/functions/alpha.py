@@ -377,7 +377,7 @@ def alpha_df_epoch(subject_id : str, input_dir, right_power_list, left_power_lis
     # Load the epochs
     epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
     # Load the reject log
-    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log', f'sub-{subject_id}-reject_log-N2pc.npz'))
+    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
     # Define the epochs status (rejected or not)
     epochs_status = reject_log['bad_epochs']
 
