@@ -10,24 +10,14 @@ import argparse
 # To get a single subject, write 'single' after the file name in the terminal, and then the subject ID when asked.
 # To get all subjects, write 'all' after the file name in the terminal.
 
-def get_df_single_subj(subject_id):
-
-    # Path to single subj data
-    input_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
-    # Where the output files are saved
-    output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
-    # The function that computes the alpha power for each epoch and put it in a df
-    single_subj_alpha_epoch(subject_id, input_path, output_path)
-
-    print(f'==================== Dataframe created and saved for subject {subject_id}! :)')
+# Path to single subj data
+input_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+# Where the output files are saved
+output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
 
 def get_df_all_subj():
 
-    # Path to single subj data
-    input_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
-    # Where the output files are saved
-    output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
-    # Get a list of all subdirectories in the input path
+    # WARNING : the paths are hard-coded, so you need to change them if you want to use this script
     subdirectories = []
     # Loop over the subdirectories, find the .csv files and append them to a list
     for root, dirs, files in os.walk(input_path):
@@ -40,8 +30,9 @@ def get_df_all_subj():
         # Compute alpha power and save it in a dataframe
         subject_id = subj[-2:]
         try:
-            get_df_single_subj(subject_id)
-        except: 
+            single_subj_alpha_epoch(subject_id, input_path, output_path)
+            print(f'==================== Dataframe created and saved for subject {subject_id}! :)')
+        except:
             print(f"==================== No data (epochs or reject log) for subject {subj}! O_o'")
 
     df_list = []
@@ -72,7 +63,8 @@ if __name__ == "__main__":
         # Prompt the user to enter a two-digit number for the single subject
         subject_id = input("Enter a two-digit number for the single subject: ")
         # Call the single subject function with the provided input
-        get_df_single_subj(subject_id)
+        single_subj_alpha_epoch(subject_id, input_path, output_path)
+        print(f'==================== Dataframe created and saved for subject {subject_id}! :)')
     elif args.mode == "all":
         # Call the all subjects function
         get_df_all_subj()

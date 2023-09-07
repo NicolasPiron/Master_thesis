@@ -99,7 +99,7 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
     raw.notch_filter([50, 100, 150])
     raw.filter(1.,30., phase='zero-double')
     psd_fig = raw.plot_psd(fmin=0, fmax=50, dB=True, average=True)
-    plt.close()
+    #plt.close() seems to slow everyting on the server ?_?
 
     # Save the PSD plot
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-01-psd')) == False:
@@ -241,7 +241,6 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
         print('Directory created')
     reject_log.save(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-reject_log-before-ica', f'sub-{subject_id}-reject_log-before-ica-{task}.npz'), overwrite=True)
 
-    plt.draw()
     log_plot = reject_log.plot('horizontal')
     plt.close(log_plot)
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-05-dropped_epochs-for-ica')) == False:
