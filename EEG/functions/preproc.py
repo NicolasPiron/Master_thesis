@@ -320,6 +320,7 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     # Save the ICs properties
     if user_inputs == []:
         print('No components excluded ------ no plots saved about ICs properties')
+    else:
         if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties')) == False:
             os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties'))
             print('Directory created')
