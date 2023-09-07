@@ -4,10 +4,10 @@ import mne
 from mne_bids import BIDSPath, write_raw_bids
 from mne_bids import make_report
 
-origin_folder = fr'/Users/nicolaspiron/Documents/Master_thesis/EEG/data'
+origin_folder ='/home/nicolasp/local_PULSATION/data/EEG'
 print(os.listdir(origin_folder))
 
-bids_root = fr'/Users/nicolaspiron/Documents/Master_thesis/EEG/toBIDS/BIDS_data/sourcedata'
+bids_root = '/home/nicolasp/local_PULSATION/Master_thesis/EEG/toBIDS/BIDS_data/sourcedata'
 for root, dirs, files in os.walk(origin_folder):
      for file in files:
         if file.endswith('.bdf'):
@@ -41,7 +41,10 @@ for root, dirs, files in os.walk(origin_folder):
                             'stim/dis_bot/target_l':5, 'stim/dis_bot/target_r':6,
                             'stim/dis_right/target_l':7, 'stim/dis_left/target_r':8,
                             'response/correct':128, 'response/incorrect':129,
+                            'stim/bug':12
+                            
                     }
+                # there is a stim 12 in S22 somehow, but I don't find it in the event list'
 
             elif task == 'Alpheye':
             
