@@ -16,9 +16,9 @@ def preproc_pipeline(subject_id):
     # Define task
     task = 'N2pc'
     # Path to data
-    input_path = '/Users/nicolaspiron/Documents/Master_thesis/EEG/toBIDS/BIDS_data/sourcedata'
+    input_path = '/home/nicolasp/local_PULSATION/Master_thesis/EEG/toBIDS/BIDS_data/sourcedata'
     # Where the output files are saved
-    output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+    output_path = '/home/nicolasp/shared_PULSATION/derivative'
     # Load data
     raw, e_list = pp.load_data(subject_id, task, input_path, plot_data=True)
     # Filter and interpolate

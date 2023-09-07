@@ -158,7 +158,8 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
     plt.legend()
     plt.grid()
     plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots',f'sub-{subject_id}-PO7_Dis_Mid.png'))
-    plt.show()
+    plt.show(block=False)
+    plt.close()
 
     # Plot for No_Dis
     plt.figure(figsize=(10, 6))
@@ -172,7 +173,8 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
     plt.legend()
     plt.grid()
     plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots', f'sub-{subject_id}-PO7_No_Dis.png'))
-    plt.show()
+    plt.show(block=False)
+    plt.close()
 
     # Plot for Dis_Contra
     plt.figure(figsize=(10, 6))
@@ -186,7 +188,8 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
     plt.legend()
     plt.grid()
     plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots', f'sub-{subject_id}-PO7_Dis_Contra.png'))
-    plt.show()
+    plt.show(block=False)
+    plt.close()
 
 def get_n2pc_values(subject_id, input_dir, output_dir):
     '''
