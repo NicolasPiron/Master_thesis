@@ -227,8 +227,9 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     # Perform automated epochs rejection
     ar = autoreject.AutoReject(n_interpolate=[1, 2, 3, 4], random_state=11,
                            n_jobs=2, verbose=True)
-    ar.fit(epochs[:20]) 
-    ar_epochs, reject_log = ar.transform(epochs, return_log=True)
+    #ar.fit(epochs[:100]) 
+    #ar_epochs, reject_log = ar.transform(epochs, return_log=True)
+    ar_epochs, reject_log = ar.fit_transform(epochs, return_log=True)
 
     # Save the rejected epochs, the log and plot
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-05-ar_epochs-before-ica')) == False:
@@ -301,8 +302,10 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
     # Fit transform the cleaned epochs to remove the bad epochs that are still bad after ICA
     ar = autoreject.AutoReject(n_interpolate=[1, 2, 3, 4], random_state=11,
                             n_jobs=2, verbose=True)
-    ar.fit(epochs[:20]) 
-    ar_epochs, final_reject_log = ar.transform(epochs, return_log=True)
+    #ar.fit(epochs[:100]) 
+    #ar_epochs, final_reject_log = ar.transform(epochs, return_log=True)
+    ar_epochs, final_reject_log = ar.fit_transform(epochs, return_log=True)
+
 
     # Apply baseline correction AFTER ICA
     epochs_clean = epochs_clean.apply_baseline(baseline=(-0.2,0), verbose=True)
