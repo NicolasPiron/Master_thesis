@@ -11,9 +11,9 @@ import argparse
 # To get all subjects, write 'all' after the file name in the terminal.
 
 # Path to single subj data
-input_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+input_path = '/home/nicolasp/shared_PULSATION/derivative'
 # Where the output files are saved
-output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+output_path = '/home/nicolasp/shared_PULSATION/derivative'
 
 def get_df_all_subj():
 
@@ -46,9 +46,9 @@ def get_df_all_subj():
     # Concatenate all dataframes in the list
     df = pd.concat(df_list)
     # Save dataframe as .csv file
-    if not os.path.exists(os.path.join(output_path, 'aalpha-power-allsubj')):
-        os.makedirs(os.path.join(output_path, 'alpha-power-allsubj'))
-    df.to_csv(os.path.join(output_path, 'alpha-power-allsubj', 'alpha-power-per-epoch-allsubj.csv'), index=False)
+    if not os.path.exists(os.path.join(output_path,'all_subj', 'alpha-power-allsubj')):
+        os.makedirs(os.path.join(output_path,'all_subj', 'alpha-power-allsubj'))
+    df.to_csv(os.path.join(output_path,'all_subj', 'alpha-power-allsubj', 'alpha-power-per-epoch-allsubj.csv'), index=False)
     print(f'==================== Dataframe created and saved for all subjects! :) (except for {missing_subj})')
 
 if __name__ == "__main__":
