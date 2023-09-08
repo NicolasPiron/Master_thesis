@@ -46,6 +46,8 @@ def get_df_all_subj():
     # Concatenate all dataframes in the list
     df = pd.concat(df_list)
     # Save dataframe as .csv file
+    if not os.path.exists(os.path.join(output_path, 'aalpha-power-allsubj')):
+        os.makedirs(os.path.join(output_path, 'alpha-power-allsubj'))
     df.to_csv(os.path.join(output_path, 'alpha-power-allsubj', 'alpha-power-per-epoch-allsubj.csv'), index=False)
     print(f'==================== Dataframe created and saved for all subjects! :) (except for {missing_subj})')
 
