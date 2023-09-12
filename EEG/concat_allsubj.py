@@ -1,12 +1,12 @@
 import sys
-from functions.file_management import concat_allsubj
+from functions.file_management import concat_all_subj
 
 # Task is either 'N2pc' or 'Alpheye'
 # Population is either 'control' or 'stroke'
 
-input_dir = 'path/to/derivative'
+input_dir = '/home/nicolasp/shared_PULSATION/derivative'
 
-output_dir = 'path/to/derivative/all_subj'
+output_dir = '/home/nicolasp/shared_PULSATION/derivative/all_subj'
 
 if __name__ == '__main__':
     
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     population = sys.argv[2]
 
     # Concatenate the files
-    concat_allsubj(task, population, input_dir, output_dir)
+    concat_all_subj(task, population, input_dir, output_dir)
 
 
 

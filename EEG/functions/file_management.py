@@ -57,7 +57,7 @@ def concat_all_subj(task='N2pc', population='control', input_dir=None, output_di
 
             # Concatenate the files
             epochs_list = []
-            for file in control_files:
+            for file in stroke_files:
                 epochs = mne.read_epochs(file)
                 epochs_list.append(epochs)
             all_subj = mne.concatenate_epochs(epochs_list)
@@ -105,7 +105,7 @@ def concat_all_subj(task='N2pc', population='control', input_dir=None, output_di
 
             # Concatenate the files
             epochs_list = []
-            for file in control_files:
+            for file in stroke_files:
                 epochs = mne.read_epochs(file)
                 epochs_list.append(epochs)
             all_subj = mne.concatenate_epochs(epochs_list)
