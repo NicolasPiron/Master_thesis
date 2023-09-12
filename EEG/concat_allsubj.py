@@ -4,9 +4,14 @@ from functions.file_management import concat_all_subj
 # Task is either 'N2pc' or 'Alpheye'
 # Population is either 'control' or 'stroke'
 
-input_dir = '/home/nicolasp/shared_PULSATION/derivative'
+#input_dir = '/home/nicolasp/shared_PULSATION/derivative'
+input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
 
-output_dir = '/home/nicolasp/shared_PULSATION/derivative/all_subj'
+output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc/all_subj'
+
+#output_dir = '/home/nicolasp/shared_PULSATION/derivative/all_subj'
+
+exclude_subject_list = [9, 10, 15, 20]
 
 if __name__ == '__main__':
     
@@ -20,7 +25,7 @@ if __name__ == '__main__':
     population = sys.argv[2]
 
     # Concatenate the files
-    concat_all_subj(task, population, input_dir, output_dir)
+    concat_all_subj(task, population, input_dir, output_dir, exclude_subject=False, exclude_subject_list=exclude_subject_list)
 
 
 
