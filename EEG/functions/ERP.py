@@ -1,20 +1,48 @@
 import numpy as np
 import pandas as pd
 import os
+import glob
 import matplotlib.pyplot as plt
 import seaborn as sns
 import mne
 import math
 
-def get_bins_baseline(subject_id, input_dir):
+def get_population_files(input_dir, task, population):
+
+    files = glob.glob(os.path.join(input_dir, 'all_subj', f'{population}_allsubj', '*'))
+    files = [file for file in files if task in file]
+
+    return files
+
+def get_population_epochs(files, exclude_subjects=False, excluded_subjects_list=[]):
+
+    def get_last_string(file):
+        return file.split('/')[-1].split('-')[-1].split('.')[0]
+
+    if exclude_subjects == True:
+        excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
+        excluded_subjects_string = '_'.join(excluded_subjects_list)
+        specific_file = [file for file in files if get_last_string(file) == excluded_subjects_string]
+    
+    if exclude_subjects == False:
+        files = files.sort()
+        specific_file = files[0]
+
+    epochs = mne.read_epochs(specific_file)
+    
+    return epochs, excluded_subjects_string
+
+def get_bins_baseline(subject_id, input_dir, epochs_=None):
     ''' This function extracts the N2pc ERP for a given subject.
 
     Parameters
     ----------
     subject_id : str
-        The subject ID to plot.
+        The subject ID to plot OR 'GA' to plot grand average.
     input_dir : str
         The path to the directory containing the input data.
+    GA : bool
+        Whether to use grand average data or not.
     
     Returns
     -------
@@ -34,7 +62,10 @@ def get_bins_baseline(subject_id, input_dir):
         The time axis for the ERP data.
     '''
     # Load subject data and crop to the relevant time window
-    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+    if subject_id == 'GA':
+        epochs = epochs_.load_data()
+    else:
+        epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
     tmin = -0.2
     tmax = 0.4
     epochs.crop(tmin=tmin, tmax=tmax)
@@ -122,7 +153,7 @@ def get_bins_baseline(subject_id, input_dir):
 
     return PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time
 
-def plot_n2pc(subject_id, input_dir, output_dir=None):
+def plot_n2pc(subject_id, input_dir, output_dir, epochs_=None, title=None):
     ''' This function plots the N2pc ERP for a given subject.
 
     Parameters
@@ -133,65 +164,99 @@ def plot_n2pc(subject_id, input_dir, output_dir=None):
         The path to the directory containing the input data.
     output_dir : str
         The path to the directory where the output will be saved.
+
     
     Returns
     -------
     None
     '''
-    PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir)
+    if subject_id == 'GA':
+        PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir, epochs_=epochs_)
+        # Create output directory if it doesn't exist
+        if os.path.exists(os.path.join(output_dir, 'all_subj','n2pc-plots')) == False:
+            os.makedirs(os.path.join(output_dir, 'all_subj','n2pc-plots'))
 
-    # Create output directory if it doesn't exist
-    if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots')) == False:
-        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots'))
+    else:
+        PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir)
+        # Create output directory if it doesn't exist
+        if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots')) == False:
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots'))
 
     # Create three separate plots for each condition
 
+
+    def create_erp_plot(subject_id, contra, ipsi, time, color, title, output_dir):
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(time, contra, color=color, label='Dis_Mid (Contralateral)')
+        plt.plot(time, ipsi, color=color, linestyle='dashed', label='Dis_Mid (Ipsilateral)')
+        plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+        plt.axhline(y=0, color='black', linewidth=1)
+        plt.xlabel('Time (ms)')
+        plt.ylabel('Amplitude (uV)')
+        plt.title('Signal from Electrodes PO7 - Dis_Mid Condition')
+        plt.legend()
+        plt.grid()
+        if subject_id == 'GA':
+            plt.savefig(os.path.join(output_dir, 'all_subj','n2pc-plots',f'{title}-PO7_Dis_Mid.png'))
+        else:
+            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots',f'sub-{subject_id}-PO7_Dis_Mid.png'))
+        plt.show(block=False)
+        plt.close()
+    
+    create_erp_plot(subject_id, PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, 'blue', title, output_dir)
+
+    create_erp_plot(subject_id, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, 'green', title, output_dir)
+
+    create_erp_plot(subject_id, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, 'red', title, output_dir)
+
+
     # Plot for Dis_Mid
-    plt.figure(figsize=(10, 6))
-    plt.plot(time, PO7_data_nbin1_baseline, color='blue', label='Dis_Mid (Contralateral)')
-    plt.plot(time, PO7_data_nbin2_baseline, color='blue', linestyle='dashed', label='Dis_Mid (Ipsilateral)')
-    plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
-    plt.axhline(y=0, color='black', linewidth=1)
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Amplitude (uV)')
-    plt.title('Signal from Electrodes PO7 - Dis_Mid Condition')
-    plt.legend()
-    plt.grid()
-    plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots',f'sub-{subject_id}-PO7_Dis_Mid.png'))
-    plt.show(block=False)
-    plt.close()
+    #plt.figure(figsize=(10, 6))
+    #plt.plot(time, PO7_data_nbin1_baseline, color='blue', label='Dis_Mid (Contralateral)')
+    #plt.plot(time, PO7_data_nbin2_baseline, color='blue', linestyle='dashed', label='Dis_Mid (Ipsilateral)')
+    #plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+    #plt.axhline(y=0, color='black', linewidth=1)
+    #plt.xlabel('Time (ms)')
+    #plt.ylabel('Amplitude (uV)')
+    #plt.title('Signal from Electrodes PO7 - Dis_Mid Condition')
+    #plt.legend()
+    #plt.grid()
+    #plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots',f'sub-{subject_id}-PO7_Dis_Mid.png'))
+    #plt.show(block=False)
+    #plt.close()
 
     # Plot for No_Dis
-    plt.figure(figsize=(10, 6))
-    plt.plot(time, PO7_data_nbin3_baseline, color='green', label='No_Dis (Contralateral)')
-    plt.plot(time, PO7_data_nbin4_baseline, color='green', linestyle='dashed', label='No_Dis (Ipsilateral)')
-    plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
-    plt.axhline(y=0, color='black', linewidth=1)
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Amplitude (uV)')
-    plt.title('Signal from Electrodes PO7 - No_Dis Condition')
-    plt.legend()
-    plt.grid()
-    plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots', f'sub-{subject_id}-PO7_No_Dis.png'))
-    plt.show(block=False)
-    plt.close()
+    #plt.figure(figsize=(10, 6))
+    #plt.plot(time, PO7_data_nbin3_baseline, color='green', label='No_Dis (Contralateral)')
+    #plt.plot(time, PO7_data_nbin4_baseline, color='green', linestyle='dashed', label='No_Dis (Ipsilateral)')
+    #plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+    #plt.axhline(y=0, color='black', linewidth=1)
+    #plt.xlabel('Time (ms)')
+    #plt.ylabel('Amplitude (uV)')
+    #plt.title('Signal from Electrodes PO7 - No_Dis Condition')
+    #plt.legend()
+    #plt.grid()
+    #plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots', f'sub-{subject_id}-PO7_No_Dis.png'))
+    #plt.show(block=False)
+    #plt.close()
 
     # Plot for Dis_Contra
-    plt.figure(figsize=(10, 6))
-    plt.plot(time, PO7_data_nbin5_baseline, color='red', label='Dis_Contra (Contralateral)')
-    plt.plot(time, PO7_data_nbin6_baseline, color='red', linestyle='dashed', label='Dis_Contra (Ipsilateral)')
-    plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
-    plt.axhline(y=0, color='black', linewidth=1)
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Amplitude (uV)')
-    plt.title('Signal from Electrodes PO7 - Dis_Contra Condition')
-    plt.legend()
-    plt.grid()
-    plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots', f'sub-{subject_id}-PO7_Dis_Contra.png'))
-    plt.show(block=False)
-    plt.close()
+    #plt.figure(figsize=(10, 6))
+    #plt.plot(time, PO7_data_nbin5_baseline, color='red', label='Dis_Contra (Contralateral)')
+    #plt.plot(time, PO7_data_nbin6_baseline, color='red', linestyle='dashed', label='Dis_Contra (Ipsilateral)')
+    #plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+    #plt.axhline(y=0, color='black', linewidth=1)
+    #plt.xlabel('Time (ms)')
+    #plt.ylabel('Amplitude (uV)')
+    #plt.title('Signal from Electrodes PO7 - Dis_Contra Condition')
+    #plt.legend()
+    #plt.grid()
+    #plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots', f'sub-{subject_id}-PO7_Dis_Contra.png'))
+    #plt.show(block=False)
+    #plt.close()
 
-def get_n2pc_values(subject_id, input_dir, output_dir):
+def get_n2pc_values(subject_id, input_dir, output_dir, epochs_=None, title=None):
     '''
     This function extracts the N2pc values for a given subject and saves them in a csv file.
     
@@ -209,8 +274,11 @@ def get_n2pc_values(subject_id, input_dir, output_dir):
     df : pandas.DataFrame
         A dataframe containing the N2pc values for each condition and side.
     '''
+    if subject_id == 'GA':
+        PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir, epochs_=epochs_)
 
-    PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir)
+    else:
+        PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir)
 
     bin_list = [PO7_data_nbin1_baseline,
                 PO7_data_nbin2_baseline,
@@ -291,8 +359,13 @@ def get_n2pc_values(subject_id, input_dir, output_dir):
     pd.options.display.float_format = '{:.5e}'.format
     
     # Save the dataframe
-    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values')):
-        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values'))
-    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values', f'sub-{subject_id}-n2pc_values.csv'))
+    if subject_id == 'GA':
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'n2pc-values')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'n2pc-values'))
+        df.to_csv(os.path.join(output_dir, 'all_subj', 'n2pc-values', f'{title}-n2pc_values.csv'))
+    else:
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values')):
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values'))
+        df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values', f'sub-{subject_id}-n2pc_values.csv'))
     
     return df
