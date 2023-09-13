@@ -5,9 +5,9 @@ from functions.file_management import concat_all_subj
 # Population is either 'control' or 'stroke'
 
 #input_dir = '/home/nicolasp/shared_PULSATION/derivative'
-input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+input_dir = '/home/nicolasp/shared_PULSATION/derivative'
 
-output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc/all_subj'
+output_dir = '/home/nicolasp/shared_PULSATION/derivative/all_subj'
 
 #output_dir = '/home/nicolasp/shared_PULSATION/derivative/all_subj'
 
@@ -25,7 +25,10 @@ if __name__ == '__main__':
     population = sys.argv[2]
 
     # Concatenate the files
-    concat_all_subj(task, population, input_dir, output_dir, exclude_subject=False, exclude_subject_list=exclude_subject_list)
+    concat_all_subj(task, population, input_dir, output_dir, exclude_subject=True, exclude_subject_list=exclude_subject_list)
+
+    # Print a message to confirm that the script has finished
+    print(f'Concatenation for {task} {population} group done! subjects excluded: {exclude_subject_list}')
 
 
 

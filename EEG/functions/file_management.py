@@ -2,6 +2,37 @@ import glob
 import os
 import mne
 
+def add_sub0(list):
+    ''' Adds a "sub" and a 0 before the number of the subject
+        if the number has only one digit.
+
+    Parameters
+    ----------
+    list : list
+        The list of subjects to transform
+    
+    Returns
+    ----------
+    transformed_list : list
+        The transformed list of subjects
+
+    '''
+
+        # Transform the list of subjects to exclude into the format 'sub-xx'
+    sub_list = [f'sub-{subject}' for subject in list]
+
+    transformed_list = []
+    for item in sub_list:
+        # Split the string into two parts: 'sub-' and the number
+        parts = item.split('-')
+        if len(parts) == 2 and len(parts[1]) == 1:
+            # If the number has only one digit, add a '0' before it
+            transformed_list.append(f'sub-0{parts[1]}')
+        else:
+            transformed_list.append(item)
+    
+    return transformed_list
+
 def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=False, exclude_subject_list=[]):
     ''' Concatenates and saves the files of all the subjects that have been preprocessed.
     
@@ -28,23 +59,17 @@ def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=Fal
     if exclude_subject == True:
 
         # Transform the list of subjects to exclude into the format 'sub-xx'
-        exclude_subject_list = [f'sub-{subject}' for subject in exclude_subject_list]
-
-        transformed_list = []
-        for item in exclude_subject_list:
-            # Split the string into two parts: 'sub-' and the number
-            parts = item.split('-')
-            if len(parts) == 2 and len(parts[1]) == 1:
-                # If the number has only one digit, add a '0' before it
-                transformed_list.append(f'sub-0{parts[1]}')
-            else:
-                transformed_list.append(item)
+        transformed_list = add_sub0(exclude_subject_list)
 
         # Get the list of all the subjects and remove the excluded subjects
         subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
         for subject in subject_list:
             if subject[-2:] in transformed_list:
                 subject_list.remove(subject)
+
+        # Transform the list of excluded subjects into a string
+        
+
     elif exclude_subject == False:
 
         subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
@@ -73,9 +98,13 @@ def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=Fal
             all_subj = mne.concatenate_epochs(epochs_list)
             if not os.path.exists(os.path.join(output_dir, f'{population}-allsubj')):
                 os.makedirs(os.path.join(output_dir, f'{population}-allsubj'))
+
+            exclude_subject_list_ctrl = [str(sub) for sub in exclude_subject_list if int(sub) < 51]
+            string_of_excluded_subjects = '_'.join(exclude_subject_list_ctrl)
+
             # name the file depending on the excluded subjects
             if exclude_subject == True:
-                all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}-excluded-{exclude_subject_list}.fif'), overwrite=True) 
+                all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}-excluded-{string_of_excluded_subjects}.fif'), overwrite=True) 
             elif exclude_subject == False:
                 all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}.fif'), overwrite=True) 
                 
@@ -101,9 +130,13 @@ def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=Fal
             all_subj = mne.concatenate_epochs(epochs_list)
             if not os.path.exists(os.path.join(output_dir, f'{population}-allsubj')):
                 os.makedirs(os.path.join(output_dir, f'{population}-allsubj'))
+
+            exclude_subject_list_strk = [str(sub) for sub in exclude_subject_list if int(sub) >= 51]
+            string_of_excluded_subjects = '_'.join(exclude_subject_list_strk)
+
             # name the file depending on the excluded subjects
             if exclude_subject == True:
-                all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}-excluded-{exclude_subject_list}.fif'), overwrite=True) 
+                all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}-excluded-{string_of_excluded_subjects}.fif'), overwrite=True) 
             elif exclude_subject == False:
                 all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}.fif'), overwrite=True) 
 
@@ -131,8 +164,11 @@ def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=Fal
             if not os.path.exists(os.path.join(output_dir, f'{population}-allsubj')):
                 os.makedirs(os.path.join(output_dir, f'{population}-allsubj'))
 
+            exclude_subject_list_ctrl = [str(sub) for sub in exclude_subject_list if int(sub) < 51]
+            string_of_excluded_subjects = '_'.join(exclude_subject_list_ctrl)
+
             if exclude_subject == True:
-                all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}-excluded-{exclude_subject_list}.fif'), overwrite=True) 
+                all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}-excluded-{string_of_excluded_subjects}.fif'), overwrite=True) 
             elif exclude_subject == False:
                 all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}.fif'), overwrite=True) 
                 
@@ -158,7 +194,10 @@ def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=Fal
             if not os.path.exists(os.path.join(output_dir, f'{population}-allsubj')):
                 os.makedirs(os.path.join(output_dir, f'{population}-allsubj'))
 
+            exclude_subject_list_strk = [str(sub) for sub in exclude_subject_list if int(sub) >= 51]
+            string_of_excluded_subjects = '_'.join(exclude_subject_list_strk)
+
             if exclude_subject == True:
-                all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}-excluded-{exclude_subject_list}.fif'), overwrite=True) 
+                all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}-excluded-{string_of_excluded_subjects}.fif'), overwrite=True) 
             elif exclude_subject == False:
                 all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}.fif'), overwrite=True) 
