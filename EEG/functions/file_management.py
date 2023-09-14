@@ -58,21 +58,30 @@ def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=Fal
 
     if exclude_subject == True:
 
+        print(f'====================== Excluding the following subjects: {exclude_subject_list}')
+
         # Transform the list of subjects to exclude into the format 'sub-xx'
         transformed_list = add_sub0(exclude_subject_list)
 
         # Get the list of all the subjects and remove the excluded subjects
         subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
         for subject in subject_list:
-            if subject[-2:] in transformed_list:
+            if subject[-6:] in transformed_list:
+                print(f'====================== Excluding {subject}')
                 subject_list.remove(subject)
+        
+        print(f'====================== Remaining subjects: {subject_list}')
 
         # Transform the list of excluded subjects into a string
         
 
     elif exclude_subject == False:
 
+        print('====================== No subject excluded')
+
         subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
+
+        print(f'====================== Remaining subjects: {subject_list}')
 
     if task == 'N2pc':
 
@@ -87,6 +96,7 @@ def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=Fal
                 if int(subject[-2:]) < 51:
                     file = glob.glob(os.path.join(subject, 'cleaned_epochs', 'sub*N2pc.fif'))
                     control_files.append(file[0])
+            print(f'====================== Control files: {control_files} for {task}')
 
             # Concatenate the files
             epochs_list = []
@@ -119,6 +129,7 @@ def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=Fal
                 if int(subject[-2:]) >= 51:
                     file = glob.glob(os.path.join(subject, 'cleaned_epochs', 'sub*N2pc.fif'))
                     stroke_files.append(file[0])
+            print(f'====================== Stroke files: {stroke_files} for {task}')
 
              # Concatenate the files
             epochs_list = []
@@ -139,6 +150,8 @@ def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=Fal
                 all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}-excluded-{string_of_excluded_subjects}.fif'), overwrite=True) 
             elif exclude_subject == False:
                 all_subj.save(os.path.join(output_dir, f'{population}-allsubj', f'{population}-allsubj-{task}.fif'), overwrite=True) 
+
+            print(f'====================== Concatenated stroke files for {task} have been saved')
 
     elif task == 'Alpheye':
 
