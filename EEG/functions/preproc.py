@@ -31,7 +31,7 @@ def load_data(subject_id, task, input_path, plot_data=True):
 
     subject_id = str(subject_id)
 
-    if task == 'RESTINGOPEN' or 'RESTINGCLOSE':
+    if task == 'RESTINGSTATEOPEN' or task == 'RESTINGSTATECLOSE':
 
         file = os.path.join(input_path, fr"sub-{subject_id}/ses-01/eeg/sub-{subject_id}_ses-01_task-{task}_eeg.bdf")
 
@@ -49,7 +49,7 @@ def load_data(subject_id, task, input_path, plot_data=True):
 
         return raw
 
-    else:
+    elif task == 'N2pc' or task == 'Alpheye':
 
         path = fr"sub-{subject_id}/ses-01/eeg/sub-{subject_id}_ses-01_task-{task}_run-"
         files = glob.glob(os.path.join(input_path,path+'*.bdf'))
@@ -231,11 +231,10 @@ def epoch_data(subject_id, task, raw, e_list,  output_path):
     epochs.resample(512)
 
     # Save the event list and the epochs
-    if task == 'N2pc' or 'Alpheye':
-        if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-03-event_lists')) == False:
-            os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-03-event_lists'))
-            print('Directory created')
-        df.to_csv(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-03-event_lists', f'sub-{subject_id}-elist-{task}.csv'), index=False)
+    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-03-event_lists')) == False:
+        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-03-event_lists'))
+        print('Directory created')
+    df.to_csv(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-03-event_lists', f'sub-{subject_id}-elist-{task}.csv'), index=False)
 
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-04-epochs')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'step-04-epochs'))

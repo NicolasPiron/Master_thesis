@@ -1,6 +1,13 @@
 import functions.preproc as pp
 import sys
 
+# Define task
+task = 'N2pc'
+# Path to data
+input_path = '/Users/nicolaspiron/Documents/Master_thesis/EEG/toBIDS/BIDS_data/sourcedata'
+# Where the output files are saved
+output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+
 def preproc_pipeline(subject_id):
     ''' Preprocessing pipeline for EEG data
 
@@ -13,12 +20,7 @@ def preproc_pipeline(subject_id):
     -------
     None
     '''
-    # Define task
-    task = 'RESTINGSTATECLOSE'
-    # Path to data
-    input_path = '/Users/nicolaspiron/Documents/Master_thesis/EEG/toBIDS/BIDS_data/sourcedata'
-    # Where the output files are saved
-    output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+
     # Load data
     if task == 'RESTINGSTATECLOSE' or task == 'RESTINGSTATEOPEN':
         raw = pp.load_data(subject_id, task, input_path, plot_data=True)
@@ -27,7 +29,7 @@ def preproc_pipeline(subject_id):
         # Epoch data
         epochs = pp.epoch_data(subject_id=subject_id, task=task, raw=raw, e_list=None, output_path=output_path)
 
-    else:
+    elif task == 'N2pc' or task == 'Alpheye':
         raw, e_list = pp.load_data(subject_id, task, input_path, plot_data=True)
         # Filter and interpolate
         raw = pp.filter_and_interpolate(subject_id=subject_id, task=task, raw=raw, output_path=output_path, plot_data=False)
