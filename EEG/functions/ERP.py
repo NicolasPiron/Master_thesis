@@ -160,12 +160,19 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
             
             transformed_list = add_sub0(excluded_subjects_list)
             print(transformed_list)
-            
+
             subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
+
+            subjects_to_keep = []
+
             for subject in subject_list:
+                print(subject[-6:])
                 if subject[-6:] in transformed_list:
                     print(f'====================== Excluding {subject}')
-                    subject_list.remove(subject)
+                else:
+                    subjects_to_keep.append(subject)
+
+            subject_list = subjects_to_keep
 
         else:
             subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
@@ -191,7 +198,7 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
         
         for subject in subject_list:
             
-            sub_id = int(subject[-2:])
+            sub_id = subject[-2:]
             b1, b2, b3, b4, b5, b6, time = get_evoked_data(sub_id, input_dir)
             
             PO7_data_nbin1_list.append(b1)
@@ -289,9 +296,18 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
     condition2 = 'No_Dis'
     condition3 = 'Dis_Contra'
     
-    title1 = f'{population}-excluded_subjects-{excluded_subjects_string}-PO7-{condition1}'
-    title2 = f'{population}-excluded_subjects-{excluded_subjects_string}-PO7-{condition2}'
-    title3 = f'{population}-excluded_subjects-{excluded_subjects_string}-PO7-{condition3}'
+    if exclude_subjects == True:
+        title1 = f'{population}-excluded_subjects-{excluded_subjects_string}-PO7-{condition1}'
+    else:
+        title1 = f'{population}-PO7-{condition1}'
+    if exclude_subjects == True:
+        title2 = f'{population}-excluded_subjects-{excluded_subjects_string}-PO7-{condition2}'
+    else:
+        title2 = f'{population}-PO7-{condition2}'
+    if exclude_subjects == True:
+        title3 = f'{population}-excluded_subjects-{excluded_subjects_string}-PO7-{condition3}'
+    else:
+        title3 = f'{population}-PO7-{condition3}'
 
     create_erp_plot(subject_id, d1, d2, time, 'blue', condition1, title1, output_dir)
     create_erp_plot(subject_id, d3, d4, time,'green', condition2, title2, output_dir)
@@ -396,7 +412,7 @@ def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, e
         str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
         excluded_subjects_string = '_'.join(str_excluded_subjects_list)
         title = f'{population}-excluded_subjects-{excluded_subjects_string}'
-        
+
         df.to_csv(os.path.join(output_dir, 'all_subj', 'n2pc-values', population, f'{title}-n2pc_values.csv'))
     else:
         if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values')):
