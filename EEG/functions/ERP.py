@@ -6,33 +6,52 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import mne
 import math
+from functions.file_management import add_sub0
 
-def get_population_files(input_dir, task, population):
 
-    files = glob.glob(os.path.join(input_dir, 'all_subj', f'{population}_allsubj', '*'))
-    files = [file for file in files if task in file]
+def to_evoked(subject_id, task, input_dir):
 
-    return files
+    file = os.path.join(input_dir, f'sub-{subject_id}/cleaned_epochs/sub-{subject_id}-cleaned_epochs-{task}.fif')
+    epochs = mne.read_epochs(file)
 
-def get_population_epochs(files, exclude_subjects=False, excluded_subjects_list=[]):
+    if task == 'N2pc':
 
-    def get_last_string(file):
-        return file.split('/')[-1].split('-')[-1].split('.')[0]
+        # crop the epochs to the relevant time window
+        tmin = -0.2
+        tmax = 0.4
+        epochs.crop(tmin=tmin, tmax=tmax)
+            
+        # define the bins
+        bins = {'bin1' : ['dis_top/target_l','dis_bot/target_l'],
+                'bin2' : ['dis_top/target_r','dis_bot/target_r'],
+                'bin3' : ['no_dis/target_l'],
+                'bin4' : ['no_dis/target_r'],
+                'bin5' : ['dis_right/target_l'],
+                'bin6' : ['dis_left/target_r']}
 
-    if exclude_subjects == True:
-        excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
-        excluded_subjects_string = '_'.join(excluded_subjects_list)
-        specific_file = [file for file in files if get_last_string(file) == excluded_subjects_string]
-    
-    if exclude_subjects == False:
-        files = files.sort()
-        specific_file = files[0]
+        # create evoked
+        evoked_list = [epochs[bin].average() for bin in bins.values()]
+        
+        # rename the distractor mid conditions to simplify
+        evoked_1 = evoked_list[0]
+        evoked_2 = evoked_list[1]
+        evoked_1.comment = 'dis_mid/target_l'
+        evoked_2.comment = 'dis_mid/target_r'
+        
+        # replace the '/' that causes problems when saving
+        for evoked in evoked_list:
+            evoked.comment = evoked.comment.replace('/', '_')
+        
 
-    epochs = mne.read_epochs(specific_file)
-    
-    return epochs, excluded_subjects_string
+        # save the evoked objects in subject directory
+        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', f'evoked-{task}')):
+            os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', f'evoked-{task}'))
+        for evoked in evoked_list:
+            print(evoked.comment)
+            evoked.save(os.path.join(input_dir, f'sub-{subject_id}', f'evoked-{task}', f'sub-{subject_id}-{evoked.comment}-ave.fif'), overwrite=True)
 
-def get_bins_baseline(subject_id, input_dir, epochs_=None):
+
+def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     ''' This function extracts the N2pc ERP for a given subject.
 
     Parameters
@@ -41,8 +60,6 @@ def get_bins_baseline(subject_id, input_dir, epochs_=None):
         The subject ID to plot OR 'GA' to plot grand average.
     input_dir : str
         The path to the directory containing the input data.
-    GA : bool
-        Whether to use grand average data or not.
     
     Returns
     -------
@@ -61,99 +78,155 @@ def get_bins_baseline(subject_id, input_dir, epochs_=None):
     time : numpy.ndarray
         The time axis for the ERP data.
     '''
-    # Load subject data and crop to the relevant time window
+    def get_evoked_data(subject_id, input_dir):
+    
+        subject_id = str(subject_id)
+        evoked_path = os.path.join(input_dir, f'sub-{subject_id}', f'evoked-N2pc')
+        evoked_files = glob.glob(os.path.join(evoked_path, f'sub-{subject_id}-*.fif'))
+
+        # Load the evoked files
+        evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
+
+        bin_dict = {'bin1' : 'dis_mid_target_l',
+                'bin2' : 'dis_mid_target_r',
+                'bin3' : 'no_dis_target_l',
+                'bin4' : 'no_dis_target_r',
+                'bin5' : 'dis_right_target_l',
+                'bin6' : 'dis_left_target_r'}
+
+        # Assign the evoked object that corresponds to the bin
+        bin_evoked = {}
+
+        for bin_name, comment in bin_dict.items():
+            for evoked in evoked_list:
+                if evoked.comment == comment:
+                    bin_evoked[bin_name] = evoked
+                    break 
+
+        # Rename the keys of the dict
+        prefix = 'evk_'
+        # Create a new dictionary with modified keys
+        bin_evoked = {prefix + key: value for key, value in bin_evoked.items()}
+
+        # Define the channel indices for left (Lch) and right (Rch) channels
+        Lch = np.concatenate([np.arange(0, 27)])
+        Rch = np.concatenate([np.arange(33, 36), np.arange(38, 46), np.arange(48, 64)])
+
+        evk_bin1_R = bin_evoked['evk_bin1'].copy().pick(Rch)
+        evk_bin1_L = bin_evoked['evk_bin1'].copy().pick(Lch)
+        evk_bin2_R = bin_evoked['evk_bin2'].copy().pick(Rch)
+        evk_bin2_L = bin_evoked['evk_bin2'].copy().pick(Lch)
+        evk_bin3_R = bin_evoked['evk_bin3'].copy().pick(Rch)
+        evk_bin3_L = bin_evoked['evk_bin3'].copy().pick(Lch)
+        evk_bin4_R = bin_evoked['evk_bin4'].copy().pick(Rch)
+        evk_bin4_L = bin_evoked['evk_bin4'].copy().pick(Lch)
+        evk_bin5_R = bin_evoked['evk_bin5'].copy().pick(Rch)
+        evk_bin5_L = bin_evoked['evk_bin5'].copy().pick(Lch)
+        evk_bin6_R = bin_evoked['evk_bin6'].copy().pick(Rch)
+        evk_bin6_L = bin_evoked['evk_bin6'].copy().pick(Lch)
+
+        # Define functions to create the new bin operations
+        def bin_operator(data1, data2):
+            return 0.5 * data1 + 0.5 * data2
+        
+        nbin1 = bin_operator(evk_bin1_R.data, evk_bin2_L.data)
+        nbin2 = bin_operator(evk_bin1_L.data, evk_bin2_R.data)
+        nbin3 = bin_operator(evk_bin3_R.data, evk_bin4_L.data)
+        nbin4 = bin_operator(evk_bin3_L.data, evk_bin4_R.data)
+        nbin5 = bin_operator(evk_bin5_R.data, evk_bin6_L.data)
+        nbin6 = bin_operator(evk_bin5_L.data, evk_bin6_R.data)
+        
+        time = bin_evoked['evk_bin1'].times * 1000  # Convert to milliseconds
+
+        # Define the channel indices for P7, P9, and PO7
+        P7_idx = bin_evoked['evk_bin1'].info['ch_names'].index('P7')
+        P9_idx = bin_evoked['evk_bin1'].info['ch_names'].index('P9')
+        PO7_idx = bin_evoked['evk_bin1'].info['ch_names'].index('PO7')
+
+        # Extract the data for P7, P9, and PO7 electrodes
+        PO7_data_nbin1 = nbin1[PO7_idx]
+        PO7_data_nbin2 = nbin2[PO7_idx]
+        PO7_data_nbin3 = nbin3[PO7_idx]
+        PO7_data_nbin4 = nbin4[PO7_idx]
+        PO7_data_nbin5 = nbin5[PO7_idx]
+        PO7_data_nbin6 = nbin6[PO7_idx]
+        
+        return PO7_data_nbin1, PO7_data_nbin2, PO7_data_nbin3, PO7_data_nbin4, PO7_data_nbin5, PO7_data_nbin6, time
+    
+    
     if subject_id == 'GA':
-        epochs = epochs_.load_data()
+        
+        if exclude_subjects == True:
+            
+            transformed_list = add_sub0(excluded_subjects_list)
+            print(transformed_list)
+            
+            subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
+            for subject in subject_list:
+                if subject[-6:] in transformed_list:
+                    print(f'====================== Excluding {subject}')
+                    subject_list.remove(subject)
+
+        else:
+            subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
+        
+        if population == 'control':
+
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) < 50]
+            print(f'====================== subjects list, control population : {subject_list}')
+            
+
+        elif population == 'stroke':
+
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 50]
+            print(f'====================== subjects list, stroke population : {subject_list}')
+            
+        
+        PO7_data_nbin1_list = []
+        PO7_data_nbin2_list = []
+        PO7_data_nbin3_list = []
+        PO7_data_nbin4_list = []
+        PO7_data_nbin5_list = []
+        PO7_data_nbin6_list = []
+        
+        for subject in subject_list:
+            
+            sub_id = int(subject[-2:])
+            b1, b2, b3, b4, b5, b6, time = get_evoked_data(sub_id, input_dir)
+            
+            PO7_data_nbin1_list.append(b1)
+            PO7_data_nbin2_list.append(b2)
+            PO7_data_nbin3_list.append(b3)
+            PO7_data_nbin4_list.append(b4)
+            PO7_data_nbin5_list.append(b5)
+            PO7_data_nbin6_list.append(b6)
+            print(f'====================== data collected for {subject}')
+        
+        # transform the lists in np.arrays
+        PO7_data_nbin1_array = np.array(PO7_data_nbin1_list)
+        PO7_data_nbin2_array = np.array(PO7_data_nbin2_list)
+        PO7_data_nbin3_array = np.array(PO7_data_nbin3_list)
+        PO7_data_nbin4_array = np.array(PO7_data_nbin4_list)
+        PO7_data_nbin5_array = np.array(PO7_data_nbin5_list)
+        PO7_data_nbin6_array = np.array(PO7_data_nbin6_list)
+        
+        # compute the mean of each array (should be length evk.info['sfreq']*0.6 (200ms basline, 400ms after 0))
+        PO7_data_nbin1_mean = PO7_data_nbin1_array.mean(axis=0)
+        PO7_data_nbin2_mean = PO7_data_nbin2_array.mean(axis=0)
+        PO7_data_nbin3_mean = PO7_data_nbin3_array.mean(axis=0)
+        PO7_data_nbin4_mean = PO7_data_nbin4_array.mean(axis=0)
+        PO7_data_nbin5_mean = PO7_data_nbin5_array.mean(axis=0)
+        PO7_data_nbin6_mean = PO7_data_nbin6_array.mean(axis=0)
+        
+        return PO7_data_nbin1_mean, PO7_data_nbin2_mean, PO7_data_nbin3_mean, PO7_data_nbin4_mean, PO7_data_nbin5_mean, PO7_data_nbin6_mean, time
+            
     else:
-        epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
-    tmin = -0.2
-    tmax = 0.4
-    epochs.crop(tmin=tmin, tmax=tmax)
-    
-    # Define the channel indices for left (Lch) and right (Rch) channels
-    Lch = np.concatenate([np.arange(0, 27)])
-    Rch = np.concatenate([np.arange(33, 36), np.arange(38, 46), np.arange(48, 64)])
+        
+        b1, b2, b3, b4, b5, b6, time = get_evoked_data(subject_id, input_dir)
+        
+        return b1, b2, b3, b4, b5, b6, time
 
-    # Define functions to create the new bin operations
-    def bin_operator(data1, data2):
-        return 0.5 * data1 + 0.5 * data2
-    
-    bin1 = ['dis_top/target_l','dis_bot/target_l']
-    bin2 = ['dis_top/target_r','dis_bot/target_r']
-    bin3 = ['no_dis/target_l']
-    bin4 = ['no_dis/target_r']
-    bin5 = ['dis_right/target_l']
-    bin6 = ['dis_left/target_r']
-
-
-    # Create evoked objects for each bin
-    evk_bin1_R = epochs[bin1].average(picks=Rch)
-    evk_bin1_L = epochs[bin1].average(picks=Lch)
-    evk_bin2_R = epochs[bin2].average(picks=Rch)
-    evk_bin2_L = epochs[bin2].average(picks=Lch)
-    evk_bin3_R = epochs[bin3].average(picks=Rch)
-    evk_bin3_L = epochs[bin3].average(picks=Lch)
-    evk_bin4_R = epochs[bin4].average(picks=Rch)
-    evk_bin4_L = epochs[bin4].average(picks=Lch)
-    evk_bin5_R = epochs[bin5].average(picks=Rch)
-    evk_bin5_L = epochs[bin5].average(picks=Lch)
-    evk_bin6_R = epochs[bin6].average(picks=Rch)
-    evk_bin6_L = epochs[bin6].average(picks=Lch)
-
-    evk_bin1 = epochs[bin1].average()
-    evk_bin2 = epochs[bin2].average()
-    evk_bin3 = epochs[bin3].average()
-    evk_bin4 = epochs[bin4].average()
-    evk_bin5 = epochs[bin5].average()
-    evk_bin6 = epochs[bin6].average()
-
-    # Create weights for the new bin operations
-    #substract_weights = [1, -1]
-
-    # Prepare Contra and Ipsi bins
-    nbin1 = bin_operator(evk_bin1_R.data, evk_bin2_L.data)
-    nbin2 = bin_operator(evk_bin1_L.data, evk_bin2_R.data)
-    nbin3 = bin_operator(evk_bin3_R.data, evk_bin4_L.data)
-    nbin4 = bin_operator(evk_bin3_L.data, evk_bin4_R.data)
-    nbin5 = bin_operator(evk_bin5_R.data, evk_bin6_L.data)
-    nbin6 = bin_operator(evk_bin5_L.data, evk_bin6_R.data)
-
-    # Apply weights to the new bins
-    #nbin7 = mne.combine_evoked([evk_bin1, evk_bin2], weights=substract_weights)
-    #nbin8 = mne.combine_evoked([evk_bin3, evk_bin4], weights=substract_weights)
-    #nbin9 = mne.combine_evoked([evk_bin5, evk_bin6], weights=substract_weights)
-
-
-    # Define the baseline period in milliseconds
-    baseline = (-200, 0)  
-
-    # Define the time axis
-    time = evk_bin1.times * 1000  # Convert to milliseconds
-
-    # Define the channel indices for P7, P9, and PO7
-    P7_idx = evk_bin1.info['ch_names'].index('P7')
-    P9_idx = evk_bin1.info['ch_names'].index('P9')
-    PO7_idx = evk_bin1.info['ch_names'].index('PO7')
-
-    # Extract the data for P7, P9, and PO7 electrodes
-    PO7_data_nbin1 = nbin1[PO7_idx]
-    PO7_data_nbin2 = nbin2[PO7_idx]
-    PO7_data_nbin3 = nbin3[PO7_idx]
-    PO7_data_nbin4 = nbin4[PO7_idx]
-    PO7_data_nbin5 = nbin5[PO7_idx]
-    PO7_data_nbin6 = nbin6[PO7_idx]
-
-    # Apply baseline correction to the ERP data
-    PO7_data_nbin1_baseline = mne.baseline.rescale(PO7_data_nbin1, times=time, baseline=baseline)
-    PO7_data_nbin2_baseline = mne.baseline.rescale(PO7_data_nbin2, times=time, baseline=baseline)
-    PO7_data_nbin3_baseline = mne.baseline.rescale(PO7_data_nbin3, times=time, baseline=baseline)
-    PO7_data_nbin4_baseline = mne.baseline.rescale(PO7_data_nbin4, times=time, baseline=baseline)
-    PO7_data_nbin5_baseline = mne.baseline.rescale(PO7_data_nbin5, times=time, baseline=baseline)
-    PO7_data_nbin6_baseline = mne.baseline.rescale(PO7_data_nbin6, times=time, baseline=baseline)
-
-    return PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time
-
-def plot_n2pc(subject_id, input_dir, output_dir, epochs_=None, title=None):
+def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     ''' This function plots the N2pc ERP for a given subject.
 
     Parameters
@@ -170,93 +243,62 @@ def plot_n2pc(subject_id, input_dir, output_dir, epochs_=None, title=None):
     -------
     None
     '''
-    if subject_id == 'GA':
-        PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir, epochs_=epochs_)
-        # Create output directory if it doesn't exist
-        if os.path.exists(os.path.join(output_dir, 'all_subj','n2pc-plots')) == False:
-            os.makedirs(os.path.join(output_dir, 'all_subj','n2pc-plots'))
-
-    else:
-        PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir)
-        # Create output directory if it doesn't exist
-        if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots')) == False:
-            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots'))
-
-    # Create three separate plots for each condition
-
-
-    def create_erp_plot(subject_id, contra, ipsi, time, color, title, output_dir):
+    
+    def create_erp_plot(subject_id, contra, ipsi, time, color, condition, title, output_dir):
 
         plt.figure(figsize=(10, 6))
-        plt.plot(time, contra, color=color, label='Dis_Mid (Contralateral)')
-        plt.plot(time, ipsi, color=color, linestyle='dashed', label='Dis_Mid (Ipsilateral)')
+        plt.plot(time, contra, color=color, label=f'{condition} (Contralateral)')
+        plt.plot(time, ipsi, color=color, linestyle='dashed', label=f'{condition} (Ipsilateral)')
         plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
         plt.axhline(y=0, color='black', linewidth=1)
         plt.xlabel('Time (ms)')
         plt.ylabel('Amplitude (uV)')
-        plt.title('Signal from Electrodes PO7 - Dis_Mid Condition')
+        plt.title(f'Signal from Electrodes PO7 - {condition} Condition')
         plt.legend()
         plt.grid()
         if subject_id == 'GA':
-            plt.savefig(os.path.join(output_dir, 'all_subj','n2pc-plots',f'{title}-PO7_Dis_Mid.png'))
+            plt.savefig(os.path.join(output_dir, 'all_subj','n2pc-plots', population, f'{title}.png'))
         else:
-            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots',f'sub-{subject_id}-PO7_Dis_Mid.png'))
+            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots',f'sub-{subject_id}-PO7_{condition}.png'))
         plt.show(block=False)
         plt.close()
+        
+        
+    if subject_id == 'GA':
+        
+        d1, d2, d3, d4, d5, d6, time = get_bins_data(subject_id, input_dir, exclude_subjects=exclude_subjects, excluded_subjects_list=excluded_subjects_list, population=population)
+        # Create output directory if it doesn't exist
+        if os.path.exists(os.path.join(output_dir, 'all_subj','n2pc-plots', population)) == False:
+            os.makedirs(os.path.join(output_dir, 'all_subj','n2pc-plots', population))
+            
+        str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
+        excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        
+    else:
+        
+        d1, d2, d3, d4, d5, d6, time = get_bins_data(subject_id, input_dir)
+        # Create output directory if it doesn't exist
+        if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots')) == False:
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots'))
+        
+        excluded_subjects_string = ''
+        population = ''
+            
+        
+    condition1 = 'Dis_Mid'
+    condition2 = 'No_Dis'
+    condition3 = 'Dis_Contra'
     
-    create_erp_plot(subject_id, PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, 'blue', title, output_dir)
+    title1 = f'{population}-excluded_subjects-{excluded_subjects_string}-PO7-{condition1}'
+    title2 = f'{population}-excluded_subjects-{excluded_subjects_string}-PO7-{condition2}'
+    title3 = f'{population}-excluded_subjects-{excluded_subjects_string}-PO7-{condition3}'
 
-    create_erp_plot(subject_id, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, 'green', title, output_dir)
+    create_erp_plot(subject_id, d1, d2, time, 'blue', condition1, title1, output_dir)
+    create_erp_plot(subject_id, d3, d4, time,'green', condition2, title2, output_dir)
+    create_erp_plot(subject_id, d5, d6, time, 'red', condition3, title3, output_dir)
 
-    create_erp_plot(subject_id, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, 'red', title, output_dir)
 
-
-    # Plot for Dis_Mid
-    #plt.figure(figsize=(10, 6))
-    #plt.plot(time, PO7_data_nbin1_baseline, color='blue', label='Dis_Mid (Contralateral)')
-    #plt.plot(time, PO7_data_nbin2_baseline, color='blue', linestyle='dashed', label='Dis_Mid (Ipsilateral)')
-    #plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
-    #plt.axhline(y=0, color='black', linewidth=1)
-    #plt.xlabel('Time (ms)')
-    #plt.ylabel('Amplitude (uV)')
-    #plt.title('Signal from Electrodes PO7 - Dis_Mid Condition')
-    #plt.legend()
-    #plt.grid()
-    #plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots',f'sub-{subject_id}-PO7_Dis_Mid.png'))
-    #plt.show(block=False)
-    #plt.close()
-
-    # Plot for No_Dis
-    #plt.figure(figsize=(10, 6))
-    #plt.plot(time, PO7_data_nbin3_baseline, color='green', label='No_Dis (Contralateral)')
-    #plt.plot(time, PO7_data_nbin4_baseline, color='green', linestyle='dashed', label='No_Dis (Ipsilateral)')
-    #plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
-    #plt.axhline(y=0, color='black', linewidth=1)
-    #plt.xlabel('Time (ms)')
-    #plt.ylabel('Amplitude (uV)')
-    #plt.title('Signal from Electrodes PO7 - No_Dis Condition')
-    #plt.legend()
-    #plt.grid()
-    #plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots', f'sub-{subject_id}-PO7_No_Dis.png'))
-    #plt.show(block=False)
-    #plt.close()
-
-    # Plot for Dis_Contra
-    #plt.figure(figsize=(10, 6))
-    #plt.plot(time, PO7_data_nbin5_baseline, color='red', label='Dis_Contra (Contralateral)')
-    #plt.plot(time, PO7_data_nbin6_baseline, color='red', linestyle='dashed', label='Dis_Contra (Ipsilateral)')
-    #plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
-    #plt.axhline(y=0, color='black', linewidth=1)
-    #plt.xlabel('Time (ms)')
-    #plt.ylabel('Amplitude (uV)')
-    #plt.title('Signal from Electrodes PO7 - Dis_Contra Condition')
-    #plt.legend()
-    #plt.grid()
-    #plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots', f'sub-{subject_id}-PO7_Dis_Contra.png'))
-    #plt.show(block=False)
-    #plt.close()
-
-def get_n2pc_values(subject_id, input_dir, output_dir, epochs_=None, title=None):
+def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     '''
     This function extracts the N2pc values for a given subject and saves them in a csv file.
     
@@ -275,24 +317,12 @@ def get_n2pc_values(subject_id, input_dir, output_dir, epochs_=None, title=None)
         A dataframe containing the N2pc values for each condition and side.
     '''
     if subject_id == 'GA':
-        PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir, epochs_=epochs_)
+        b1, b2, b3, b4, b5, b6, time = get_bins_data(subject_id, input_dir, exclude_subjects=exclude_subjects, excluded_subjects_list=excluded_subjects_list, population=population)
 
     else:
-        PO7_data_nbin1_baseline, PO7_data_nbin2_baseline, PO7_data_nbin3_baseline, PO7_data_nbin4_baseline, PO7_data_nbin5_baseline, PO7_data_nbin6_baseline, time = get_bins_baseline(subject_id, input_dir)
+        b1, b2, b3, b4, b5, b6, time = get_bins_data(subject_id, input_dir)
 
-    bin_list = [PO7_data_nbin1_baseline,
-                PO7_data_nbin2_baseline,
-                PO7_data_nbin3_baseline,
-                PO7_data_nbin4_baseline,
-                PO7_data_nbin5_baseline,
-                PO7_data_nbin6_baseline]
-    
-    #bin_list = [PO7_data_nbin1,
-     #           PO7_data_nbin2,
-      #          PO7_data_nbin3,
-       #         PO7_data_nbin4,
-        #        PO7_data_nbin5,
-         #       PO7_data_nbin6]
+    bin_list = [b1, b2, b3, b4, b5, b6]
 
     # Define 50ms windows lists
     slices_150_200 = []
@@ -360,12 +390,45 @@ def get_n2pc_values(subject_id, input_dir, output_dir, epochs_=None, title=None)
     
     # Save the dataframe
     if subject_id == 'GA':
-        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'n2pc-values')):
-            os.makedirs(os.path.join(output_dir, 'all_subj', 'n2pc-values'))
-        df.to_csv(os.path.join(output_dir, 'all_subj', 'n2pc-values', f'{title}-n2pc_values.csv'))
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'n2pc-values', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'n2pc-values', population))
+
+        str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
+        excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        title = f'{population}-excluded_subjects-{excluded_subjects_string}'
+        
+        df.to_csv(os.path.join(output_dir, 'all_subj', 'n2pc-values', population, f'{title}-n2pc_values.csv'))
     else:
         if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values')):
             os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values'))
         df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values', f'sub-{subject_id}-n2pc_values.csv'))
     
     return df
+
+
+##### LEGACY CODE #####
+
+def get_population_files(input_dir, task, population):
+
+    files = glob.glob(os.path.join(input_dir, 'all_subj', f'{population}_allsubj', '*'))
+    files = [file for file in files if task in file]
+
+    return files
+
+def get_population_epochs(files, exclude_subjects=False, excluded_subjects_list=[]):
+
+    def get_last_string(file):
+        return file.split('/')[-1].split('-')[-1].split('.')[0]
+
+    if exclude_subjects == True:
+        excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
+        excluded_subjects_string = '_'.join(excluded_subjects_list)
+        specific_file = [file for file in files if get_last_string(file) == excluded_subjects_string]
+    
+    if exclude_subjects == False:
+        files = files.sort()
+        specific_file = files[0]
+
+    epochs = mne.read_epochs(specific_file)
+    
+    return epochs, excluded_subjects_string
