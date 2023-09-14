@@ -278,8 +278,12 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         if os.path.exists(os.path.join(output_dir, 'all_subj','n2pc-plots', population)) == False:
             os.makedirs(os.path.join(output_dir, 'all_subj','n2pc-plots', population))
             
-        str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
-        excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        if population == 'control':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        elif population == 'stroke':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
         
     else:
         
@@ -409,8 +413,13 @@ def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, e
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'n2pc-values', population)):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'n2pc-values', population))
 
-        str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
-        excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        if population == 'control':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        elif population == 'stroke':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        
         title = f'{population}-excluded_subjects-{excluded_subjects_string}'
 
         df.to_csv(os.path.join(output_dir, 'all_subj', 'n2pc-values', population, f'{title}-n2pc_values.csv'))
