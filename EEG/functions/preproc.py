@@ -344,7 +344,7 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
                             n_jobs=2, verbose=True)
     #ar.fit(epochs[:100]) 
     #ar_epochs, final_reject_log = ar.transform(epochs, return_log=True)
-    ar_epochs, final_reject_log = ar.fit_transform(epochs, return_log=True)
+    epochs_clean, final_reject_log = ar.fit_transform(epochs_clean, return_log=True)
 
 
     if task == 'N2pc':
@@ -374,7 +374,6 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
             os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal'))
             print('Directory created')
         IC_removal.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ic_removal', f'sub-{subject_id}-ic_removal-{task}.png'))
-    #ICs_properties.savefig(os.path.join(output_path, f'sub-{subject_id}', 'preprocessing', 'plots', 'step-06-ics_properties', f'sub-{subject_id}-ICs_properties-{task}.png'))
     # The final epochs we will use for further analysis
     if os.path.exists(os.path.join(output_path , f'sub-{subject_id}', 'cleaned_epochs')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', 'cleaned_epochs'))
