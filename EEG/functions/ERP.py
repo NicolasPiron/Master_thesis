@@ -10,7 +10,24 @@ from functions.file_management import add_sub0
 
 
 def to_evoked(subject_id, task, input_dir):
+    ''' This function converts the epochs to evoked objects and saves them in the subject directory.
+        It saves one evoked file by condition (i.e. bin).
 
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot.
+    task : str
+        The task to plot.
+    input_dir : str
+        The path to the directory containing the input data.
+    
+    Returns
+    -------
+    None
+    
+    '''
+    # load the epochs
     file = os.path.join(input_dir, f'sub-{subject_id}/cleaned_epochs/sub-{subject_id}-cleaned_epochs-{task}.fif')
     epochs = mne.read_epochs(file)
 
@@ -52,28 +69,35 @@ def to_evoked(subject_id, task, input_dir):
 
 
 def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
-    ''' This function extracts the N2pc ERP for a given subject.
+    ''' This function extracts the N2pc ERP values for a given subject, or all of them
+        if subject_id = 'GA'.
 
     Parameters
     ----------
     subject_id : str
-        The subject ID to plot OR 'GA' to plot grand average.
+        The subject ID OR 'GA' to get the grand average.
     input_dir : str
         The path to the directory containing the input data.
+    exclude_subjects : bool
+        Whether to exclude subjects from the grand average.
+    excluded_subjects_list : list
+        List of subjects to be excluded from the grand average.
+    population : str
+        Population (control or stroke).
     
     Returns
     -------
-    PO7_data_nbin1_baseline : numpy.ndarray
+    PO7_data_nbin1 : numpy.ndarray
         The N2pc ERP data for the Dis_Mid contra condition.
-    PO7_data_nbin2_baseline : numpy.ndarray
+    PO7_data_nbin2 : numpy.ndarray
         The N2pc ERP data for the Dis_Mid ipsi condition.
-    PO7_data_nbin3_baseline : numpy.ndarray
+    PO7_data_nbin3 : numpy.ndarray
         The N2pc ERP data for the No_Dis contra condition.
-    PO7_data_nbin4_baseline : numpy.ndarray
+    PO7_data_nbin4: numpy.ndarray
         The N2pc ERP data for the No_Dis ipsi condition.
-    PO7_data_nbin5_baseline : numpy.ndarray
+    PO7_data_nbin5 : numpy.ndarray
         The N2pc ERP data for the Dis_Contra contra condition.
-    PO7_data_nbin6_baseline : numpy.ndarray
+    PO7_data_nbin6 : numpy.ndarray
         The N2pc ERP data for the Dis_Contra ipsi condition.
     time : numpy.ndarray
         The time axis for the ERP data.
@@ -112,6 +136,7 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
         Lch = np.concatenate([np.arange(0, 27)])
         Rch = np.concatenate([np.arange(33, 36), np.arange(38, 46), np.arange(48, 64)])
 
+        # Lateralize bins in order to be able to compute the N2pc
         evk_bin1_R = bin_evoked['evk_bin1'].copy().pick(Rch)
         evk_bin1_L = bin_evoked['evk_bin1'].copy().pick(Lch)
         evk_bin2_R = bin_evoked['evk_bin2'].copy().pick(Rch)
@@ -129,6 +154,7 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
         def bin_operator(data1, data2):
             return 0.5 * data1 + 0.5 * data2
         
+        # Create the new bins
         nbin1 = bin_operator(evk_bin1_R.data, evk_bin2_L.data)
         nbin2 = bin_operator(evk_bin1_L.data, evk_bin2_R.data)
         nbin3 = bin_operator(evk_bin3_R.data, evk_bin4_L.data)
@@ -136,14 +162,15 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
         nbin5 = bin_operator(evk_bin5_R.data, evk_bin6_L.data)
         nbin6 = bin_operator(evk_bin5_L.data, evk_bin6_R.data)
         
+        # Useful to plot the data
         time = bin_evoked['evk_bin1'].times * 1000  # Convert to milliseconds
 
-        # Define the channel indices for P7, P9, and PO7
-        P7_idx = bin_evoked['evk_bin1'].info['ch_names'].index('P7')
-        P9_idx = bin_evoked['evk_bin1'].info['ch_names'].index('P9')
+        # Define the channel indices for (P7, P9, and) PO7
+        #P7_idx = bin_evoked['evk_bin1'].info['ch_names'].index('P7')
+        #P9_idx = bin_evoked['evk_bin1'].info['ch_names'].index('P9')
         PO7_idx = bin_evoked['evk_bin1'].info['ch_names'].index('PO7')
 
-        # Extract the data for P7, P9, and PO7 electrodes
+        # Extract the data for (P7, P9, and) PO7 electrodes
         PO7_data_nbin1 = nbin1[PO7_idx]
         PO7_data_nbin2 = nbin2[PO7_idx]
         PO7_data_nbin3 = nbin3[PO7_idx]
@@ -158,20 +185,21 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
         
         if exclude_subjects == True:
             
+            # transform the excluded_subjects_list to match the format of the subject IDs
             transformed_list = add_sub0(excluded_subjects_list)
             print(transformed_list)
 
+            # get the list of all subjects
             subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
 
+            # exclude the subjects in the excluded_subjects_list
             subjects_to_keep = []
-
             for subject in subject_list:
                 print(subject[-6:])
                 if subject[-6:] in transformed_list:
                     print(f'====================== Excluding {subject}')
                 else:
                     subjects_to_keep.append(subject)
-
             subject_list = subjects_to_keep
 
         else:
@@ -179,16 +207,18 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
         
         if population == 'control':
 
+            # keep only the control subjects (i.e. subject IDs < 50)
             subject_list = [subject for subject in subject_list if int(subject[-2:]) < 50]
             print(f'====================== subjects list, control population : {subject_list}')
             
 
         elif population == 'stroke':
 
+            # keep only the stroke subjects (i.e. subject IDs > 50)
             subject_list = [subject for subject in subject_list if int(subject[-2:]) > 50]
             print(f'====================== subjects list, stroke population : {subject_list}')
             
-        
+        # initialize lists to store the data for each subject
         PO7_data_nbin1_list = []
         PO7_data_nbin2_list = []
         PO7_data_nbin3_list = []
@@ -234,23 +264,28 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
         return b1, b2, b3, b4, b5, b6, time
 
 def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
-    ''' This function plots the N2pc ERP for a given subject.
+    ''' This function plots the N2pc ERP for a given subject, or a population if you specify subject_id = 'GA'.
 
     Parameters
     ----------
     subject_id : str
-        The subject ID to plot.
+        The subject ID to plot. Can be 'GA' to plot the grand average.
     input_dir : str
         The path to the directory containing the input data.
     output_dir : str
         The path to the directory where the output will be saved.
+    exclude_subjects : bool
+        Whether to exclude subjects from the grand average.
+    excluded_subjects_list : list
+        List of subjects to be excluded from the grand average.
+    population : str
+        Population (control or stroke).
 
-    
     Returns
     -------
     None
     '''
-    
+    # define a function to create the plots
     def create_erp_plot(subject_id, contra, ipsi, time, color, condition, title, output_dir):
 
         plt.figure(figsize=(10, 6))
@@ -277,9 +312,13 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         # Create output directory if it doesn't exist
         if os.path.exists(os.path.join(output_dir, 'all_subj','n2pc-plots', population)) == False:
             os.makedirs(os.path.join(output_dir, 'all_subj','n2pc-plots', population))
-            
-        str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
-        excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        
+        if population == 'control':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        elif population == 'stroke':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
         
     else:
         
@@ -316,7 +355,8 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
 
 def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     '''
-    This function extracts the N2pc values for a given subject and saves them in a csv file.
+    This function extracts the N2pc values for a given subject and saves them in a csv file. 
+    Can be used to extract the values for all subjects (subject_id = 'GA').
     
     Parameters
     ----------
@@ -326,6 +366,12 @@ def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, e
         The path to the directory containing the input data.
     output_dir : str
         The path to the directory where the output will be saved.
+    exclude_subjects : bool
+        Whether to exclude subjects from the grand average.
+    excluded_subjects_list : list
+        List of subjects to be excluded from the grand average.
+    population : str
+        Population (control or stroke).
 
     Returns
     -------
@@ -351,6 +397,7 @@ def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, e
     slices_300_400 = []
     slices_200_400 = []
 
+    # 51 refers to the number of sample points in 100ms (sfreq = 512)
     t_150 = 51*3.5
     t_150 = math.ceil(t_150)
     t_200 = 51*4
@@ -409,8 +456,13 @@ def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, e
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'n2pc-values', population)):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'n2pc-values', population))
 
-        str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
-        excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        if population == 'control':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        elif population == 'stroke':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+            
         title = f'{population}-excluded_subjects-{excluded_subjects_string}'
 
         df.to_csv(os.path.join(output_dir, 'all_subj', 'n2pc-values', population, f'{title}-n2pc_values.csv'))

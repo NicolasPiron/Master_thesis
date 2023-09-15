@@ -33,6 +33,11 @@ def add_sub0(list):
     
     return transformed_list
 
+
+############# LEGACY FUNCTIONS #############
+
+# concat_all_subj should not be used because it directly merges all the epochs together for every subject. 
+
 def concat_all_subj(task, population, input_dir, output_dir, exclude_subject=False, exclude_subject_list=[]):
     ''' Concatenates and saves the files of all the subjects that have been preprocessed.
     

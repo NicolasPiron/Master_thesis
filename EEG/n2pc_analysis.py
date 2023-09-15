@@ -5,41 +5,45 @@ import argparse
 
 ##############################################################################################################
 
+# This script allows to compute the n2pc waveforms and values for single subjects or for the grand average
+# by typing the following command in the terminal : 'python n2pc_analysis.py single' or 'python n2pc_analysis.py GA'
+# The user can choose to exclude subjects from the grand average
+
 # Variables to be changed by the user : 
 
 # Path to data
-input_dir = '/home/nicolasp/shared_PULSATION/derivative'
+input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
 # Where the output files are saved
-output_dir = '/home/nicolasp/shared_PULSATION/derivative'
+output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
 # Population (control or stroke)
 population = 'control'
 
-# Subject list
-subject_list = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 51, 52, 53, 54, 55]
+# Subject list when analysing single subjects
+subject_list = [1, 2, 3, 4]
 
-excluded_subjects_list = [9, 10, 15, 20]
+# List of subjects to be excluded from the grand average
+excluded_subjects_list = [4, 1, 2, 3]
 
 ##############################################################################################################
 
-def loop_for_evoked(subject_list, input_dir, output_dir):
-
-    for subject in subject_list:
-        subject_id = str(subject)
-        if len(subject_id) == 1:
-            subject_id = '0' + subject_id
-        erp.to_evoked(subject_id, input_dir, output_dir)
-
-
 def loop_over_subjects_n2pc(subject_list, input_dir, output_dir):
-    """
-    Loop over subjects and compute n2pc
-    :param subject_list: list of subjects
-    :param input_dir: path to the input directory
-    :param output_dir: path to the output directory
-    :return:
-    """
+   '''Loop over subjects and compute n2pc
 
-    for subject in subject_list:
+    Parameters
+    ----------
+    subject_list : list
+        List of subjects to be analysed
+    input_dir : str
+        Path to data
+    output_dir : str
+        Where the output files are saved
+    
+    Returns
+    -------
+    None
+   
+    '''
+   for subject in subject_list:
         subject_id = str(subject)
         if len(subject_id) == 1:
             subject_id = '0' + subject_id
@@ -47,20 +51,41 @@ def loop_over_subjects_n2pc(subject_list, input_dir, output_dir):
         erp.plot_n2pc(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
         # n2pc numerical values
         erp.get_n2pc_values(subject_id, input_dir, output_dir)
+        print(f'================ Subject {subject_id} done ================')
 
 def grand_average(input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
+    '''Compute grand average n2pc
+    
+    Parameters
+    ----------
+    input_dir : str
+        Path to data
+    output_dir : str    
+        Where the output files are saved
+    exclude_subjects : bool
+        Whether to exclude subjects from the grand average
+    excluded_subjects_list : list
+        List of subjects to be excluded from the grand average
+    population : str
+        Population (control or stroke)
+
+    Returns
+    -------
+    None
+    
+    '''
 
     if exclude_subjects == True:
 
         erp.plot_n2pc('GA', input_dir, output_dir, exclude_subjects=True, excluded_subjects_list=excluded_subjects_list, population=population)
-
         erp.get_n2pc_values('GA', input_dir, output_dir, exclude_subjects=True, excluded_subjects_list=excluded_subjects_list, population=population)
+        print(f'================ Grand Average done (no subject excluded) ================')
     
     else:
 
         erp.plot_n2pc('GA', input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=population)
-
         erp.get_n2pc_values('GA', input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=population)
+        print(f'================ Grand Average done (subjects {excluded_subjects_list} excluded) ================')
 
 
 if __name__ == '__main__':
@@ -78,13 +103,14 @@ if __name__ == '__main__':
         if yes_or_no == 'yes':
             grand_average(input_dir, output_dir, exclude_subjects=True, excluded_subjects_list=excluded_subjects_list, population=population)
         if yes_or_no == 'no':
-            grand_average(input_dir, output_dir, xclude_subjects=False, excluded_subjects_list=[], population=population)
+            grand_average(input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=population)
         # Call the single subject function with the provided input
         
         print()
     elif args.mode == "single":
 
         loop_over_subjects_n2pc(subject_list, input_dir, output_dir)
+        print('================ All subjects done ================')
 
     else:
         print("Invalid mode. Please choose 'single' or 'GA'.")
