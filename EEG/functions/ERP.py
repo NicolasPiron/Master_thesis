@@ -474,6 +474,149 @@ def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, e
     return df
 
 
+
+########## Getting values per epoch ##########
+
+def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
+    ''' Compute the difference bewteen the ipsi and contra channels (PO7-PO8) for each epoch and save the values in a dataframe
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot.
+    input_dir : str
+        The path to the directory containing the input data.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        A dataframe containing the N2pc values for each condition and side.
+    '''
+
+    # load data
+    file = os.path.join(input_dir, f'sub-{subject_id}/cleaned_epochs/sub-{subject_id}-cleaned_epochs-N2pc.fif')
+    epochs = mne.read_epochs(file)
+
+    # crop epochs to relevent time window
+    epochs.crop(tmin=0, tmax=0.4)
+    
+    # get the reeject log (preprocessing step) for the subject
+    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
+    # Define the epochs status (rejected or not)
+    epochs_status = reject_log['bad_epochs']
+
+    # initialize the df
+    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'condition', 'target_side', '150-200ms', '200-250ms', '250-300ms', '300-350ms', '350-400ms', '200-300ms', '300-400ms', 'total 200-400ms', 'index_reset'])
+    
+    # create row for each epoch
+    df['epoch_index'] = range(1,len(epochs_status)+1)
+    df['epoch_dropped'] = epochs_status
+    df['ID'] = subject_id
+
+    # add a column that store the reset index of the epochs
+    index_val = 0
+    index_list = []
+    n_valid = []
+    # iterate through the 'epoch_dropped' column to create the reset index column
+    for row_number in range(len(df)):
+        if df.iloc[row_number, 2] == False:
+            index_list.append(index_val)
+            n_valid.append(index_val)
+            index_val += 1
+        else:
+            index_list.append(np.nan)
+
+    # add the index column to the DataFrame
+    df['index_reset'] = index_list
+
+    # iterate through the rows of the DataFrame to fill the columns
+    for row_number in range(len(df)):
+        
+        # check if the epoch is dropped
+        if df.iloc[row_number, 2] == True:
+            print(f'========= epoch {row_number+1} was dropped',)
+        else:
+            print(f'========= epoch {row_number+1} was keeped')
+
+            # compute the data to fill the dataframe
+
+            # get the epoch index (after epochs rejection)
+            epoch_idx = int(df['index_reset'].loc[row_number])
+            
+            # get the data from the channels of interest
+            PO7 = epochs[epoch_idx].get_data(picks=['PO7'])
+            PO8 = epochs[epoch_idx].get_data(picks=['PO8'])
+            PO7 = PO7.reshape(206)
+            PO8 = PO8.reshape(206)
+            
+            # find where is ispsilateral and contralateral to the target
+            epoch_id = epochs.events[epoch_idx][2]
+            if epoch_id in [1, 3, 5, 7]:
+                target_side = 'left'
+                ipsi = PO7
+                contra = PO8
+            elif epoch_id in [2, 4, 6, 8]:
+                target_side = 'right'
+                ipsi = PO8
+                contra = PO7
+
+            # get the difference between the channels
+            diff = ipsi - contra
+            
+            if epoch_id in [1, 2, 5, 6]:
+                cond = 'Dis_mid'
+            elif epoch_id in [3, 4]:
+                cond = 'No_dis'
+            elif epoch_id in [7, 8]:
+                cond = 'Dis_contra'
+
+            # create the time windows based on sfreq
+            sfreq = epochs.info['sfreq'] 
+            t_150 = sfreq * 0.15
+            t_150 = math.ceil(t_150)
+            t_200 = sfreq * 0.2
+            t_200 = math.ceil(t_200)
+            t_250 = sfreq * 0.25
+            t_250 = math.ceil(t_250)
+            t_300 = sfreq * 0.3
+            t_300 = math.ceil(t_300)
+            t_350 = sfreq * 0.35
+            t_350 = math.ceil(t_350)
+            t_400 = sfreq * 0.4
+            t_400 = math.ceil(t_400)
+
+            # slice the data into 50ms and 100ms windows
+            diff_150_200 = diff[t_150:t_200].mean()
+            diff_200_250 = diff[t_200:t_250].mean()
+            diff_250_300 = diff[t_250:t_300].mean()
+            diff_300_350 = diff[t_300:t_350].mean()
+            diff_350_400 = diff[t_350:t_400].mean()
+            diff_200_300 = diff[t_200:t_300].mean()
+            diff_300_400 = diff[t_300:t_400].mean()
+            diff_200_400 = diff[t_200:t_400].mean()
+
+            # fill the dataframe with everything we just computed 
+            df.iloc[row_number, 3] = cond
+            df.iloc[row_number, 4] = target_side
+            df.iloc[row_number, 5] = diff_150_200
+            df.iloc[row_number, 6] = diff_200_250
+            df.iloc[row_number, 7] = diff_250_300
+            df.iloc[row_number, 8] = diff_300_350
+            df.iloc[row_number, 9] = diff_350_400
+            df.iloc[row_number, 10] = diff_200_300
+            df.iloc[row_number, 11] = diff_300_400
+            df.iloc[row_number, 12] = diff_200_400
+    
+    print(f'========== df created for subject {subject_id}')
+
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values'))
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values', f'sub-{subject_id}-n2pc_values_per_epoch.csv'))
+
+    print(f'========== df saved for subject {subject_id}')
+
+
+
 ##### LEGACY CODE #####
 
 def get_population_files(input_dir, task, population):
@@ -500,3 +643,4 @@ def get_population_epochs(files, exclude_subjects=False, excluded_subjects_list=
     epochs = mne.read_epochs(specific_file)
     
     return epochs, excluded_subjects_string
+
