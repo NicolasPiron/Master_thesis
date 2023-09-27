@@ -68,6 +68,110 @@ def to_evoked(subject_id, task, input_dir):
             evoked.save(os.path.join(input_dir, f'sub-{subject_id}', f'evoked-{task}', f'sub-{subject_id}-{evoked.comment}-ave.fif'), overwrite=True)
 
 
+
+def get_evoked(subject_id, input_dir):
+    ''' This function loads the evoked files for a given subject and returns a dictionary
+    
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot.
+    input_dir : str
+        The path to the directory containing the input data.
+    
+    Returns
+    -------
+    bin_evoked : dict
+        A dictionary containing the evoked objects for each condition (i.e. bin).
+    '''
+
+    subject_id = str(subject_id)
+    evoked_path = os.path.join(input_dir, f'sub-{subject_id}', f'evoked-N2pc')
+    evoked_files = glob.glob(os.path.join(evoked_path, f'sub-{subject_id}-*.fif'))
+    print(evoked_files)
+    # Load the evoked files
+    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
+    print(evoked_list)
+    bin_dict = {'bin1' : 'dis_mid_target_l',
+            'bin2' : 'dis_mid_target_r',
+            'bin3' : 'no_dis_target_l',
+            'bin4' : 'no_dis_target_r',
+            'bin5' : 'dis_right_target_l',
+            'bin6' : 'dis_left_target_r'}
+
+    # Assign the evoked object that corresponds to the bin
+    bin_evoked = {}
+
+    for bin_name, comment in bin_dict.items():
+        for evoked in evoked_list:
+            if evoked.comment == comment:
+                bin_evoked[bin_name] = evoked
+                break 
+
+    # Rename the keys of the dict
+    prefix = 'evk_'
+    # Create a new dictionary with modified keys
+    bin_evoked = {prefix + key: value for key, value in bin_evoked.items()}
+
+    return bin_evoked
+
+
+def concat_evoked(subject_id, input_dir, output_dir):
+    ''' This function concatenates the evoked files into 3 conditions
+        for a given subject and saves them in the subject directory.
+    
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot.
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+
+    Returns
+    -------
+    None
+    '''
+    # load the evoked files
+    bin_evoked = get_evoked(subject_id, input_dir)
+
+    print(bin_evoked)
+
+    # create to list of evoked objects for each condition
+    dis_mid = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin1', 'evk_bin2']]
+    no_dis = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin3', 'evk_bin4']]
+    dis_contra = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin5', 'evk_bin6']]
+
+    # find right and left channels
+    ch_names = list(bin_evoked.values())[0].info['ch_names']
+    LCh = []
+    RCh = []
+    for i, ch in enumerate(ch_names):
+        if str(ch[-1]) == 'z':
+            print(f'central channel {ch} -> not included in lateral channels list')
+        elif int(ch[-1]) % 2 == 0:
+            RCh.append(i)
+        elif int(ch[-1]) %2 != 2:
+            LCh.append(i) 
+
+    # combine the evoked objects
+    pairs = [dis_mid, no_dis, dis_contra]
+    pair_names = ['dis_mid', 'no_dis', 'dis_contra']
+    for i, pair in enumerate(pairs):
+        # the right target evoked object will be laterally swapped so it is like the target is on the left
+        to_swap = pair[1]
+        data = to_swap.get_data()
+        swapped_data = data.copy()
+        swapped_data[RCh] = data[LCh]
+        swapped_data[LCh] = data[RCh]
+        swapped = mne.EvokedArray(swapped_data, to_swap.info)
+        combined_pair = mne.combine_evoked([pair[0], swapped], weights='equal')
+        # save the combined evoked object
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined')):
+            os.makedirs(os.path.join(output_dir ,f'sub-{subject_id}', f'evoked-N2pc', 'combined'))
+        combined_pair.save(os.path.join(output_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined', f'sub-{subject_id}-{pair_names[i]}-ave.fif'), overwrite=True)
+
 def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     ''' This function extracts the N2pc ERP values for a given subject, or all of them
         if subject_id = 'GA'.
@@ -103,35 +207,9 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
         The time axis for the ERP data.
     '''
     def get_evoked_data(subject_id, input_dir):
-    
-        subject_id = str(subject_id)
-        evoked_path = os.path.join(input_dir, f'sub-{subject_id}', f'evoked-N2pc')
-        evoked_files = glob.glob(os.path.join(evoked_path, f'sub-{subject_id}-*.fif'))
 
-        # Load the evoked files
-        evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
-
-        bin_dict = {'bin1' : 'dis_mid_target_l',
-                'bin2' : 'dis_mid_target_r',
-                'bin3' : 'no_dis_target_l',
-                'bin4' : 'no_dis_target_r',
-                'bin5' : 'dis_right_target_l',
-                'bin6' : 'dis_left_target_r'}
-
-        # Assign the evoked object that corresponds to the bin
-        bin_evoked = {}
-
-        for bin_name, comment in bin_dict.items():
-            for evoked in evoked_list:
-                if evoked.comment == comment:
-                    bin_evoked[bin_name] = evoked
-                    break 
-
-        # Rename the keys of the dict
-        prefix = 'evk_'
-        # Create a new dictionary with modified keys
-        bin_evoked = {prefix + key: value for key, value in bin_evoked.items()}
-
+        bin_evoked = get_evoked(subject_id, input_dir)
+        
         # Define the channel indices for left (Lch) and right (Rch) channels
         Lch = np.concatenate([np.arange(0, 27)])
         Rch = np.concatenate([np.arange(33, 36), np.arange(38, 46), np.arange(48, 64)])
