@@ -28,7 +28,7 @@ def to_evoked(subject_id, task, input_dir):
     
     '''
     # load the epochs
-    file = os.path.join(input_dir, f'sub-{subject_id}/cleaned_epochs/sub-{subject_id}-cleaned_epochs-{task}.fif')
+    file = os.path.join(input_dir, f'sub-{subject_id}/{task}/cleaned_epochs/sub-{subject_id}-cleaned_epochs-{task}.fif')
     epochs = mne.read_epochs(file)
 
     if task == 'N2pc':
@@ -61,11 +61,11 @@ def to_evoked(subject_id, task, input_dir):
         
 
         # save the evoked objects in subject directory
-        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', f'evoked-{task}')):
-            os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', f'evoked-{task}'))
+        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', task, f'evoked-{task}')):
+            os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', task, f'evoked-{task}'))
         for evoked in evoked_list:
             print(evoked.comment)
-            evoked.save(os.path.join(input_dir, f'sub-{subject_id}', f'evoked-{task}', f'sub-{subject_id}-{evoked.comment}-ave.fif'), overwrite=True)
+            evoked.save(os.path.join(input_dir, f'sub-{subject_id}', task, f'evoked-{task}', f'sub-{subject_id}-{evoked.comment}-ave.fif'), overwrite=True)
 
 
 
@@ -86,7 +86,7 @@ def get_evoked(subject_id, input_dir):
     '''
 
     subject_id = str(subject_id)
-    evoked_path = os.path.join(input_dir, f'sub-{subject_id}', f'evoked-N2pc')
+    evoked_path = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', f'evoked-N2pc')
     evoked_files = glob.glob(os.path.join(evoked_path, f'sub-{subject_id}-*.fif'))
     # Load the evoked files
     evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
@@ -217,9 +217,9 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
             combined_pair = mne.combine_evoked([pair[0], swapped], weights='equal')
             combined_pair.comment = pair_names[i]
             # save the combined evoked object
-            if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined')):
-                os.makedirs(os.path.join(output_dir ,f'sub-{subject_id}', f'evoked-N2pc', 'combined'))
-            combined_pair.save(os.path.join(output_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined', f'sub-{subject_id}-{pair_names[i]}-ave.fif'), overwrite=True)
+            if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', f'evoked-N2pc', 'combined')):
+                os.makedirs(os.path.join(output_dir ,f'sub-{subject_id}', 'N2pc', f'evoked-N2pc', 'combined'))
+            combined_pair.save(os.path.join(output_dir, f'sub-{subject_id}','N2pc', f'evoked-N2pc', 'combined', f'sub-{subject_id}-{pair_names[i]}-ave.fif'), overwrite=True)
 
 
     subject_id = str(subject_id)
@@ -250,7 +250,7 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
         for sub in subject_list:
             subject_id = str(sub[-2:])
             # check is the combined evoked files already exist
-            if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'evoked-N2pc', 'combined', f'sub-{subject_id}-dis_mid-ave.fif')):
+            if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'combined', f'sub-{subject_id}-dis_mid-ave.fif')):
                 
                 combine_evoked_single_subj(subject_id, input_dir, output_dir)
                 print(f'====================== evoked files combined for {subject_id}')
@@ -258,7 +258,7 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
                 print(f'====================== evoked files were already combined for {subject_id}')
             
             # loop over the subjects and append the evoked objects to the lists
-            evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined', f'sub-{subject_id}-*ave.fif'))
+            evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', f'evoked-N2pc', 'combined', f'sub-{subject_id}-*ave.fif'))
             evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
             evoked_dict = {}
             for evoked in evoked_list:
@@ -276,8 +276,8 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
         dis_contra_combined.comment = 'dis_contra'
 
         # save the combined evoked objects
-        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population)):
-            os.makedirs(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population))
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population))
         
         if population == 'control':
             str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
@@ -295,9 +295,9 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
             file_name_no_dis = f'{population}-no_dis-ave.fif'
             file_name_dis_contra = f'{population}-dis_contra-ave.fif'
         
-        dis_mid_combined.save(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population, file_name_dis_mid), overwrite=True)
-        no_dis_combined.save(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population, file_name_no_dis), overwrite=True)
-        dis_contra_combined.save(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population, file_name_dis_contra), overwrite=True)
+        dis_mid_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, file_name_dis_mid), overwrite=True)
+        no_dis_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, file_name_no_dis), overwrite=True)
+        dis_contra_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, file_name_dis_contra), overwrite=True)
             
     else:
 
@@ -338,10 +338,10 @@ def plot_erp_topo(subject_id, input_dir, output_dir, exclude_subjects=False, exc
     if subject_id == 'GA':
         print('====================== plotting for GA')
         # input data
-        evoked_combined_path = os.path.join(input_dir, 'all_subj', 'evoked-N2pc', 'combined', population)
+        evoked_combined_path = os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population)
 
         # output directory
-        out_path = os.path.join(output_dir, 'all_subj', 'n2pc-plots', population, 'n2pc-topo')
+        out_path = os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo')
         
         if exclude_subjects == True:
             print(f'====================== excluding subjects {excluded_subjects_list}')
@@ -355,11 +355,11 @@ def plot_erp_topo(subject_id, input_dir, output_dir, exclude_subjects=False, exc
     else:
         print(f'====================== plotting for {subject_id}')
         # input data
-        evoked_combined_path = os.path.join(input_dir, f'sub-{subject_id}', 'evoked-N2pc', 'combined')
+        evoked_combined_path = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'combined')
         file_name_start = f'sub-{subject_id}'
 
         # output directory
-        out_path = os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-plots', 'n2pc-topo')
+        out_path = os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo')
 
     # load data and store it in a dictionary
     evoked_combined_files = glob.glob(os.path.join(evoked_combined_path, f'{file_name_start}*.fif'))
@@ -411,10 +411,10 @@ def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False
     if subject_id == 'GA':
         print('====================== plotting for GA')
         # input data
-        evoked_combined_path = os.path.join(input_dir, 'all_subj', 'evoked-N2pc', 'combined', population)
+        evoked_combined_path = os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population)
 
         # output directory
-        out_path = os.path.join(output_dir, 'all_subj', 'spectral-topo', population)
+        out_path = os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population)
         
         if exclude_subjects == True:
             print(f'====================== excluding subjects {excluded_subjects_list}')
@@ -426,11 +426,11 @@ def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False
     else:
         print(f'====================== plotting for {subject_id}')
         # input data
-        evoked_combined_path = os.path.join(input_dir, f'sub-{subject_id}', 'evoked-N2pc', 'combined')
+        evoked_combined_path = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'combined')
         file_name_start = f'sub-{subject_id}'
 
         # output directory
-        out_path = os.path.join(output_dir, f'sub-{subject_id}', 'spectral-topo')
+        out_path = os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'spectral-topo')
 
     # load data and store it in a dictionary
     evoked_combined_files = glob.glob(os.path.join(evoked_combined_path, f'{file_name_start}*.fif'))
@@ -640,9 +640,9 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         plt.legend()
         plt.grid()
         if subject_id == 'GA':
-            plt.savefig(os.path.join(output_dir, 'all_subj','n2pc-plots', population, f'{title}.png'))
+            plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, f'{title}.png'))
         else:
-            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots',f'sub-{subject_id}-PO7_{condition}.png'))
+            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots',f'sub-{subject_id}-PO7_{condition}.png'))
         plt.show(block=False)
         plt.close()
         
@@ -651,8 +651,8 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         
         d1, d2, d3, d4, d5, d6, time = get_bins_data(subject_id, input_dir, exclude_subjects=exclude_subjects, excluded_subjects_list=excluded_subjects_list, population=population)
         # Create output directory if it doesn't exist
-        if os.path.exists(os.path.join(output_dir, 'all_subj','n2pc-plots', population)) == False:
-            os.makedirs(os.path.join(output_dir, 'all_subj','n2pc-plots', population))
+        if os.path.exists(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', population)) == False:
+            os.makedirs(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', population))
         
         if population == 'control':
             str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
@@ -665,8 +665,8 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         
         d1, d2, d3, d4, d5, d6, time = get_bins_data(subject_id, input_dir)
         # Create output directory if it doesn't exist
-        if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots')) == False:
-            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','n2pc-plots'))
+        if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots')) == False:
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots'))
         
         excluded_subjects_string = ''
         population = ''
@@ -794,8 +794,8 @@ def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, e
     
     # Save the dataframe
     if subject_id == 'GA':
-        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'n2pc-values', population)):
-            os.makedirs(os.path.join(output_dir, 'all_subj', 'n2pc-values', population))
+        if not os.path.exists(os.path.join(output_dir, 'all_subj','N2pc', 'n2pc-values', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj','N2pc', 'n2pc-values', population))
 
         if population == 'control':
             str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
@@ -806,11 +806,11 @@ def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, e
             
         title = f'{population}-excluded_subjects-{excluded_subjects_string}'
 
-        df.to_csv(os.path.join(output_dir, 'all_subj', 'n2pc-values', population, f'{title}-n2pc_values.csv'))
+        df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc','n2pc-values', population, f'{title}-n2pc_values.csv'))
     else:
-        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values')):
-            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values'))
-        df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values', f'sub-{subject_id}-n2pc_values.csv'))
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc','n2pc-values')):
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc','n2pc-values'))
+        df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc','n2pc-values', f'sub-{subject_id}-n2pc_values.csv'))
     
     return df
 
@@ -835,14 +835,14 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
     '''
 
     # load data
-    file = os.path.join(input_dir, f'sub-{subject_id}/cleaned_epochs/sub-{subject_id}-cleaned_epochs-N2pc.fif')
+    file = os.path.join(input_dir, f'sub-{subject_id}/N2pc/cleaned_epochs/sub-{subject_id}-cleaned_epochs-N2pc.fif')
     epochs = mne.read_epochs(file)
 
     # crop epochs to relevent time window
     epochs.crop(tmin=0, tmax=0.4)
     
     # get the reeject log (preprocessing step) for the subject
-    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
+    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
     # Define the epochs status (rejected or not)
     epochs_status = reject_log['bad_epochs']
 
@@ -950,9 +950,9 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
     
     print(f'========== df created for subject {subject_id}')
 
-    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values')):
-        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values'))
-    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-values', f'sub-{subject_id}-n2pc_values_per_epoch.csv'))
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-values')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-values'))
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-values', f'sub-{subject_id}-n2pc_values_per_epoch.csv'))
 
     print(f'========== df saved for subject {subject_id}')
 
