@@ -113,8 +113,23 @@ def get_evoked(subject_id, input_dir):
 
     return bin_evoked
 
-def get_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=False):
+def get_non_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=False):
+    ''' Gives you a list of all the subjects in the input_dir, excluding the subjects in the excluded_subjects_list.
 
+    Parameters
+    ----------
+    excluded_subjects_list : list
+        List of subjects to be excluded from the grand average.
+    input_dir : str
+        The path to the directory containing the input data.
+    exclude_subjects : bool
+        Whether to exclude subjects or not
+    
+    Returns
+    -------
+    subject_list : list
+        List of all the subjects in the input_dir, excluding the subjects in the excluded_subjects_list.
+    '''
     if exclude_subjects == True:
         
         # transform the excluded_subjects_list to match the format of the subject IDs
@@ -211,7 +226,7 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
 
     if subject_id == 'GA':
     
-        subject_list = get_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=exclude_subjects)
+        subject_list = get_non_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=exclude_subjects)
 
         if population == 'control':
 
@@ -256,6 +271,9 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
         dis_mid_combined = mne.combine_evoked(dis_mid_list, weights='equal')
         no_dis_combined = mne.combine_evoked(no_dis_list, weights='equal')
         dis_contra_combined = mne.combine_evoked(dis_contra_list, weights='equal')
+        dis_mid_combined.comment = 'dis_mid'
+        no_dis_combined.comment = 'no_dis'
+        dis_contra_combined.comment = 'dis_contra'
 
         # save the combined evoked objects
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population)):
@@ -286,24 +304,149 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
         combine_evoked_single_subj(subject_id, input_dir, output_dir)
 
 
-def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
+def plot_erp_topo(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
+    '''
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot. Can be 'GA' to plot the grand average.
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+    exclude_subjects : bool
+        Whether to exclude subjects from the grand average.
+    excluded_subjects_list : list
+        List of subjects to be excluded from the grand average.
+    population : str
+        Population (control or stroke).
+
+    Returns
+    -------
+    None
+    '''
 
     subject_id = str(subject_id)
 
+    def load_combined_evoked(evoked_list):
+        evoked_dict = {}
+        for evoked in evoked_list:
+            evoked_dict[evoked.comment] = evoked
+        return evoked_dict
+    
+    # define the adequate path to the data and the output directory
+    if subject_id == 'GA':
+        print('====================== plotting for GA')
+        # input data
+        evoked_combined_path = os.path.join(input_dir, 'all_subj', 'evoked-N2pc', 'combined', population)
+
+        # output directory
+        out_path = os.path.join(output_dir, 'all_subj', population, 'n2pc-plots', 'n2pc-topo')
+        
+        if exclude_subjects == True:
+            print(f'====================== excluding subjects {excluded_subjects_list}')
+            excluded_subjects_string = '_'.join([str(sub) for sub in excluded_subjects_list])
+            # important : file_name_start is used to find the files and save the plots
+            file_name_start = f'{population}-excluded_subjects-{excluded_subjects_string}'
+
+        if exclude_subjects == False:
+            print(f'====================== not excluding subjects')
+            file_name_start = f'{population}'
+    else:
+        print(f'====================== plotting for {subject_id}')
+        # input data
+        evoked_combined_path = os.path.join(input_dir, f'sub-{subject_id}', 'evoked-N2pc', 'combined')
+        file_name_start = f'sub-{subject_id}'
+
+        # output directory
+        out_path = os.path.join(output_dir, f'sub-{subject_id}', 'n2pc-plots', 'n2pc-topo')
+
     # load data and store it in a dictionary
-    evoked_combined_path = os.path.join(input_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined')
-    evoked_combined_files = glob.glob(os.path.join(evoked_combined_path, f'sub-{subject_id}-*ave.fif'))
+    evoked_combined_files = glob.glob(os.path.join(evoked_combined_path, f'{file_name_start}*.fif'))
+    if len(evoked_combined_files) == 0:
+        print('====================== no file found')
     evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_combined_files]
-    evoked_dict = {}
-    for evoked in evoked_list:
-        evoked_dict[evoked.comment] = evoked
+    evoked_dict = load_combined_evoked(evoked_list)
+    # plot the topomaps
+    for evoked in list(evoked_dict.values()):
+        topo = evoked.plot_topomap(times=[0.1, 0.15, 0.2, 0.25, 0.3])
+        topo.savefig(os.path.join(out_path, f'{file_name_start}-topo-{evoked.comment}.png'))
+
+
+def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
+    '''
+    
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot. Can be 'GA' to plot the grand average.
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+    exclude_subjects : bool
+        Whether to exclude subjects from the grand average.
+    excluded_subjects_list : list
+        List of subjects to be excluded from the grand average.
+    population : str
+        Population (control or stroke).
+
+    Returns
+    -------
+    None
+    '''
+
+    subject_id = str(subject_id)
+
+    def load_combined_evoked(evoked_list):
+        evoked_dict = {}
+        for evoked in evoked_list:
+            evoked_dict[evoked.comment] = evoked
+        return evoked_dict
+    
+    # define the adequate path to the data and the output directory
+    if subject_id == 'GA':
+        print('====================== plotting for GA')
+        # input data
+        evoked_combined_path = os.path.join(input_dir, 'all_subj', 'evoked-N2pc', 'combined', population)
+
+        # output directory
+        out_path = os.path.join(output_dir, 'all_subj', 'spectral-topo', population)
+        
+        if exclude_subjects == True:
+            print(f'====================== excluding subjects {excluded_subjects_list}')
+            excluded_subjects_string = '_'.join([str(sub) for sub in excluded_subjects_list])
+            file_name_start = f'{population}-excluded_subjects-{excluded_subjects_string}'
+        if exclude_subjects == False:
+            print(f'====================== not excluding subjects')
+            file_name_start = f'{population}'
+    else:
+        print(f'====================== plotting for {subject_id}')
+        # input data
+        evoked_combined_path = os.path.join(input_dir, f'sub-{subject_id}', 'evoked-N2pc', 'combined')
+        file_name_start = f'sub-{subject_id}'
+
+        # output directory
+        out_path = os.path.join(output_dir, f'sub-{subject_id}', 'spectral-topo')
+
+    # load data and store it in a dictionary
+    evoked_combined_files = glob.glob(os.path.join(evoked_combined_path, f'{file_name_start}*.fif'))
+    if len(evoked_combined_files) == 0:
+        print('====================== no file found')
+    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_combined_files]
+    evoked_dict = load_combined_evoked(evoked_list)
     
     # transform the evoked objects into spectrum objects
     spectrum_dict = {}
     for key, value in evoked_dict.items():
         spectrum_dict[key] = value.compute_psd()
+    
+    # plot the spectrum for alpha and beta frequency bands
+    bands = {'Alpha (8-12 Hz)': (8, 12), 'Beta (12-30 Hz)': (12, 30)}
 
-    ####### IN CONSTRUCTION ########
+    for bin_, spectrum in spectrum_dict.items():    
+        plot = spectrum.plot_topomap(bands=bands, vlim=(1, 500), res=512)
+        plot.savefig(os.path.join(out_path, f'{file_name_start}-spectral-topo-{bin_}.png'))
 
 
 def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
@@ -395,7 +538,7 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
     
     if subject_id == 'GA':
         
-        subject_list = get_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=exclude_subjects)
+        subject_list = get_non_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=exclude_subjects)
         
         if population == 'control':
 
