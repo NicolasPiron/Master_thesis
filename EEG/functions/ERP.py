@@ -88,10 +88,8 @@ def get_evoked(subject_id, input_dir):
     subject_id = str(subject_id)
     evoked_path = os.path.join(input_dir, f'sub-{subject_id}', f'evoked-N2pc')
     evoked_files = glob.glob(os.path.join(evoked_path, f'sub-{subject_id}-*.fif'))
-    print(evoked_files)
     # Load the evoked files
     evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
-    print(evoked_list)
     bin_dict = {'bin1' : 'dis_mid_target_l',
             'bin2' : 'dis_mid_target_r',
             'bin3' : 'no_dis_target_l',
@@ -115,62 +113,197 @@ def get_evoked(subject_id, input_dir):
 
     return bin_evoked
 
+def get_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=False):
 
-def concat_evoked(subject_id, input_dir, output_dir):
+    if exclude_subjects == True:
+        
+        # transform the excluded_subjects_list to match the format of the subject IDs
+        transformed_list = add_sub0(excluded_subjects_list)
+        print(transformed_list)
+
+        # get the list of all subjects
+        subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
+
+        # exclude the subjects in the excluded_subjects_list
+        subjects_to_keep = []
+        for subject in subject_list:
+            print(subject[-6:])
+            if subject[-6:] in transformed_list:
+                print(f'====================== Excluding {subject}')
+            else:
+                subjects_to_keep.append(subject)
+        subject_list = subjects_to_keep
+
+    else:
+        subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
+    
+    return subject_list
+
+
+def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     ''' This function concatenates the evoked files into 3 conditions
         for a given subject and saves them in the subject directory.
+        It aslo combine subjects into a grand average if subject_id = 'GA'.
     
     Parameters
     ----------
     subject_id : str
-        The subject ID to plot.
+        The subject ID to plot. Can be 'GA' to plot the grand average.
     input_dir : str
         The path to the directory containing the input data.
     output_dir : str
         The path to the directory where the output will be saved.
+    exclude_subjects : bool
+        Whether to exclude subjects from the grand average.
+    excluded_subjects_list : list
+        List of subjects to be excluded from the grand average.
+    population : str
+        Population (control or stroke).
 
     Returns
     -------
     None
     '''
-    # load the evoked files
-    bin_evoked = get_evoked(subject_id, input_dir)
 
-    print(bin_evoked)
+    def combine_evoked_single_subj(subject_id, input_dir, output_dir):  
+        # load the evoked files
+        bin_evoked = get_evoked(subject_id, input_dir)
 
-    # create to list of evoked objects for each condition
-    dis_mid = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin1', 'evk_bin2']]
-    no_dis = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin3', 'evk_bin4']]
-    dis_contra = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin5', 'evk_bin6']]
+        print(bin_evoked)
 
-    # find right and left channels
-    ch_names = list(bin_evoked.values())[0].info['ch_names']
-    LCh = []
-    RCh = []
-    for i, ch in enumerate(ch_names):
-        if str(ch[-1]) == 'z':
-            print(f'central channel {ch} -> not included in lateral channels list')
-        elif int(ch[-1]) % 2 == 0:
-            RCh.append(i)
-        elif int(ch[-1]) %2 != 2:
-            LCh.append(i) 
+        # create to list of evoked objects for each condition
+        dis_mid = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin1', 'evk_bin2']]
+        no_dis = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin3', 'evk_bin4']]
+        dis_contra = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin5', 'evk_bin6']]
 
-    # combine the evoked objects
-    pairs = [dis_mid, no_dis, dis_contra]
-    pair_names = ['dis_mid', 'no_dis', 'dis_contra']
-    for i, pair in enumerate(pairs):
-        # the right target evoked object will be laterally swapped so it is like the target is on the left
-        to_swap = pair[1]
-        data = to_swap.get_data()
-        swapped_data = data.copy()
-        swapped_data[RCh] = data[LCh]
-        swapped_data[LCh] = data[RCh]
-        swapped = mne.EvokedArray(swapped_data, to_swap.info)
-        combined_pair = mne.combine_evoked([pair[0], swapped], weights='equal')
-        # save the combined evoked object
-        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined')):
-            os.makedirs(os.path.join(output_dir ,f'sub-{subject_id}', f'evoked-N2pc', 'combined'))
-        combined_pair.save(os.path.join(output_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined', f'sub-{subject_id}-{pair_names[i]}-ave.fif'), overwrite=True)
+        # find right and left channels
+        ch_names = list(bin_evoked.values())[0].info['ch_names']
+        LCh = []
+        RCh = []
+        for i, ch in enumerate(ch_names):
+            if str(ch[-1]) == 'z':
+                print(f'central channel {ch} -> not included in lateral channels list')
+            elif int(ch[-1]) % 2 == 0:
+                RCh.append(i)
+            elif int(ch[-1]) %2 != 2:
+                LCh.append(i) 
+
+        # combine the evoked objects
+        pairs = [dis_mid, no_dis, dis_contra]
+        pair_names = ['dis_mid', 'no_dis', 'dis_contra']
+        for i, pair in enumerate(pairs):
+            # the right target evoked object will be laterally swapped so it is like the target is on the left
+            to_swap = pair[1]
+            data = to_swap.get_data()
+            swapped_data = data.copy()
+            swapped_data[RCh] = data[LCh]
+            swapped_data[LCh] = data[RCh]
+            swapped = mne.EvokedArray(swapped_data, to_swap.info)
+            combined_pair = mne.combine_evoked([pair[0], swapped], weights='equal')
+            combined_pair.comment = pair_names[i]
+            # save the combined evoked object
+            if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined')):
+                os.makedirs(os.path.join(output_dir ,f'sub-{subject_id}', f'evoked-N2pc', 'combined'))
+            combined_pair.save(os.path.join(output_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined', f'sub-{subject_id}-{pair_names[i]}-ave.fif'), overwrite=True)
+
+
+    subject_id = str(subject_id)
+
+    if subject_id == 'GA':
+    
+        subject_list = get_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=exclude_subjects)
+
+        if population == 'control':
+
+            # keep only the control subjects (i.e. subject IDs < 50)
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) < 50]
+            print(f'====================== subjects list, control population : {subject_list}')
+            
+
+        elif population == 'stroke':
+
+            # keep only the stroke subjects (i.e. subject IDs > 50)
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 50]
+            print(f'====================== subjects list, stroke population : {subject_list}')
+
+
+        # create lists of evoked objects for each condition
+        dis_mid_list = []
+        no_dis_list = []
+        dis_contra_list = []
+
+        for subject in subject_list:
+            # check is the combined evoked files already exist
+            if not os.path.exists(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', f'sub-{subject}-dis_mid-ave.fif')):
+                
+                combine_evoked_single_subj(subject, input_dir, output_dir)
+                print(f'====================== evoked files combined for {subject}')
+            else:
+                print(f'====================== evoked files were already combined for {subject}')
+            
+            # loop over the subjects and append the evoked objects to the lists
+            evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject}', f'evoked-N2pc', 'combined', f'sub-{subject}-*ave.fif'))
+            evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
+            evoked_dict = {}
+            for evoked in evoked_list:
+                evoked_dict[evoked.comment] = evoked
+            dis_mid_list.append(evoked_dict['dis_mid'])
+            no_dis_list.append(evoked_dict['no_dis'])
+            dis_contra_list.append(evoked_dict['dis_contra'])
+        
+        # combine the evoked objects
+        dis_mid_combined = mne.combine_evoked(dis_mid_list, weights='equal')
+        no_dis_combined = mne.combine_evoked(no_dis_list, weights='equal')
+        dis_contra_combined = mne.combine_evoked(dis_contra_list, weights='equal')
+
+        # save the combined evoked objects
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population))
+        
+        if population == 'control':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        elif population == 'stroke':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+
+        if exclude_subjects == True:
+            file_name_dis_mid = f'{population}-excluded_subjects-{excluded_subjects_string}-dis_mid-ave.fif'
+            file_name_no_dis = f'{population}-excluded_subjects-{excluded_subjects_string}-no_dis-ave.fif'
+            file_name_dis_contra = f'{population}-excluded_subjects-{excluded_subjects_string}-dis_contra-ave.fif'
+        else:
+            file_name_dis_mid = f'{population}-dis_mid-ave.fif'
+            file_name_no_dis = f'{population}-no_dis-ave.fif'
+            file_name_dis_contra = f'{population}-dis_contra-ave.fif'
+        
+        dis_mid_combined.save(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population, file_name_dis_mid), overwrite=True)
+        no_dis_combined.save(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population, file_name_no_dis), overwrite=True)
+        dis_contra_combined.save(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', population, file_name_dis_contra), overwrite=True)
+            
+    else:
+
+        combine_evoked_single_subj(subject_id, input_dir, output_dir)
+
+
+def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
+
+    subject_id = str(subject_id)
+
+    # load data and store it in a dictionary
+    evoked_combined_path = os.path.join(input_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined')
+    evoked_combined_files = glob.glob(os.path.join(evoked_combined_path, f'sub-{subject_id}-*ave.fif'))
+    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_combined_files]
+    evoked_dict = {}
+    for evoked in evoked_list:
+        evoked_dict[evoked.comment] = evoked
+    
+    # transform the evoked objects into spectrum objects
+    spectrum_dict = {}
+    for key, value in evoked_dict.items():
+        spectrum_dict[key] = value.compute_psd()
+
+    ####### IN CONSTRUCTION ########
+
 
 def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     ''' This function extracts the N2pc ERP values for a given subject, or all of them
@@ -261,27 +394,7 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
     
     if subject_id == 'GA':
         
-        if exclude_subjects == True:
-            
-            # transform the excluded_subjects_list to match the format of the subject IDs
-            transformed_list = add_sub0(excluded_subjects_list)
-            print(transformed_list)
-
-            # get the list of all subjects
-            subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
-
-            # exclude the subjects in the excluded_subjects_list
-            subjects_to_keep = []
-            for subject in subject_list:
-                print(subject[-6:])
-                if subject[-6:] in transformed_list:
-                    print(f'====================== Excluding {subject}')
-                else:
-                    subjects_to_keep.append(subject)
-            subject_list = subjects_to_keep
-
-        else:
-            subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
+        subject_list = get_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=exclude_subjects)
         
         if population == 'control':
 
