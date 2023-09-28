@@ -324,7 +324,7 @@ def alpha_power_per_epoch(subject_id : str, input_dir : str):
         a list of alpha band mean power values (8-12Hz) for the left side of the head for each epoch
     '''
 
-    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs',f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs',f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
 
     freqs = np.arange(8, 13)
     right_elecs=['O2', 'PO4', 'PO8']
@@ -377,9 +377,9 @@ def alpha_df_epoch(subject_id : str, input_dir, right_power_list, left_power_lis
 
     '''
     # Load the epochs
-    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
     # Load the reject log
-    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
+    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
     # Define the epochs status (rejected or not)
     epochs_status = reject_log['bad_epochs']
 
@@ -444,9 +444,9 @@ def single_subj_alpha_epoch(subject_id, input_dir, output_dir):
 
     df.insert(0, 'ID', subject_id)
 
-    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df')):
-        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df'))
-    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df', f'sub-{subject_id}-alpha-power-per-epoch.csv'))
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'alpha-power-df')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','N2pc', 'alpha-power-df'))
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'alpha-power-df', f'sub-{subject_id}-alpha-power-per-epoch.csv'))
 
     return df
     
@@ -478,7 +478,7 @@ def all_subj_alpha_epoch(input_dir, output_dir):
     all_subj_files = []
 
     # Loop over the directories to access the files
-    directories = glob.glob(os.path.join(input_dir, 'sub*'))
+    directories = glob.glob(os.path.join(input_dir, 'N2pc', 'sub*'))
     for directory in directories:
         file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*N2pc.fif'))
         all_subj_files.append(file[0])
@@ -506,8 +506,8 @@ def all_subj_alpha_epoch(input_dir, output_dir):
 
         big_df = pd.concat([big_df, subj_df], ignore_index=True)
     
-    if not os.path.exists(os.path.join(output_dir, 'alpha-power-df')):
-        os.makedirs(os.path.join(output_dir, 'alpha-power-df'))
-    big_df.to_csv(os.path.join(output_dir, 'alpha-power-df', 'allsubj_alpha_power_per_epoch.csv'))
+    if not os.path.exists(os.path.join(output_dir, 'all_subj' 'alpha-power-df')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'alpha-power-df'))
+    big_df.to_csv(os.path.join(output_dir, 'all-subj', 'alpha-power-df', 'allsubj_alpha_power_per_epoch.csv'))
 
     return big_df
