@@ -234,7 +234,7 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
 
         for subject in subject_list:
             # check is the combined evoked files already exist
-            if not os.path.exists(os.path.join(output_dir, 'all_subj', 'evoked-N2pc', 'combined', f'sub-{subject}-dis_mid-ave.fif')):
+            if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'evoked-N2pc', 'combined', f'sub-{subject}-dis_mid-ave.fif')):
                 
                 combine_evoked_single_subj(subject, input_dir, output_dir)
                 print(f'====================== evoked files combined for {subject}')
