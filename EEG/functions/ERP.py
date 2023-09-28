@@ -370,6 +370,8 @@ def plot_erp_topo(subject_id, input_dir, output_dir, exclude_subjects=False, exc
     # plot the topomaps
     for bin_, evoked in evoked_dict.items():
         topo = evoked.plot_topomap(times=[0.1, 0.15, 0.2, 0.25, 0.3])
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
         topo.savefig(os.path.join(out_path, f'{file_name_start}-topo-{bin_}.png'))
 
 
@@ -446,6 +448,8 @@ def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False
 
     for bin_, spectrum in spectrum_dict.items():    
         plot = spectrum.plot_topomap(bands=bands, vlim=(1, 500), res=512)
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
         plot.savefig(os.path.join(out_path, f'{file_name_start}-spectral-topo-{bin_}.png'))
 
 
