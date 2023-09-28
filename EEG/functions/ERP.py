@@ -232,7 +232,8 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
         no_dis_list = []
         dis_contra_list = []
 
-        for subject_id in subject_list:
+        for sub in subject_list:
+            subject_id = str(sub[-2:])
             # check is the combined evoked files already exist
             if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'evoked-N2pc', 'combined', f'sub-{subject_id}-dis_mid-ave.fif')):
                 
