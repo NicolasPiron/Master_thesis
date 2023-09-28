@@ -368,9 +368,9 @@ def plot_erp_topo(subject_id, input_dir, output_dir, exclude_subjects=False, exc
     evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_combined_files]
     evoked_dict = load_combined_evoked(evoked_list)
     # plot the topomaps
-    for evoked in list(evoked_dict.values()):
+    for bin_, evoked in evoked_dict.items():
         topo = evoked.plot_topomap(times=[0.1, 0.15, 0.2, 0.25, 0.3])
-        topo.savefig(os.path.join(out_path, f'{file_name_start}-topo-{evoked.comment}.png'))
+        topo.savefig(os.path.join(out_path, f'{file_name_start}-topo-{bin_}.png'))
 
 
 def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
