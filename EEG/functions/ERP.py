@@ -232,17 +232,17 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
         no_dis_list = []
         dis_contra_list = []
 
-        for subject in subject_list:
+        for subject_id in subject_list:
             # check is the combined evoked files already exist
-            if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'evoked-N2pc', 'combined', f'sub-{subject}-dis_mid-ave.fif')):
+            if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'evoked-N2pc', 'combined', f'sub-{subject_id}-dis_mid-ave.fif')):
                 
-                combine_evoked_single_subj(subject, input_dir, output_dir)
-                print(f'====================== evoked files combined for {subject}')
+                combine_evoked_single_subj(subject_id, input_dir, output_dir)
+                print(f'====================== evoked files combined for {subject_id}')
             else:
-                print(f'====================== evoked files were already combined for {subject}')
+                print(f'====================== evoked files were already combined for {subject_id}')
             
             # loop over the subjects and append the evoked objects to the lists
-            evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject}', f'evoked-N2pc', 'combined', f'sub-{subject}-*ave.fif'))
+            evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', f'evoked-N2pc', 'combined', f'sub-{subject_id}-*ave.fif'))
             evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
             evoked_dict = {}
             for evoked in evoked_list:
