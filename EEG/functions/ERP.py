@@ -369,10 +369,11 @@ def plot_erp_topo(subject_id, input_dir, output_dir, exclude_subjects=False, exc
     evoked_dict = load_combined_evoked(evoked_list)
     # plot the topomaps
     for bin_, evoked in evoked_dict.items():
-        topo = evoked.plot_topomap(times=[0.1, 0.15, 0.2, 0.25, 0.3])
+        topo = evoked.plot_topomap(times=[0.1, 0.15, 0.2, 0.25, 0.3], show=False)
         if not os.path.exists(out_path):
             os.makedirs(out_path)
-        topo.savefig(os.path.join(out_path, f'{file_name_start}-topo-{str(bin_[-7:])}.png'))
+        bin_name = bin_.split(' ')[-1]
+        topo.savefig(os.path.join(out_path, f'{file_name_start}-topo-{bin_name}.png'))
 
 
 def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
@@ -447,10 +448,11 @@ def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False
     bands = {'Alpha (8-12 Hz)': (8, 12), 'Beta (12-30 Hz)': (12, 30)}
 
     for bin_, spectrum in spectrum_dict.items():    
-        plot = spectrum.plot_topomap(bands=bands, vlim=(1, 500), res=512)
+        plot = spectrum.plot_topomap(bands=bands, vlim='joint', res=512, show=False)
         if not os.path.exists(out_path):
             os.makedirs(out_path)
-        plot.savefig(os.path.join(out_path, f'{file_name_start}-spectral-topo-{str(bin_[-7:])}.png'))
+        bin_name = bin_.split(' ')[-1]
+        plot.savefig(os.path.join(out_path, f'{file_name_start}-spectral-topo-{bin_name}.png'))
 
 
 def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
