@@ -341,7 +341,7 @@ def plot_erp_topo(subject_id, input_dir, output_dir, exclude_subjects=False, exc
         evoked_combined_path = os.path.join(input_dir, 'all_subj', 'evoked-N2pc', 'combined', population)
 
         # output directory
-        out_path = os.path.join(output_dir, 'all_subj', population, 'n2pc-plots', 'n2pc-topo')
+        out_path = os.path.join(output_dir, 'all_subj', 'n2pc-plots', population, 'n2pc-topo')
         
         if exclude_subjects == True:
             print(f'====================== excluding subjects {excluded_subjects_list}')
@@ -372,7 +372,7 @@ def plot_erp_topo(subject_id, input_dir, output_dir, exclude_subjects=False, exc
         topo = evoked.plot_topomap(times=[0.1, 0.15, 0.2, 0.25, 0.3])
         if not os.path.exists(out_path):
             os.makedirs(out_path)
-        topo.savefig(os.path.join(out_path, f'{file_name_start}-topo-{bin_}.png'))
+        topo.savefig(os.path.join(out_path, f'{file_name_start}-topo-{str(bin_[-7:])}.png'))
 
 
 def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
@@ -450,7 +450,7 @@ def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False
         plot = spectrum.plot_topomap(bands=bands, vlim=(1, 500), res=512)
         if not os.path.exists(out_path):
             os.makedirs(out_path)
-        plot.savefig(os.path.join(out_path, f'{file_name_start}-spectral-topo-{bin_}.png'))
+        plot.savefig(os.path.join(out_path, f'{file_name_start}-spectral-topo-{str(bin_[-7:])}.png'))
 
 
 def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
