@@ -640,19 +640,37 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         plt.legend()
         plt.grid()
         if subject_id == 'GA':
-            plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, f'{title}.png'))
+            plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', 'n2pc-waveform', population, f'{title}.png'))
         else:
-            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots',f'sub-{subject_id}-PO7_{condition}.png'))
+            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-PO7_{condition}.png'))
         plt.show(block=False)
         plt.close()
+
+    def create_diff_plot(subject_id, contra, ipsi, time, color, condition, title, output_dir):
+
+        diff_waveform = ipsi - contra
+        plt.figure(figsize=(10, 6))
+        plt.plot(time, diff_waveform, color=color, label=f'{condition}')
+        plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+        plt.axhline(y=0, color='black', linewidth=1)
+        plt.xlabel('Time (ms)')
+        plt.ylabel('Amplitude (uV)')
+        plt.title(f'Difference of PO8-PO7 - {condition} Condition')
+        plt.legend()
+        plt.grid()
+        if subject_id == 'GA':
+            plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', 'n2pc-waveform', population, f'diff-{title}.png'))
+        else:
+            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff_{condition}.png'))
+        
         
         
     if subject_id == 'GA':
         
         d1, d2, d3, d4, d5, d6, time = get_bins_data(subject_id, input_dir, exclude_subjects=exclude_subjects, excluded_subjects_list=excluded_subjects_list, population=population)
         # Create output directory if it doesn't exist
-        if os.path.exists(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', population)) == False:
-            os.makedirs(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', population))
+        if os.path.exists(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', 'n2pc-waveform', population)) == False:
+            os.makedirs(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', 'n2pc-waveform', population))
         
         if population == 'control':
             str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
@@ -665,8 +683,8 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         
         d1, d2, d3, d4, d5, d6, time = get_bins_data(subject_id, input_dir)
         # Create output directory if it doesn't exist
-        if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots')) == False:
-            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots'))
+        if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform')) == False:
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform'))
         
         excluded_subjects_string = ''
         population = ''
@@ -692,7 +710,9 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
     create_erp_plot(subject_id, d1, d2, time, 'blue', condition1, title1, output_dir)
     create_erp_plot(subject_id, d3, d4, time,'green', condition2, title2, output_dir)
     create_erp_plot(subject_id, d5, d6, time, 'red', condition3, title3, output_dir)
-
+    create_diff_plot(subject_id, d1, d2, time, 'blue', condition1, title1, output_dir)
+    create_diff_plot(subject_id, d3, d4, time,'green', condition2, title2, output_dir)
+    create_diff_plot(subject_id, d5, d6, time, 'red', condition3, title3, output_dir)
 
 def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     '''
