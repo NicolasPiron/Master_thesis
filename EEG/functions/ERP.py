@@ -670,8 +670,9 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         if subject_id == 'GA':
             plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform' , f'diff-{title}.png'))
         else:
-            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff_{condition}.png'))
-
+            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff.png'))
+        plt.show()
+        plt.close()
         
         
     if subject_id == 'GA':
