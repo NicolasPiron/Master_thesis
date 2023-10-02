@@ -670,24 +670,8 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         if subject_id == 'GA':
             plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform' , f'diff-{title}.png'))
         else:
-            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff.png'))
+            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff_{condition}.png'))
 
-      #  plt.figure(figsize=(10, 6))
-      #  plt.plot(time, diff_waveform, color=color, label=f'{condition}')
-      #  plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
-      #  plt.axhline(y=0, color='black', linewidth=1)
-      #  plt.xlabel('Time (ms)')
-      #  plt.ylabel('Amplitude (uV)')
-      #  plt.title(f'Difference of ipsi vs contra - {condition} Condition')
-      #  plt.legend()
-      #  plt.grid()
-      #  if subject_id == 'GA':
-      #      plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', 'n2pc-waveform', population, f'diff-{title}.png'))
-      #  else:
-      #      plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff_{condition}.png'))
-      #  plt.show(block=False)
-      #  plt.close()
-        
         
         
     if subject_id == 'GA':
