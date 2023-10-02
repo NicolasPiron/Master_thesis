@@ -640,28 +640,53 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         plt.legend()
         plt.grid()
         if subject_id == 'GA':
-            plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', 'n2pc-waveform', population, f'{title}.png'))
+            plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform',  f'{title}.png'))
         else:
             plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-PO7_{condition}.png'))
         plt.show(block=False)
         plt.close()
 
-    def create_diff_plot(subject_id, contra, ipsi, time, color, condition, title, output_dir):
-
+    def get_diff(contra, ipsi):
         diff_waveform = ipsi - contra
+        return diff_waveform
+
+    def create_diff_plot(subject_id, contra_cond1, ipsi_cond1, contra_cond2, ipsi_cond2, contra_cond3, ipsi_cond3, time, output_dir, title):
+
+        diff_cond1 = get_diff(contra_cond1, ipsi_cond1)
+        diff_cond2 = get_diff(contra_cond2, ipsi_cond2)
+        diff_cond3 = get_diff(contra_cond3, ipsi_cond3)
+
         plt.figure(figsize=(10, 6))
-        plt.plot(time, diff_waveform, color=color, label=f'{condition}')
+        plt.plot(time, diff_cond1, color='blue', label=f'Dis_Mid')
+        plt.plot(time, diff_cond2, color='green', label=f'No_Dis')
+        plt.plot(time, diff_cond3, color='red', label=f'Dis_Contra')
         plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
         plt.axhline(y=0, color='black', linewidth=1)
         plt.xlabel('Time (ms)')
         plt.ylabel('Amplitude (uV)')
-        plt.title(f'Difference of PO8-PO7 - {condition} Condition')
+        plt.title(f'Signal from Electrodes PO7-PO8 - Difference of ipsi vs contra')
         plt.legend()
         plt.grid()
         if subject_id == 'GA':
-            plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', 'n2pc-waveform', population, f'diff-{title}.png'))
+            plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform' , f'diff-{title}.png'))
         else:
-            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff_{condition}.png'))
+            plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff.png'))
+
+      #  plt.figure(figsize=(10, 6))
+      #  plt.plot(time, diff_waveform, color=color, label=f'{condition}')
+      #  plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+      #  plt.axhline(y=0, color='black', linewidth=1)
+      #  plt.xlabel('Time (ms)')
+      #  plt.ylabel('Amplitude (uV)')
+      #  plt.title(f'Difference of ipsi vs contra - {condition} Condition')
+      #  plt.legend()
+      #  plt.grid()
+      #  if subject_id == 'GA':
+      #      plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', 'n2pc-waveform', population, f'diff-{title}.png'))
+      #  else:
+      #      plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff_{condition}.png'))
+      #  plt.show(block=False)
+      #  plt.close()
         
         
         
@@ -707,12 +732,15 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
     else:
         title3 = f'{population}-PO7-{condition3}'
 
+    if exclude_subjects == True:
+        title_diff =f'{population}-excluded_subjects-{excluded_subjects_string}'
+    else:
+        title_diff = f'{population}'   
+
     create_erp_plot(subject_id, d1, d2, time, 'blue', condition1, title1, output_dir)
     create_erp_plot(subject_id, d3, d4, time,'green', condition2, title2, output_dir)
     create_erp_plot(subject_id, d5, d6, time, 'red', condition3, title3, output_dir)
-    create_diff_plot(subject_id, d1, d2, time, 'blue', condition1, title1, output_dir)
-    create_diff_plot(subject_id, d3, d4, time,'green', condition2, title2, output_dir)
-    create_diff_plot(subject_id, d5, d6, time, 'red', condition3, title3, output_dir)
+    create_diff_plot(subject_id, d1, d2, d3, d4, d5, d6, time, output_dir, title_diff)
 
 def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     '''
