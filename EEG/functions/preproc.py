@@ -112,18 +112,20 @@ def filter_and_interpolate(subject_id, task, raw, output_path, plot_data=True):
     else:
         print("No channels to drop.")
 
+    psd_before_filter = raw.plot_psd(fmin=0, fmax=60, dB=True, average=True, show=False)
     # Set channel types, montage and filter
     raw.set_channel_types({'EXG1': 'eog', 'EXG2': 'eog','EXG3': 'eog','EXG4': 'eog', 'EXG5': 'eog','EXG6': 'eog'})
     raw.set_montage('biosemi64') 
     raw.notch_filter([50, 100, 150])
     raw.filter(1.,30., phase='zero-double')
-    psd_fig = raw.plot_psd(fmin=0, fmax=50, dB=True, average=True, show=False)
+    psd_fig = raw.plot_psd(fmin=0, fmax=60, dB=True, average=True, show=False)
     #plt.close() seems to slow everyting on the server ?_?
 
     # Save the PSD plot
     if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-01-psd')) == False:
         os.makedirs(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-01-psd'))
         print('Directory created')
+    psd_before_filter.savefig(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-01-psd', f'sub-{subject_id}-psd-before-filter-{task}.png'))
     psd_fig.savefig(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-01-psd', f'sub-{subject_id}-psd-{task}.png'))
     print('====================== PSD plot saved')
 
