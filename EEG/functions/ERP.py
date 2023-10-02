@@ -671,7 +671,7 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
             plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform' , f'diff-{title}.png'))
         else:
             plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff.png'))
-        plt.show()
+        plt.show(block=False)
         plt.close()
         
         
@@ -679,8 +679,8 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         
         d1, d2, d3, d4, d5, d6, time = get_bins_data(subject_id, input_dir, exclude_subjects=exclude_subjects, excluded_subjects_list=excluded_subjects_list, population=population)
         # Create output directory if it doesn't exist
-        if os.path.exists(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', 'n2pc-waveform', population)) == False:
-            os.makedirs(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', 'n2pc-waveform', population))
+        if os.path.exists(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', population, 'n2pc-waveform')) == False:
+            os.makedirs(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', population, 'n2pc-waveform'))
         
         if population == 'control':
             str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
