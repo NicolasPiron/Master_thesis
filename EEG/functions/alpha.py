@@ -307,7 +307,7 @@ def alpha_assymetry_all_subj(input_dir, output_dir):
 ### ================================================================================================
 
 
-def alpha_power_per_epoch(subject_id : str, input_dir : str):
+def alpha_power_per_epoch(subject_id, input_dir, right_elecs=['O2', 'PO4', 'PO8'], left_elecs=['O1', 'PO3', 'PO7']):
     ''' Compute the alpha power for each epoch and return a list of alpha power values for the right side of the head and a list of alpha power values for the left side of the head.
 
     Parameters:
@@ -327,12 +327,9 @@ def alpha_power_per_epoch(subject_id : str, input_dir : str):
     epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs',f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
 
     freqs = np.arange(8, 13)
-    right_elecs=['O2', 'PO4', 'PO8']
-    left_elecs=['O1', 'PO3', 'PO7']
 
     n_cycles = freqs / 2.
     time_bandwidth = 4.
-    baseline = None  # no baseline correction
     n_jobs = 1  # number of parallel jobs to run
     
     right_power_list = []
@@ -435,14 +432,94 @@ def alpha_df_epoch(subject_id : str, input_dir, right_power_list, left_power_lis
 
     return df    
 
+def alpha_df_epoch_3clusters(subject_id, input_dir):
+
+    # get the alpha power for each epoch for each cluster
+    cluster_dict = {'occipital': {'right':['O2', 'PO4', 'PO8'], 'left': ['O1', 'PO3', 'PO7']},
+                    'parietal' : {'right':['P2', 'CP2', 'CP4'], 'left':['P1', 'CP1', 'CP3']}, 'frontal':{'right':['FC2', 'FC4', 'F2'], 'left':['FC1', 'FC3', 'F1']}}
+
+
+    right_occip, left_occip = alpha_power_per_epoch(subject_id, input_dir, right_elecs=cluster_dict['occipital']['right'], left_elecs=cluster_dict['occipital']['left'])
+    right_parietal, left_parietal = alpha_power_per_epoch(subject_id, input_dir, right_elecs=cluster_dict['parietal']['right'], left_elecs=cluster_dict['parietal']['left'])
+    right_frontal, left_frontal = alpha_power_per_epoch(subject_id, input_dir, right_elecs=cluster_dict['frontal']['right'], left_elecs=cluster_dict['frontal']['left'])
+
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+    if type(epochs) == mne.epochs.EpochsFIF:
+        print(f'=========== epochs found for subject {subject_id}')
+    else:
+        print(f'=========== epochs not found for subject {subject_id}')
+    # Load the reject log
+    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
+    # Define the epochs status (rejected or not)
+    epochs_status = reject_log['bad_epochs']
+
+    # Initiate the df
+    df = pd.DataFrame(columns=[['ID', 'epoch_index', 'epoch_dropped', 'condition','target_side', 'distractor_position', 'alpha_power_right_occip', 'alpha_power_left_occip',
+                                'alpha_power_right_parietal', 'alpha_power_left_parietal', 'alpha_power_right_frontal', 'alpha_power_left_frontal']])
+    
+    # Create row for each epoch
+    df['ID'] = str(subject_id)
+    df['epoch_index'] = range(1,len(epochs_status)+1)
+    df['epoch_dropped'] = epochs_status
+
+    # Add aa column that store the reset index of the epochs
+    index_val = 0
+    index_list = []
+
+    # Iterate through the 'epoch_dropped' column to create the reset index column
+    for row_number in range(len(df)):
+        if df.iloc[row_number, 2] == False:
+            index_list.append(index_val)
+            index_val += 1
+        else:
+            index_list.append(np.nan)
+    # Add the index column to the DataFrame
+    df['index_reset'] = index_list
+
+    for row_number in range(len(df)):
+
+        if df.iloc[row_number,21] == False:
+
+            # add condition
+            df.iloc[row_number, 3] = epochs.events[int(df['index_reset'].loc[row_number]),2]
+
+            # add target side
+            if df.iloc[row_number, 3] % 2 == 0:
+                df.iloc[row_number, 4] = 'right'
+            elif df.iloc[row_number, 3] % 2 != 0:
+                df.iloc[row_number,4] = 'left'
+
+            # add dis position
+            if df.iloc[row_number, 3] in [1,2,5,6]:
+                df.iloc[row_number, 5] = 'mid'
+            elif df.iloc[row_number, 3] in [3,4]:
+                df.iloc[row_number, 5] = 'nodis'
+            elif df.iloc[row_number, 3] in [7,8]:
+                df.iloc[row_number, 5] = 'lat'
+                
+            # add alpha power right occipital
+            df.iloc[row_number, 6] = right_occip[int(df['index_reset'].loc[row_number])]
+            # add alpha power left occipital
+            df.iloc[row_number, 7] = left_occip[int(df['index_reset'].loc[row_number])]
+            # add alpha power right parietal
+            df.iloc[row_number, 8] = right_parietal[int(df['index_reset'].loc[row_number])]
+            # add alpha power left parietal
+            df.iloc[row_number, 9] = left_parietal[int(df['index_reset'].loc[row_number])]
+            # add alpha power right frontal
+            df.iloc[row_number, 10] = right_frontal[int(df['index_reset'].loc[row_number])]
+            # add alpha power left frontal
+            df.iloc[row_number, 11] = left_frontal[int(df['index_reset'].loc[row_number])]
+    
+    # Scientific notification because very small values
+    pd.options.display.float_format = '{:.5e}'.format
+
+    return df
+
 def single_subj_alpha_epoch(subject_id, input_dir, output_dir):
 
     subject_id = str(subject_id)
-    # Uses the functions defined above to create a dataframe with the alpha power score for each side for each epoch
-    right_power_list, left_power_list = alpha_power_per_epoch(subject_id, input_dir)
-    df = alpha_df_epoch(subject_id, input_dir, right_power_list, left_power_list)
 
-    df.insert(0, 'ID', subject_id)
+    df = alpha_df_epoch_3clusters(subject_id, input_dir)
 
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'alpha-power-df')):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','N2pc', 'alpha-power-df'))
@@ -478,7 +555,7 @@ def all_subj_alpha_epoch(input_dir, output_dir):
     all_subj_files = []
 
     # Loop over the directories to access the files
-    directories = glob.glob(os.path.join(input_dir, 'N2pc', 'sub*'))
+    directories = glob.glob(os.path.join(input_dir, 'sub*', 'N2pc'))
     for directory in directories:
         file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*N2pc.fif'))
         all_subj_files.append(file[0])

@@ -11,9 +11,9 @@ import argparse
 # To get all subjects, write 'all' after the file name in the terminal.
 
 # Path to single subj data
-input_path = '/home/nicolasp/shared_PULSATION/derivative'
+input_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
 # Where the output files are saved
-output_path = '/home/nicolasp/shared_PULSATION/derivative'
+output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
 
 def get_df_all_subj():
 
@@ -38,17 +38,17 @@ def get_df_all_subj():
     df_list = []
     missing_subj = []
     for subj in subdirectories:
-        if os.path.exists(os.path.join(input_path, subj, 'alpha-power-df', f'{subj}-alpha-power-per-epoch.csv')):
-            df_list.append(pd.read_csv((os.path.join(input_path, subj, 'alpha-power-df', f'{subj}-alpha-power-per-epoch.csv'))))
+        if os.path.exists(os.path.join(input_path, subj, 'N2pc', 'alpha-power-df', f'{subj}-alpha-power-per-epoch.csv')):
+            df_list.append(pd.read_csv((os.path.join(input_path, subj, 'N2pc', 'alpha-power-df', f'{subj}-alpha-power-per-epoch.csv'))))
         else:
             print(f"==================== No alpha power dataframe for subject {subj}! O_o'")
             missing_subj.append(subj)
     # Concatenate all dataframes in the list
     df = pd.concat(df_list)
     # Save dataframe as .csv file
-    if not os.path.exists(os.path.join(output_path,'all_subj', 'alpha-power-allsubj')):
-        os.makedirs(os.path.join(output_path,'all_subj', 'alpha-power-allsubj'))
-    df.to_csv(os.path.join(output_path,'all_subj', 'alpha-power-allsubj', 'alpha-power-per-epoch-allsubj.csv'), index=False)
+    if not os.path.exists(os.path.join(output_path,'all_subj','N2pc', 'alpha-power-allsubj')):
+        os.makedirs(os.path.join(output_path,'all_subj','N2pc', 'alpha-power-allsubj'))
+    df.to_csv(os.path.join(output_path,'all_subj','N2pc', 'alpha-power-allsubj', 'alpha-power-per-epoch-allsubj.csv'), index=False)
     print(f'==================== Dataframe created and saved for all subjects! :) (except for {missing_subj})')
 
 if __name__ == "__main__":
