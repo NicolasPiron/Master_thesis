@@ -663,6 +663,8 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         plt.plot(time, diff_cond1, color='blue', label=f'Dis_Mid')
         plt.plot(time, diff_cond2, color='green', label=f'No_Dis')
         plt.plot(time, diff_cond3, color='red', label=f'Dis_Contra')
+        if subject_id == 'GA':
+            plt.ylim(-0.00000004, 0.00000014)
         plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
         plt.axhline(y=0, color='black', linewidth=1)
         plt.xlabel('Time (ms)')
