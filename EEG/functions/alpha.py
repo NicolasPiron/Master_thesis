@@ -458,7 +458,7 @@ def alpha_df_epoch_3clusters(subject_id, input_dir):
                                 'alpha_power_right_parietal', 'alpha_power_left_parietal', 'alpha_power_right_frontal', 'alpha_power_left_frontal']])
     
     # Create row for each epoch
-    df['ID'] = str(subject_id)
+    df['ID'] = [subject_id] * len(epochs_status)
     df['epoch_index'] = range(1,len(epochs_status)+1)
     df['epoch_dropped'] = epochs_status
 
