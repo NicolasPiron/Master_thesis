@@ -447,8 +447,11 @@ def plot_spectral_topo(subject_id, input_dir, output_dir, exclude_subjects=False
     # plot the spectrum for alpha and beta frequency bands
     bands = {'Alpha (8-12 Hz)': (8, 12), 'Beta (12-30 Hz)': (12, 30)}
 
-    for bin_, spectrum in spectrum_dict.items():    
-        plot = spectrum.plot_topomap(bands=bands, vlim='joint', res=512, show=False)
+    for bin_, spectrum in spectrum_dict.items():
+        if subject_id == 'GA':
+            plot = spectrum.plot_topomap(bands=bands, vlim=(0,100), res=512, show=False)
+        else:
+            plot = spectrum.plot_topomap(bands=bands, vlim='joint', res=512, show=False)
         if not os.path.exists(out_path):
             os.makedirs(out_path)
         bin_name = bin_.split(' ')[-1]
