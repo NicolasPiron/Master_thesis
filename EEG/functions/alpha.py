@@ -478,7 +478,7 @@ def alpha_df_epoch_3clusters(subject_id, input_dir):
 
     for row_number in range(len(df)):
 
-        if df.iloc[row_number,21] == False:
+        if df.iloc[row_number,2] == False:
 
             # add condition
             df.iloc[row_number, 3] = epochs.events[int(df['index_reset'].loc[row_number]),2]
