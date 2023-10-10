@@ -389,6 +389,11 @@ def get_resting_power_df(input_dir, output_dir):
     # Loop over the subjects
     for subject in subject_list:
 
+        # Check if the files exist, if not, skip the subject
+        if not os.path.exists(os.path.join(input_dir, subject, 'RESTINGSTATEOPEN', 'cleaned_epochs', f'{subject}-cleaned_epochs-RESTINGSTATEOPEN.fif')) or not os.path.exists(os.path.join(input_dir, subject, 'RESTINGSTATECLOSED', 'cleaned_epochs', f'{subject}-cleaned_epochs-RESTINGSTATECLOSED.fif')):
+            print(f'========================= No resting state epochs found for {subject}')
+            continue
+
         subject = subject[-2:]
         print(f'========================= working on {subject}')
         # Loop over the frequencies
