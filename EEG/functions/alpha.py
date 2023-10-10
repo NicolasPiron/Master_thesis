@@ -383,6 +383,9 @@ def get_resting_power_df(input_dir, output_dir):
     # Initiate the df
     df = pd.DataFrame(columns=[['ID', 'condition', 'freq band', 'cluster', 'side', 'mean power']])
 
+    # Create a counter to keep track of the rows and be able to correctly add the data to the df (bad idea, need a better solution)
+    counter = 0
+
     # Loop over the subjects
     for subject in subject_list:
 
@@ -405,9 +408,11 @@ def get_resting_power_df(input_dir, output_dir):
                     left_power_mean = left_power.to_data_frame()[cluster_dict[cluster]['left']].mean(axis=1).mean(axis=0)
 
                     # Add the data to the df
-                    df = df.append({'ID': subject, 'condition': condition, 'freq band': freq, 'cluster': cluster, 'side': 'right', 'mean power': right_power_mean}, ignore_index=True)
-                    df = df.append({'ID': subject, 'condition': condition, 'freq band': freq, 'cluster': cluster, 'side': 'left', 'mean power': left_power_mean}, ignore_index=True)
-
+                    df.loc[counter] = [subject, condition, freq, cluster, 'right', right_power_mean]
+                    counter += 1
+                    df.loc[counter] = [subject, condition, freq, cluster, 'left', left_power_mean]
+                    counter += 1
+                    
     # Scientific notification because very small values
     pd.options.display.float_format = '{:.5e}'.format
 
