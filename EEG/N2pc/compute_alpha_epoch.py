@@ -1,9 +1,15 @@
-from functions.alpha import single_subj_alpha_epoch
 import sys
 import os
-import pandas as pd
-import glob
 import argparse
+import pandas as pd
+
+# Add the path to the functions to the system path
+current_dir = os.path.join(os.path.dirname(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
+from functions.alpha import single_subj_alpha_epoch
+
 
 # Run this file to get the alpha power by side for each epochs. You can chose the participant,
 # or run it for all participants. The output is a .csv file with the alpha power for each epoch.

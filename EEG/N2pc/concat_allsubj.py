@@ -1,4 +1,11 @@
 import sys
+import os
+
+# Add the path to the functions to the system path
+current_dir = os.path.join(os.path.dirname(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
 from functions.file_management import concat_all_subj
 
 # Task is either 'N2pc' or 'Alpheye'

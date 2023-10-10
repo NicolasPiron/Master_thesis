@@ -1,7 +1,13 @@
-import functions.ERP as erp
 import sys
+import os
 import argparse
 
+# Add the path to the functions to the system path
+current_dir = os.path.join(os.path.dirname(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
+import functions.ERP as erp
 
 ##############################################################################################################
 
@@ -19,7 +25,7 @@ output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
 population = 'control'
 
 # Subject list when analysing single subjects
-subject_list = [1, 2, 3, 4]
+subject_list = [1]
 
 # List of subjects to be excluded from the grand average
 excluded_subjects_list = [4, 1, 2, 3]
@@ -79,13 +85,12 @@ def grand_average(input_dir, output_dir, exclude_subjects=False, excluded_subjec
 
         erp.plot_n2pc('GA', input_dir, output_dir, exclude_subjects=True, excluded_subjects_list=excluded_subjects_list, population=population)
         erp.get_n2pc_values('GA', input_dir, output_dir, exclude_subjects=True, excluded_subjects_list=excluded_subjects_list, population=population)
-        print(f'================ Grand Average done (no subject excluded) ================')
-    
+        print(f'================ Grand Average done (subjects {excluded_subjects_list} excluded) ================')
     else:
 
         erp.plot_n2pc('GA', input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=population)
         erp.get_n2pc_values('GA', input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=population)
-        print(f'================ Grand Average done (subjects {excluded_subjects_list} excluded) ================')
+        print(f'================ Grand Average done (no subject excluded) ================')
 
 
 if __name__ == '__main__':

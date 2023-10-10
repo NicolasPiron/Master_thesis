@@ -1,5 +1,13 @@
-import functions.ERP as erp
+import sys
+import os
 import argparse
+
+# Add the path to the functions to the system path
+current_dir = os.path.join(os.path.dirname(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
+from functions import ERP as erp
 
 # parameters to be changed by the user
 
@@ -10,7 +18,7 @@ output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
 population = 'control'
 
 # Subject list when analysing single subjects
-subject_list = [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+subject_list = [1]
 
 # List of subjects to be excluded from the grand average
 excluded_subjects_list = []

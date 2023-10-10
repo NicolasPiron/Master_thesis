@@ -1,8 +1,15 @@
-import functions.ERP as erp
-import argparse
+import sys
 import os
+import argparse
 import pandas as pd
 
+# Add the path to the functions to the system path
+current_dir = os.path.join(os.path.dirname(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
+
+import functions.ERP as erp
 
 # Parameters to be changed by the user
 input_dir = ''

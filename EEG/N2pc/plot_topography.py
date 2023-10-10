@@ -1,7 +1,13 @@
-import functions.ERP as erp
+import sys
+import os
 import argparse
 
+# Add the path to the functions to the system path
+current_dir = os.path.join(os.path.dirname(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
 
+import functions.ERP as erp
 
 # Path to data
 input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
