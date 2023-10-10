@@ -363,7 +363,7 @@ def get_resting_power_df(input_dir, output_dir):
     '''
 
     # Define the conditions
-    conditions = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSED']
+    conditions = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
 
     # Define the frequencies
     alpha_freqs = np.arange(8, 13)
@@ -390,7 +390,7 @@ def get_resting_power_df(input_dir, output_dir):
     for subject in subject_list:
 
         # Check if the files exist, if not, skip the subject
-        if not os.path.exists(os.path.join(input_dir, subject, 'RESTINGSTATEOPEN', 'cleaned_epochs', f'{subject}-cleaned_epochs-RESTINGSTATEOPEN.fif')) or not os.path.exists(os.path.join(input_dir, subject, 'RESTINGSTATECLOSED', 'cleaned_epochs', f'{subject}-cleaned_epochs-RESTINGSTATECLOSED.fif')):
+        if not os.path.exists(os.path.join(input_dir, subject, 'RESTINGSTATEOPEN', 'cleaned_epochs', f'{subject}-cleaned_epochs-RESTINGSTATEOPEN.fif')) or not os.path.exists(os.path.join(input_dir, subject, 'RESTINGSTATECLOSE', 'cleaned_epochs', f'{subject}-cleaned_epochs-RESTINGSTATECLOSE.fif')):
             print(f'========================= No resting state epochs found for {subject}')
             continue
 
