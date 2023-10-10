@@ -412,12 +412,7 @@ def get_resting_power_df(input_dir, output_dir):
                     right_power_mean = right_power.to_data_frame()[cluster_dict[cluster]['right']].mean(axis=1).mean(axis=0)
                     left_power_mean = left_power.to_data_frame()[cluster_dict[cluster]['left']].mean(axis=1).mean(axis=0)
 
-                    # Give better names to the values
-                    if len(subject) == 1:
-                        subject_ = f'0{subject}'
-                    else:
-                        subject_ = subject
-
+                    # Give better names to the values - better readability
                     if freq is alpha_freqs:
                         freq_ = 'alpha'
                     elif freq is theta_freqs:
@@ -426,13 +421,13 @@ def get_resting_power_df(input_dir, output_dir):
                     if condition is 'RESTINGSTATEOPEN':
                         condition_ = 'open'
                     elif condition is 'RESTINGSTATECLOSE':
-                        condition_ = 'close'
+                        condition_ = 'closed'
 
                     # Add the data to the df
-                    df.loc[counter] = [subject_, condition_, freq_, cluster, 'right', right_power_mean]
+                    df.loc[counter] = [subject, condition_, freq_, cluster, 'right', right_power_mean]
                     # Adjust the counter so that the next row is added correctly
                     counter += 1
-                    df.loc[counter] = [subject_, condition_, freq_, cluster, 'left', left_power_mean]
+                    df.loc[counter] = [subject, condition_, freq_, cluster, 'left', left_power_mean]
                     counter += 1
                     
     # Scientific notification because very small values
@@ -442,6 +437,8 @@ def get_resting_power_df(input_dir, output_dir):
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'resting-state-power-df')):
         os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state','resting-state-power-df'))
     df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'resting-state-power-df', 'allsubj_resting_state_power.csv'))
+
+    print('========================= DONE :D')
 
     return df
 
