@@ -1,6 +1,3 @@
-import sys
-import os
-
 from time_frequency_func import get_resting_power_df
 
 # This file computes the average of the epochs for each subject and each condition (eyes closed and eyes open)
