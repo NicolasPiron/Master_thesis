@@ -120,14 +120,14 @@ def get_resting_power_df(input_dir, output_dir):
                     left_power_mean = left_power.to_data_frame()[cluster_dict[cluster]['left']].mean(axis=1).mean(axis=0)
 
                     # Give better names to the values - better readability
-                    if freq is alpha_freqs:
+                    if freq == alpha_freqs:
                         freq_ = 'alpha'
-                    elif freq is theta_freqs:
+                    elif freq == theta_freqs:
                         freq_ = 'theta'
                     
-                    if condition is 'RESTINGSTATEOPEN':
+                    if condition == 'RESTINGSTATEOPEN':
                         condition_ = 'open'
-                    elif condition is 'RESTINGSTATECLOSE':
+                    elif condition == 'RESTINGSTATECLOSE':
                         condition_ = 'closed'
 
                     # Add the data to the df
@@ -148,3 +148,102 @@ def get_resting_power_df(input_dir, output_dir):
     print('========================= DONE :D')
 
     return df
+
+
+### ================================================================================================
+### =============================== USING SPECTRUM OBJECTS =========================================
+### ================================================================================================
+
+def get_spectrum(subject_id, input_dir):
+    '''
+    '''
+
+    subject_id = str(subject_id)
+
+    # Load the epochs
+    epochs_open = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-RESTINGSTATEOPEN.fif'))
+    epochs_closed = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-RESTINGSTATECLOSE.fif'))
+
+    # Remove bad epochs from info
+    epochs_open.info['bads'] = []
+    epochs_closed.info['bads'] = []
+
+    # Transform the epochs into Spectrum objects
+    spectrum_open = epochs_open.compute_psd(fmin=0, fmax=30)
+    spectrum_closed = epochs_closed.compute_psd(fmin=0, fmax=30)
+
+    return spectrum_open, spectrum_closed
+
+def get_mean_freq(subject_id, input_dir, bands, picks):
+    '''
+    '''
+    
+    spectrum_open, spectrum_closed = get_spectrum(subject_id, input_dir)
+
+    # Get the equivalent indices of the bands in the data (from .get_data() method)
+    lower_bound = bands[0]*2
+    upper_bound = bands[1]*2+1
+
+    # Compute the mean of the epochs for each band
+    epoch_average_open = spectrum_open.get_data(picks=picks)[:, :, lower_bound:upper_bound].mean(axis=0)
+    epoch_average_close = spectrum_closed.get_data(picks=picks)[:, :, lower_bound:upper_bound].mean(axis=0)
+
+    # Get the mean power for all the selected channels
+    channel_average_open = epoch_average_open.mean(axis=0)
+    channel_average_closed = epoch_average_close.mean(axis=0)
+
+    # Get the mean power for the whole spectrum
+    mean_power_open = np.mean(channel_average_open)
+    mean_power_closed = np.mean(channel_average_closed)
+
+    return mean_power_open, mean_power_closed
+   
+def plot_resting_spectral_topo(subject_id, input_dir, output_dir, bands):
+
+    # Get the spectrum objects
+    spectrum_open, spectrum_closed = get_spectrum(subject_id, input_dir)
+
+    # Plot the topographies
+    topo_plot_open = spectrum_open.plot_topomap(ch_type='eeg', bands=bands, show=False)
+    topo_plot_closed = spectrum_closed.plot_topomap(ch_type='eeg', bands=bands, show=False)
+
+    # Save the plots
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'topo-plots')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'topo-plots'))
+    topo_plot_open.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'topo-plots', f'sub-{subject_id}-topo-plot-open.png'))
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'topo-plots')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'topo-plots'))
+    topo_plot_closed.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'topo-plots', f'sub-{subject_id}-topo-plot-closed.png'))
+
+    return topo_plot_open, topo_plot_closed
+    
+def plot_resting_psd(subject_id, input_dir, output_dir, picks):
+
+    # Get the spectrum objects
+    spectrum_open, spectrum_closed = get_spectrum(subject_id, input_dir)
+
+    # Create string for the title of the plot
+    str_picks = str(picks)
+
+    # Create string for the name of the file
+    str_picks_name = str_picks.replace('[', '')
+    str_picks_name = str_picks_name.replace(']', '')
+    str_picks_name = str_picks_name.replace(' ', '')
+    str_picks_name = str_picks_name.replace("'", '')
+    str_picks_name = str_picks_name.replace(',', '-')
+
+    # Plot and save the PSDs
+    psd_open = spectrum_open.plot(average=True, picks=picks, show=False)
+    psd_open.get_axes()[0].set_title('PSD resting state open ' + str_picks)
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'psd-plots')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'psd-plots'))
+    psd_open.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'psd-plots', f'sub-{subject_id}_ch-{str_picks_name}_psd-open.png'))
+
+    psd_closed = spectrum_closed.plot(average=True, picks=picks, show=False)
+    psd_closed.get_axes()[0].set_title('PSD resting state closed ' + str_picks)
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'psd-plots')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'psd-plots'))
+    psd_closed.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'psd-plots', f'sub-{subject_id}_ch-{str_picks_name}_psd-closed.png'))
+
+    return psd_open, psd_closed
+

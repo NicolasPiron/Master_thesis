@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import mne
 import math
-from functions.file_management import add_sub0
+from file_management import add_sub0
 
 
 def to_evoked(subject_id, task, input_dir):
