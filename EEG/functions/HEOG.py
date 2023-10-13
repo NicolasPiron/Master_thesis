@@ -42,6 +42,8 @@ def get_heog_evoked(subject_id, input_dir, output_dir):
     dis_side_target_l = epochs['dis_right/target_l']
     dis_side_target_r = epochs['dis_left/target_r']
 
+    print('========== Epochs concatenated ==========')
+
     # isolate HEOG data
     # EXG3: right HEOG
     # EXG4: left HEOG
@@ -59,6 +61,8 @@ def get_heog_evoked(subject_id, input_dir, output_dir):
     dis_side_target_l_heog4 = dis_side_target_l.copy().pick('EXG4')
     dis_side_target_r_heog4 = dis_side_target_r.copy().pick('EXG4')
 
+    print('========== HEOG data isolated ==========')
+
     # extract data
     dis_mid_target_l_heog3 = dis_mid_target_l_heog3.get_data()
     dis_mid_target_r_heog3 = dis_mid_target_r_heog3.get_data()
@@ -71,6 +75,10 @@ def get_heog_evoked(subject_id, input_dir, output_dir):
     dis_mid_target_r_heog4 = dis_mid_target_r_heog4.get_data()
     no_dis_target_l_heog4 = no_dis_target_l_heog4.get_data()
     no_dis_target_r_heog4 = no_dis_target_r_heog4.get_data()
+    dis_side_target_l_heog4 = dis_side_target_l_heog4.get_data()
+    dis_side_target_r_heog4 = dis_side_target_r_heog4.get_data()
+    
+    print('========== HEOG data extracted ==========')
 
     # compute evoked
     dis_mid_target_l_heog3_evk = dis_mid_target_l_heog3.mean(axis=0)
