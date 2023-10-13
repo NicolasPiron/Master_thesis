@@ -25,7 +25,11 @@ def loop_for_evoked(subject_list, task, input_dir):
         subject_id = str(subject)
         if len(subject_id) == 1:
             subject_id = '0' + subject_id
-        erp.to_evoked(subject_id, task, input_dir)
+        try:
+            erp.to_evoked(subject_id, task, input_dir)
+        except:
+            print('Error with subject ' + subject_id)
+            continue
 
 if __name__ == '__main__':
 

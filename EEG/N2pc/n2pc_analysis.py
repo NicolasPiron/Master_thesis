@@ -53,12 +53,16 @@ def loop_over_subjects_n2pc(subject_list, input_dir, output_dir):
         subject_id = str(subject)
         if len(subject_id) == 1:
             subject_id = '0' + subject_id
-        # n2pc waveforms
-        erp.plot_n2pc(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
-        erp.plot_n2pc_all_cond(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
-        # n2pc numerical values
-        erp.get_n2pc_values(subject_id, input_dir, output_dir)
-        print(f'================ Subject {subject_id} done ================')
+        try:
+            # n2pc waveforms
+            erp.plot_n2pc(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+            erp.plot_n2pc_all_cond(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+            # n2pc numerical values
+            erp.get_n2pc_values(subject_id, input_dir, output_dir)
+            print(f'================ Subject {subject_id} done ================')
+        except:
+            print(f'Error with subject {subject_id}')
+            continue
 
 def grand_average(input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     '''Compute grand average n2pc

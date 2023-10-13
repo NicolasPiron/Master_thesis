@@ -94,8 +94,13 @@ def combine_evoked_all(subject_list, task):
     evk_list = []
     for subject in subject_list:
         subject_id = subject[-2:]
-        evk = mne.read_evokeds(os.path.join(subject, task, f'evoked-{task}', f'sub-{subject_id}-all-ave.fif'))
-        evk_list.append(evk)
+
+        try:
+            evk = mne.read_evokeds(os.path.join(subject, task, f'evoked-{task}', f'sub-{subject_id}-all-ave.fif'))
+            evk_list.append(evk)
+        except:
+            print(f'====================== No evoked file found for subject {subject_id}')
+            continue
     
     # Concate the evoked objects
     evk_all = mne.combine_evoked(evk_list, weights='equal')
@@ -749,6 +754,14 @@ def plot_n2pc_all_cond(subject_id, input_dir, output_dir, exclude_subjects=False
             fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform', f'{population}-excluded-{excluded_subjects_string}-all-conditions.png'))
         else:  
             fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform', f'{population}-all-conditions.png'))
+        
+        # save the evoked object
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'all_cond', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'all_cond', population))
+        if exclude_subjects == True:
+            evoked.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'all_cond', population, f'{population}-excluded-{excluded_subjects_string}-all-conditions-ave.fif'), overwrite=True)
+        else:
+            evoked.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'all_cond', population, f'{population}-all-conditions-ave.fif'), overwrite=True)
 
     else:
 
