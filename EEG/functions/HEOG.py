@@ -2,6 +2,7 @@ import mne
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import signal
 
 def get_heog_evoked(subject_id, input_dir, output_dir):
     ''' Only for N2pc task, compute the difference between ipsi and contra HEOG, saves it as a np array and returns it.
@@ -127,18 +128,46 @@ def get_heog_evoked(subject_id, input_dir, output_dir):
     no_dis_target_l_diff = no_dis_target_l_ipsi - no_dis_target_l_contra
     no_dis_target_r_diff = no_dis_target_r_ipsi - no_dis_target_r_contra
 
+    print('========== sanity check ==========')
+
+    # apply a filter to smooth the data
+    # reshape arrays
+    dis_mid_target_l_diff = dis_mid_target_l_diff.reshape(dis_mid_target_l_diff.shape[1])
+    dis_mid_target_r_diff = dis_mid_target_r_diff.reshape(dis_mid_target_r_diff.shape[1])
+    dis_side_target_l_diff = dis_side_target_l_diff.reshape(dis_side_target_l_diff.shape[1])
+    dis_side_target_r_diff = dis_side_target_r_diff.reshape(dis_side_target_r_diff.shape[1])
+    no_dis_target_l_diff = no_dis_target_l_diff.reshape(no_dis_target_l_diff.shape[1])
+    no_dis_target_r_diff = no_dis_target_r_diff.reshape(no_dis_target_r_diff.shape[1])
+
+    print('========== HEOG data reshaped ==========')
+
+    # create butterworth filter
+    sos = signal.butter(1, 5, 'lp', fs=512, output='sos')
+
+    print('========== filter created ==========')
+
+    # apply filter
+    filtered_dis_mid_target_l_diff = signal.sosfilt(sos, dis_mid_target_l_diff)
+    filtered_dis_mid_target_r_diff = signal.sosfilt(sos, dis_mid_target_r_diff)
+    filtered_dis_side_target_l_diff = signal.sosfilt(sos, dis_side_target_l_diff)
+    filtered_dis_side_target_r_diff = signal.sosfilt(sos, dis_side_target_r_diff)
+    filtered_no_dis_target_l_diff = signal.sosfilt(sos, no_dis_target_l_diff)
+    filtered_no_dis_target_r_diff = signal.sosfilt(sos, no_dis_target_r_diff)
+
+    print('========== filter applied ==========')
+
     # compute the mean of the 2 differences
     # dis mid
-    dis_mid_diff = (dis_mid_target_l_diff + dis_mid_target_r_diff) / 2
-    dis_mid_diff = dis_mid_diff.reshape(dis_mid_diff.shape[1], 1)
+    dis_mid_diff = (filtered_dis_mid_target_l_diff + filtered_dis_mid_target_r_diff) / 2
+    #dis_mid_diff = dis_mid_diff.reshape(dis_mid_diff.shape[0], 1)
 
     # dis side
-    dis_side_diff = (dis_side_target_l_diff + dis_side_target_r_diff) / 2
-    dis_side_diff = dis_side_diff.reshape(dis_side_diff.shape[1], 1)
+    dis_side_diff = (filtered_dis_side_target_l_diff + filtered_dis_side_target_r_diff) / 2
+    #dis_side_diff = dis_side_diff.reshape(dis_side_diff.shape[0], 1)
 
     # no dis
-    no_dis_diff = (no_dis_target_l_diff + no_dis_target_r_diff) / 2
-    no_dis_diff = no_dis_diff.reshape(no_dis_diff.shape[1], 1)
+    no_dis_diff = (filtered_no_dis_target_l_diff + filtered_no_dis_target_r_diff) / 2
+    #no_dis_diff = no_dis_diff.reshape(no_dis_diff.shape[0], 1)
 
     # save evoked (np arrays)
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'evoked-HEOG')):
@@ -192,6 +221,6 @@ def plot_heog_erp(subject_id, input_dir, output_dir):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'heog-waveform'))
     fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'heog-waveform', f'sub-{subject_id}-heog-erp.png'))
     
-    print('========== HEOG ERP saved ==========')
+    print('========== HEOG ERP plot saved ==========')
 
     return None
