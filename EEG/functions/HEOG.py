@@ -30,6 +30,7 @@ def get_heog_evoked(subject_id, input_dir, output_dir):
     subject_id = str(subject_id)
     # load epochs
     epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+    print('========== Epochs loaded ==========')
 
     # get time vector (important for plotting)
     time = epochs.times * 1000
@@ -137,6 +138,7 @@ def get_heog_evoked(subject_id, input_dir, output_dir):
     np.save(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'evoked-HEOG', f'sub-{subject_id}-dis_mid_diff.npy'), dis_mid_diff)
     np.save(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'evoked-HEOG', f'sub-{subject_id}-dis_side_diff.npy'), dis_side_diff)
     np.save(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'evoked-HEOG', f'sub-{subject_id}-no_dis_diff.npy'), no_dis_diff)
+    print('========== Evoked saved ==========')
 
 
     return dis_mid_diff, dis_side_diff, no_dis_diff, time
@@ -162,6 +164,7 @@ def plot_heog_erp(subject_id, input_dir, output_dir):
 
     # get HEOG averaged data (across trials, groupes by condition)
     dis_mid_diff, dis_side_diff, no_dis_diff, time = get_heog_evoked(subject_id, input_dir, output_dir)
+    print('========== HEOG evoked data loaded ==========')
 
     # plot the HEOG ERP
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -180,5 +183,7 @@ def plot_heog_erp(subject_id, input_dir, output_dir):
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'heog-waveform')):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'heog-waveform'))
     fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'heog-waveform', f'sub-{subject_id}-heog-erp.png'))
+    
+    print('========== HEOG ERP saved ==========')
 
     return None
