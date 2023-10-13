@@ -97,7 +97,7 @@ def combine_evoked_all(subject_list, task):
 
         try:
             evk = mne.read_evokeds(os.path.join(subject, task, f'evoked-{task}', f'sub-{subject_id}-all-ave.fif'))
-            evk_list.append(evk)
+            evk_list.append(evk[0])
         except:
             print(f'====================== No evoked file found for subject {subject_id}')
             continue
