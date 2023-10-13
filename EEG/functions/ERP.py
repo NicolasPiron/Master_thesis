@@ -35,7 +35,7 @@ def to_evoked(subject_id, task, input_dir):
 
         # crop the epochs to the relevant time window
         tmin = -0.2
-        tmax = 0.4
+        tmax = 0.8
         epochs.crop(tmin=tmin, tmax=tmax)
             
         # define the bins
@@ -46,8 +46,11 @@ def to_evoked(subject_id, task, input_dir):
                 'bin5' : ['dis_right/target_l'],
                 'bin6' : ['dis_left/target_r']}
 
-        # create evoked
+        # create evoked for each bin
         evoked_list = [epochs[bin].average() for bin in bins.values()]
+
+        # create evoked for all the conditions
+        evoked_all = epochs.average()
         
         # rename the distractor mid conditions to simplify
         evoked_1 = evoked_list[0]
@@ -66,6 +69,40 @@ def to_evoked(subject_id, task, input_dir):
         for evoked in evoked_list:
             print(evoked.comment)
             evoked.save(os.path.join(input_dir, f'sub-{subject_id}', task, f'evoked-{task}', f'sub-{subject_id}-{evoked.comment}-ave.fif'), overwrite=True)
+        evoked_all.save(os.path.join(input_dir, f'sub-{subject_id}', task, f'evoked-{task}', f'sub-{subject_id}-all-ave.fif'), overwrite=True)
+
+def combine_evoked_all(subject_list, task):
+    ''' Takes a list of subjects and concatenates the evoked objects for each subject.
+
+    Parameters
+    ----------
+    subject_list : list
+        List of subjects to be concatenated. The list needs to be in whole path format (i.e like what get_non_excluded_subjects_list() returns).
+    task : str
+        The task.
+    input_dir : str
+        The path to the directory containing the input data.
+    
+    Returns
+    -------
+    evk_all : mne.Evoked
+        The combined evoked object.
+    
+    '''
+    
+    # Get the evoked objects for each subject
+    evk_list = []
+    for subject in subject_list:
+        subject_id = subject[-2:]
+        evk = mne.read_evokeds(os.path.join(subject, task, f'evoked-{task}', f'sub-{subject_id}-all-ave.fif'))
+        evk_list.append(evk)
+    
+    # Concate the evoked objects
+    evk_all = mne.combine_evoked(evk_list, weights='equal')
+
+    print('====================== evoked objects combined for all conditions')
+
+    return evk_all
 
 
 
@@ -128,7 +165,7 @@ def get_non_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_su
     Returns
     -------
     subject_list : list
-        List of all the subjects in the input_dir, excluding the subjects in the excluded_subjects_list.
+        List of all the subjects in the input_dir, excluding the subjects in the excluded_subjects_list (the list items are in whole path format).
     '''
     if exclude_subjects == True:
         
@@ -151,6 +188,24 @@ def get_non_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_su
 
     else:
         subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
+    
+    return subject_list
+
+def get_all_subjects_list(input_dir):
+    ''' Gives you a list of all the subjects in the input_dir.
+
+    Parameters
+    ----------
+    input_dir : str
+        The path to the directory containing the input data.
+    
+    Returns
+    -------
+    subject_list : list
+        List of all the subjects in the input_dir (the list items are in whole path format).
+    '''
+    subject_list = glob.glob(os.path.join(input_dir, 'sub*'))
+    print(f'====================== subjects list : {subject_list}')
     
     return subject_list
 
@@ -187,9 +242,9 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
         print(bin_evoked)
 
         # create to list of evoked objects for each condition
-        dis_mid = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin1', 'evk_bin2']]
-        no_dis = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin3', 'evk_bin4']]
-        dis_contra = [bin_evoked[bin_].crop(tmin=0, tmax=0.4) for bin_ in ['evk_bin5', 'evk_bin6']]
+        dis_mid = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin1', 'evk_bin2']]
+        no_dis = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin3', 'evk_bin4']]
+        dis_contra = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin5', 'evk_bin6']]
 
         # find right and left channels
         ch_names = list(bin_evoked.values())[0].info['ch_names']
@@ -606,6 +661,126 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
         b1, b2, b3, b4, b5, b6, time = get_evoked_data(subject_id, input_dir)
         
         return b1, b2, b3, b4, b5, b6, time
+
+def plot_n2pc_all_cond(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
+    ''' This function plots the N2pc ERP based on the basic evoked object for a given subject, or all of them. 
+        If subject_id = 'GA', the function will plot the grand average. There is only one condition = all the trials are considered.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID OR 'GA' to get the grand average.
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+    exclude_subjects : bool
+        Whether to exclude subjects from the grand average.
+    excluded_subjects_list : list
+        List of subjects to be excluded from the grand average.
+    population : str
+        Population (control or stroke).
+    
+    Returns
+    -------
+    None
+    '''
+
+    subject_id = str(subject_id)
+
+    if subject_id == 'GA':
+
+        if exclude_subjects == True:
+
+            subject_list = get_non_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=exclude_subjects)
+
+        else: 
+
+            subject_list = get_all_subjects_list(input_dir)
+
+        if population == 'control':
+
+            # keep only the control subjects (i.e. subject IDs < 50)
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) < 50]
+
+            # get a string with the excluded subjects IDs
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+
+            print(f'====================== subjects list, control population : {subject_list}')
+
+        elif population == 'stroke':
+
+            # keep only the stroke subjects (i.e. subject IDs > 50)
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 50]
+
+            # get a string with the excluded subjects IDs
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+
+            print(f'====================== subjects list, stroke population : {subject_list}')
+
+        evoked = combine_evoked_all(subject_list, task='N2pc')
+
+        # plot the ERP for all trials (all conditions) # there is no need to differentiate between contra and ipsi
+        # this is why we do it in a very simple way. 
+        PO7 = evoked.get_data(picks=['PO7'])
+        PO8 = evoked.get_data(picks=['PO8'])
+        PO7 = PO7.reshape(PO7.shape[1], 1)
+        PO8 = PO8.reshape(PO8.shape[1], 1)
+        time = evoked.times * 1000
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(time, PO8, label='PO8')
+        ax.plot(time, PO7, label='PO7')
+        ax.plot(time, PO8 - PO7, color='cyan', label='PO8 - PO7')
+        ax.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+        ax.axhline(y=0, color='black', linewidth=1)
+        ax.set_xlabel('Time (ms)')
+        ax.set_ylabel('Amplitude (uV)')
+        ax.set_title('Signal from Electrodes PO7 and PO8 - All Conditions')
+        ax.legend()
+        ax.grid()
+
+        # save the plot
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform'))
+        if exclude_subjects == True:
+            fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform', f'{population}-excluded-{excluded_subjects_string}-all-conditions.png'))
+        else:  
+            fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform', f'{population}-all-conditions.png'))
+
+    else:
+
+        # get the epochs, average them and plot the ERP
+        epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+        evoked = epochs.average()
+
+        # plot the ERP for all trials (all conditions) 
+        PO7 = evoked.get_data(picks=['PO7'])
+        PO8 = evoked.get_data(picks=['PO8'])
+        PO7 = PO7.reshape(PO7.shape[1], 1)
+        PO8 = PO8.reshape(PO8.shape[1], 1)
+        time = evoked.times * 1000
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(time, PO8, label='PO8')
+        ax.plot(time, PO7, label='PO7')
+        ax.plot(time, PO8 - PO7, color='cyan', label='PO8 - PO7')
+        ax.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+        ax.axhline(y=0, color='black', linewidth=1)
+        ax.set_xlabel('Time (ms)')
+        ax.set_ylabel('Amplitude (uV)')
+        ax.set_title('Signal from Electrodes PO7 and PO8 - All Conditions')
+        ax.legend()
+        ax.grid()
+
+        # save the plot
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-waveform')):
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-waveform'))
+        fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-all-conditions.png'))
+
+    return None
 
 def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=None):
     ''' This function plots the N2pc ERP for a given subject, or a population if you specify subject_id = 'GA'.

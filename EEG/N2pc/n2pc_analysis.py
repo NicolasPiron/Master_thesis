@@ -55,6 +55,7 @@ def loop_over_subjects_n2pc(subject_list, input_dir, output_dir):
             subject_id = '0' + subject_id
         # n2pc waveforms
         erp.plot_n2pc(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+        erp.plot_n2pc_all_cond(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
         # n2pc numerical values
         erp.get_n2pc_values(subject_id, input_dir, output_dir)
         print(f'================ Subject {subject_id} done ================')
@@ -85,11 +86,13 @@ def grand_average(input_dir, output_dir, exclude_subjects=False, excluded_subjec
 
         erp.plot_n2pc('GA', input_dir, output_dir, exclude_subjects=True, excluded_subjects_list=excluded_subjects_list, population=population)
         erp.get_n2pc_values('GA', input_dir, output_dir, exclude_subjects=True, excluded_subjects_list=excluded_subjects_list, population=population)
+        erp.plot_n2pc_all_cond('GA', input_dir, output_dir, exclude_subjects=True, excluded_subjects_list=excluded_subjects_list, population=population)
         print(f'================ Grand Average done (subjects {excluded_subjects_list} excluded) ================')
     else:
 
         erp.plot_n2pc('GA', input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=population)
         erp.get_n2pc_values('GA', input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=population)
+        erp.plot_n2pc_all_cond('GA', input_dir, output_dir, exclude_subjects=False, excluded_subjects_list=[], population=population)
         print(f'================ Grand Average done (no subject excluded) ================')
 
 

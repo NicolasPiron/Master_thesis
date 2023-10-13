@@ -177,7 +177,7 @@ def get_spectrum(subject_id, input_dir):
 def get_mean_freq(subject_id, input_dir, bands, picks):
     '''
     '''
-    
+
     spectrum_open, spectrum_closed = get_spectrum(subject_id, input_dir)
 
     # Get the equivalent indices of the bands in the data (from .get_data() method)
