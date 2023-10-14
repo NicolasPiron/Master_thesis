@@ -1,12 +1,30 @@
 import functions.preproc as pp
 import sys
+import os
+
+##############################################################################################################
+# Parameters to be changed by the user
 
 # Define task
 task = 'N2pc'
+#task = 'Alpheye'
+#task = 'RESTINGSTATECLOSE'
+#task = 'RESTINGSTATEOPEN'
+##############################################################################################################
+
 # Path to data
-input_path = '/Users/nicolaspiron/Documents/Master_thesis/EEG/toBIDS/BIDS_data/sourcedata'
-# Where the output files are saved
-output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if 'nicolaspiron/Documents' in script_dir:
+    print('Running on Nicolas\'s Laptop')
+    print('Paths set automatically')
+    input_path = '/Users/nicolaspiron/Documents/Master_thesis/EEG/toBIDS/BIDS_data/sourcedata'
+    output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+
+elif 'shared_PULSATION' in script_dir:
+    print('Running on Lab-Calc server')
+    print('Paths set automatically')
+    input_path = '/home/nicolasp/local_PULSATION/Master_thesis/EEG/toBIDS/BIDS_data/sourcedata'
+    output_path = '/home/nicolasp/shared_PULSATION/derivative'
 
 def preproc_pipeline(subject_id):
     ''' Preprocessing pipeline for EEG data
