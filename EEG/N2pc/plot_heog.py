@@ -11,13 +11,13 @@ import functions.HEOG as heog
 # Parameters to be changed by the user
 
 # Path to data
-input_dir = ''
+input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
 # Where the output files are saved
-output_dir = ''
+output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
 # Population (control or stroke)
 
 # Subject list when analysing single subjects
-subject_list = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+subject_list = [21]
 
 ##############################################################################################################
 
@@ -29,6 +29,7 @@ def loop_over_subjects_topo(subject_list, input_dir, output_dir):
             subject_id = '0' + subject_id
         try:
             heog.plot_heog_erp(subject_id, input_dir, output_dir)
+            heog.rejection_report_heog_artifact(subject_id, input_dir, output_dir)
             print(f'================ Subject {subject_id} done ================')
         except:
             print(f'================ Subject {subject_id} failed ================')

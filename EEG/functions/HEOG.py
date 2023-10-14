@@ -1,8 +1,15 @@
 import mne
 import os
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import signal
+import math
+
+
+################################################################################
+######################### FUNCTIONS FOR ERP (AVERAGED SIGNAL) ##################
+################################################################################
 
 def get_heog_evoked(subject_id, input_dir, output_dir):
     ''' Only for N2pc task, compute the difference between ipsi and contra HEOG, saves it as a np array and returns it.
@@ -217,10 +224,80 @@ def plot_heog_erp(subject_id, input_dir, output_dir):
     ax.grid()
 
     # save figure
-    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'heog-waveform')):
-        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'heog-waveform'))
-    fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'heog-waveform', f'sub-{subject_id}-heog-erp.png'))
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'heog-waveform', 'heog-evoked')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'heog-waveform', 'heog-evoked'))
+    fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'heog-waveform', 'heog-evoked', f'sub-{subject_id}-heog-erp.png'))
     
     print('========== HEOG ERP plot saved ==========')
 
     return None
+
+################################################################################
+############# FUNCTIONS FOR EPOCHS REJECTION BASED ON HEOG AMP #################
+################################################################################
+
+def rejection_report_heog_artifact(subject_id, input_dir, output_dir):
+
+    subject_id = str(subject_id)
+
+    # load epochs
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+
+    # get time vector (important for plotting)
+    time = epochs.times*1000
+
+    # empty list to store the index of the rejected epochs
+    saccades = []
+
+    # loop through the epochs
+    for i, epoch in enumerate(epochs.pick(['EXG3', 'EXG4'])):
+        
+        # get the data of VEOG1, VEOG2, and the diff
+        veog1 = epoch[0]
+        veog2 = epoch[1]
+        diff = veog1-veog2
+        
+        # create and apply a filter to smooth the signal (EXGs are not filtered during preprocessing)
+        sos = signal.butter(1, 5, 'lp', fs=512, output='sos')
+        veog1 = signal.sosfilt(sos,veog1)
+        veog2 = signal.sosfilt(sos,veog2)
+        diff = signal.sosfilt(sos,diff)
+
+        # create directory to save the plots
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'heog-waveform', 'individual-epochs')):
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'heog-waveform', 'individual-epochs'))
+
+        # plot and save the 3 waveformes
+        fig, ax = plt.subplots(figsize=(10,5))
+        ax.plot(time, veog1, c='#FAB6C6', linestyle='--', label='VEOG1')
+        ax.plot(time, veog2, c='#B6F0FA', linestyle='--', label='VEOG2')
+        ax.plot(time, diff, c='#FA2937', label='diff')
+        ax.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+        ax.axhline(y=0, color='black', linewidth=1)
+        ax.set_ylim(-0.0001, 0.0001)
+        ax.set_xlabel('Time (ms)')
+        ax.set_ylabel('Amplitude (V)')
+        ax.set_title(f'subject {subject_id} : epoch {i}')
+        ax.legend()
+        ax.grid()
+        fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'heog-waveform', 'individual-epochs', f'sub-{subject_id}-heog-epoch-{i}.png'))
+        plt.close(fig)
+
+        # create a rejection threshold # here : 40 microV between 0 and 300 ms
+        # tmin : 0 ms -> 0.2*epochs.info['sfreq'] because 200 ms before onset
+        tmin = 0.2*epochs.info['sfreq']
+        tmin = math.ceil(tmin)
+        # tmax : 300ms -> 0.5*epochs.info['sfreq'] because 200 ms before onset + 300 ms after onset
+        tmax = 0.5*epochs.info['sfreq']
+        tmax = math.ceil(tmax)
+
+        if diff[tmin:tmax].max() > 0.00004 or diff[tmin:tmax].min() < -0.00004:
+            print(f'saccade in epoch {i}')
+            saccades.append(i)
+
+    # create and save a csv file with the index of the rejected epochs
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list'))
+    df = pd.DataFrame(saccades) 
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'), index=False, header=False)
+
