@@ -8,12 +8,11 @@ current_dir = os.path.join(os.path.dirname(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-
 import functions.ERP as erp
+from set_paths import get_paths
 
 # Parameters to be changed by the user
-input_dir = ''
-output_dir = ''
+input_dir, output_dir = get_paths()
 
 ########################################################################################################################
 

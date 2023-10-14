@@ -1,11 +1,19 @@
 import os
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import mne
 import glob
 
 ##def alpha_power_df(subject_id):
+
+##############################################################################################################
+############################################### LEGACY, DO NOT USE ###########################################
+##############################################################################################################
+
+print('========== WARNING ==========')
+print('========== OLD CODE ==========')
+print('========== NOT COHERENT WITH CURRENT FILE ORGANIZATION ==========')
+
 
 #Epoch 3 runs
 file_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/preproc/Alpheye_out/data/raw_ica/'

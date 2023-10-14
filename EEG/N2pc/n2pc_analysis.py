@@ -8,6 +8,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 import functions.ERP as erp
+from set_paths import get_paths
 
 ##############################################################################################################
 
@@ -18,14 +19,12 @@ import functions.ERP as erp
 # Variables to be changed by the user : 
 
 # Path to data
-input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
-# Where the output files are saved
-output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+input_dir, output_dir = get_paths()
 # Population (control or stroke)
 population = 'control'
 
 # Subject list when analysing single subjects
-subject_list = [1]
+subject_list = [21]
 
 # List of subjects to be excluded from the grand average
 excluded_subjects_list = [4, 1, 2, 3]

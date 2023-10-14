@@ -9,6 +9,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 from functions.alpha import single_subj_alpha_epoch
+from set_paths import get_paths
 
 
 # Run this file to get the alpha power by side for each epochs. You can chose the participant,
@@ -16,10 +17,7 @@ from functions.alpha import single_subj_alpha_epoch
 # To get a single subject, write 'single' after the file name in the terminal, and then the subject ID when asked.
 # To get all subjects, write 'all' after the file name in the terminal.
 
-# Path to single subj data
-input_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
-# Where the output files are saved
-output_path = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+input_path, output_path = get_paths()
 
 def get_df_all_subj():
 

@@ -8,10 +8,11 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 import functions.ERP as erp
+from set_paths import get_paths
 
 
 # Path to data
-input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+input_dir, _ = get_paths()
 # Task
 task = 'N2pc'
 # Subject list

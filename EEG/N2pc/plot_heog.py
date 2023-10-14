@@ -6,14 +6,13 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 import functions.HEOG as heog
+from set_paths import get_paths
 
 ##############################################################################################################
 # Parameters to be changed by the user
 
 # Path to data
-input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
-# Where the output files are saved
-output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+input_dir, output_dir = get_paths()
 # Population (control or stroke)
 
 # Subject list when analysing single subjects
