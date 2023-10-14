@@ -2,13 +2,7 @@ import sys
 import os
 import argparse
 import pandas as pd
-
-# Add the path to the functions to the system path
-current_dir = os.path.join(os.path.dirname(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-
-from functions.alpha import single_subj_alpha_epoch
+from n2pc_func.alpha import single_subj_alpha_epoch
 from set_paths import get_paths
 
 

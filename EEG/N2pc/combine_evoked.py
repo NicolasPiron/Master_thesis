@@ -1,5 +1,3 @@
-import sys
-import os
 import argparse
 import n2pc_func.ERP as erp
 from set_paths import get_paths
