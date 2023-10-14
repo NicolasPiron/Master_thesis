@@ -28,23 +28,23 @@ We have 3 different tasks.
 
 # file organization 
 
-|-- EEG 
-    |-- N2pc
-        |-- files for analysis
-        |-- module
-    |-- resting-state
-        |-- files for analysis
-        |-- module
-    |-- Alpheye
-        |-- files for analysis
-        |-- module
-|-- ET
-    |-- Alpheye
-|-- toBIDS
-    |-- files to get raw -> BIDS
-    |-- data
-        |-- sourcedata
-        |-- derivatives
+- EEG 
+    - N2pc
+        - files for analysis
+        - module
+    - resting-state
+        - files for analysis
+        - module
+    - Alpheye
+        - files for analysis
+        - module
+- ET
+    - Alpheye
+- toBIDS
+    - files to get raw -> BIDS
+    - data
+        - sourcedata
+        - derivatives
 
 # typical workflow
 
