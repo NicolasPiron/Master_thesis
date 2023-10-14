@@ -11,9 +11,9 @@ sys.path.append(parent_dir)
 import functions.ERP as erp
 from set_paths import get_paths
 
+########################################################################################################################
 # Parameters to be changed by the user
 input_dir, output_dir = get_paths()
-
 ########################################################################################################################
 
 def loop_over_all_subj(input_dir, output_dir):
@@ -35,6 +35,7 @@ def loop_over_all_subj(input_dir, output_dir):
             print(f'==================== Dataframe created and saved for subject {subject_id}! :)')
         except:
             print(f"==================== No data (epochs or reject log) for subject {subject_id}! O_o'")
+            continue
 
 
     df_list = []

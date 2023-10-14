@@ -7,6 +7,7 @@ sys.path.append(parent_dir)
 
 import functions.HEOG as heog
 from set_paths import get_paths
+from set_subject_lists import get_subject_list
 
 ##############################################################################################################
 # Parameters to be changed by the user
@@ -16,7 +17,7 @@ input_dir, output_dir = get_paths()
 # Population (control or stroke)
 
 # Subject list when analysing single subjects
-subject_list = [21]
+subject_list = get_subject_list()
 
 ##############################################################################################################
 

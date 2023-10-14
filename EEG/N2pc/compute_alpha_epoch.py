@@ -38,6 +38,7 @@ def get_df_all_subj():
             print(f'==================== Dataframe created and saved for subject {subject_id}! :)')
         except:
             print(f"==================== No data (epochs or reject log) for subject {subj}! O_o'")
+            continue
 
     df_list = []
     missing_subj = []

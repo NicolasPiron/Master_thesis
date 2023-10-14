@@ -9,19 +9,18 @@ sys.path.append(parent_dir)
 
 from functions import ERP as erp
 from set_paths import get_paths
+from set_subject_lists import get_subject_list, get_excluded_subjects_list
 
 ##############################################################################################################
 # parameters to be changed by the user
 
-input_dir, output_dir = get_paths()
-
 population = 'control'
 
+input_dir, output_dir = get_paths()
 # Subject list when analysing single subjects
-subject_list = [1]
-
+subject_list = get_subject_list()
 # List of subjects to be excluded from the grand average
-excluded_subjects_list = []
+excluded_subjects_list = get_excluded_subjects_list()
 ##############################################################################################################
 
 def loop_over_subjects(subject_list, input_dir, output_dir):
@@ -47,9 +46,12 @@ def loop_over_subjects(subject_list, input_dir, output_dir):
         if len(subject_id) == 1:
             subject_id = '0' + subject_id
 
-        erp.combine_evoked(subject_id, input_dir, output_dir)
-        print(f'================ Subject {subject_id} done ================')
-       
+        try:
+            erp.combine_evoked(subject_id, input_dir, output_dir)
+            print(f'================ Subject {subject_id} done ================')
+        except:
+            print(f'================ No data for subject {subject_id}! ================')
+            continue
 
 if __name__ == '__main__':
 

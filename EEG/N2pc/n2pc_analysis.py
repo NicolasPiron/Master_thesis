@@ -9,14 +9,14 @@ sys.path.append(parent_dir)
 
 import functions.ERP as erp
 from set_paths import get_paths
+from set_subject_lists import get_subject_list, get_excluded_subjects_list
 
 ##############################################################################################################
-
 # This script allows to compute the n2pc waveforms and values for single subjects or for the grand average
 # by typing the following command in the terminal : 'python n2pc_analysis.py single' or 'python n2pc_analysis.py GA'
 # The user can choose to exclude subjects from the grand average
 
-# Variables to be changed by the user : 
+# Parameters to be changed by the user : 
 
 # Path to data
 input_dir, output_dir = get_paths()
@@ -24,11 +24,10 @@ input_dir, output_dir = get_paths()
 population = 'control'
 
 # Subject list when analysing single subjects
-subject_list = [21]
+subject_list = get_subject_list()
 
 # List of subjects to be excluded from the grand average
-excluded_subjects_list = [4, 1, 2, 3]
-
+excluded_subjects_list = get_excluded_subjects_list()
 ##############################################################################################################
 
 def loop_over_subjects_n2pc(subject_list, input_dir, output_dir):

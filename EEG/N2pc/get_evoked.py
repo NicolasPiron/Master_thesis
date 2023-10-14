@@ -9,14 +9,16 @@ sys.path.append(parent_dir)
 
 import functions.ERP as erp
 from set_paths import get_paths
+from set_subject_lists import get_subject_list
 
-
+##############################################################################################################
 # Path to data
 input_dir, _ = get_paths()
 # Task
 task = 'N2pc'
 # Subject list
-subject_list = [1, 2, 3, 4]
+subject_list = get_subject_list()
+##############################################################################################################
 
 
 
