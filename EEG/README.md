@@ -10,7 +10,8 @@ the 3 can be analysed seprately, but before doing so, they need to be preprocess
 
 # Preprocessing
 
-0. Create a directory 'derivative' (name not important but it's what we chose following BIDS - this is where the data and plots will be saved)
+0. Create a directory 'derivatives' (name not important but it's what we chose following BIDS - this is where the data and plots will be saved). 
+The raw data is in 'sourcedata'
 
 1. Add the path at the beginning preproc_pipeline.py
 
