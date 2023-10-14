@@ -28,19 +28,27 @@ We have 3 different tasks.
 
 # file organization 
 
-- EEG 
------ N2pc
------ resting-state
------ Alpheye
-
-- ET
------ Alpheye
-
-- toBIDS
+|-- EEG 
+    |-- N2pc
+        |-- files for analysis
+        |-- module
+    |-- resting-state
+        |-- files for analysis
+        |-- module
+    |-- Alpheye
+        |-- files for analysis
+        |-- module
+|-- ET
+    |-- Alpheye
+|-- toBIDS
+    |-- files to get raw -> BIDS
+    |-- data
+        |-- sourcedata
+        |-- derivatives
 
 # typical workflow
 
-1. If not already the case, transform the data to BIDS format
-2. preprocess
-3. analyis for each task
+1. If not already the case, transform the data to BIDS format. 
+2. Preprocess.
+3. Analyis for each task.
 
