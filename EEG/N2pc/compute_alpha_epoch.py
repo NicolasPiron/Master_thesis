@@ -3,7 +3,7 @@ import os
 import argparse
 import pandas as pd
 from n2pc_func.alpha import single_subj_alpha_epoch
-from set_paths import get_paths
+from n2pc_func.set_paths import get_paths
 
 
 # Run this file to get the alpha power by side for each epochs. You can chose the participant,

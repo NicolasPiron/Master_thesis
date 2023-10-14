@@ -1,7 +1,7 @@
-from time_frequency_func import plot_resting_psd, plot_resting_spectral_topo
+from resting_func.time_frequency_func import plot_resting_psd, plot_resting_spectral_topo
 import os
 import glob
-from set_paths import get_paths
+from resting_func.set_paths import get_paths
 
 # This file plots the topography of the scalp for each subject (theta and alpha bands) 
 # It also plots the PSD for each cluster of electrodes (occip, frontal, parietal, total)

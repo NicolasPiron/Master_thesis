@@ -1,6 +1,6 @@
 import n2pc_func.HEOG as heog
-from set_paths import get_paths
-from set_subject_lists import get_subject_list
+from n2pc_func.set_paths import get_paths
+from n2pc_func.set_subject_lists import get_subject_list
 
 ##############################################################################################################
 # Parameters to be changed by the user

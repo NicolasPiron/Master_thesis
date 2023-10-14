@@ -2,7 +2,7 @@ import os
 import argparse
 import pandas as pd
 import n2pc_func.ERP as erp
-from set_paths import get_paths
+from n2pc_func.set_paths import get_paths
 
 ########################################################################################################################
 # Parameters to be changed by the user

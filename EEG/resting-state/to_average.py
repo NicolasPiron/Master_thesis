@@ -1,7 +1,7 @@
 import mne
 import os
 import glob
-from set_paths import get_paths
+from resting_func.set_paths import get_paths
 
 # This file computes the average of the epochs for each subject and each condition (eyes closed and eyes open)
 #####################################################################

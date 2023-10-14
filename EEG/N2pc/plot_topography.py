@@ -1,7 +1,7 @@
 import argparse
 import n2pc_func.ERP as erp
-from set_paths import get_paths
-from set_subject_lists import get_subject_list, get_excluded_subjects_list
+from n2pc_func.set_paths import get_paths
+from n2pc_func.set_subject_lists import get_subject_list, get_excluded_subjects_list
 
 ##############################################################################################################
 # Parameters to be changed by the user
