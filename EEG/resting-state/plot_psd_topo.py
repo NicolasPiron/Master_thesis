@@ -1,14 +1,14 @@
 from time_frequency_func import plot_resting_psd, plot_resting_spectral_topo
 import os
 import glob
+from set_paths import get_paths
 
 # This file plots the topography of the scalp for each subject (theta and alpha bands) 
 # It also plots the PSD for each cluster of electrodes (occip, frontal, parietal, total)
 
 #####################################################################
 # parameters to be changed by user
-input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
-output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+input_dir, output_dir = get_paths()
 
 bands = {'Theta':(4, 8),
         'Alpha':(8,12)}

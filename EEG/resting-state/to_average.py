@@ -1,16 +1,14 @@
 import mne
 import os
 import glob
+from set_paths import get_paths
 
 # This file computes the average of the epochs for each subject and each condition (eyes closed and eyes open)
 #####################################################################
 # parameters to be changed by user
 
 # path to the derivative folder 
-input_dir = '/home/nicolasp/shared_PULSATION/derivative'
-
-# path to the output folder
-output_dir = '/home/nicolasp/shared_PULSATION/derivative'
+input_dir, output_dir = get_paths()
 
 #####################################################################
 
