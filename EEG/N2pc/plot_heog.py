@@ -1,11 +1,4 @@
-import sys
-import os
-
-current_dir = os.path.join(os.path.dirname(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-
-import functions.HEOG as heog
+import n2pc_func.HEOG as heog
 from set_paths import get_paths
 from set_subject_lists import get_subject_list
 
@@ -18,7 +11,6 @@ input_dir, output_dir = get_paths()
 
 # Subject list when analysing single subjects
 subject_list = get_subject_list()
-
 ##############################################################################################################
 
 def loop_over_subjects_topo(subject_list, input_dir, output_dir):

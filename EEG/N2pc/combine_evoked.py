@@ -1,13 +1,7 @@
 import sys
 import os
 import argparse
-
-# Add the path to the functions to the system path
-current_dir = os.path.join(os.path.dirname(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-
-from functions import ERP as erp
+import n2pc_func.ERP as erp
 from set_paths import get_paths
 from set_subject_lists import get_subject_list, get_excluded_subjects_list
 
