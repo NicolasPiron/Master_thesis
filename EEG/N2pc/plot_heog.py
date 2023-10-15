@@ -13,7 +13,7 @@ input_dir, output_dir = get_paths()
 subject_list = get_subject_list()
 ##############################################################################################################
 
-def loop_over_subjects_topo(subject_list, input_dir, output_dir):
+def loop_over_subjects_heog(subject_list, input_dir, output_dir):
 
    for subject in subject_list:
         subject_id = str(subject)
@@ -30,4 +30,5 @@ def loop_over_subjects_topo(subject_list, input_dir, output_dir):
 
 if __name__ == '__main__':
 
-    loop_over_subjects_topo(subject_list, input_dir, output_dir)
+    loop_over_subjects_heog(subject_list, input_dir, output_dir)
+    heog.report_heog_all_subj(input_dir, output_dir)

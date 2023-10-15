@@ -1,5 +1,6 @@
 import mne
 import os
+import glob
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -306,3 +307,52 @@ def rejection_report_heog_artifact(subject_id, input_dir, output_dir):
     df = pd.DataFrame(saccades) 
     df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'), index=False, header=False)
 
+def report_heog_all_subj(input_dir, output_dir):
+    ''' Take all the csv files containing the index of the rejected epochs for each subject, and create a csv file with the number of rejected epochs for each subject.
+
+    Parameters
+    ----------
+    input_dir : str
+        Path to the input directory.
+    output_dir : str
+        Path to the output directory.
+    
+    Returns
+    -------
+    df : pandas dataframe
+        Dataframe containing the number of rejected epochs for each subject.    
+    '''
+
+    # define subject paths list
+    subject_paths = glob.glob(os.path.join(input_dir, 'sub-*'))
+    print(f'========== {len(subject_paths)} subjects found ==========')
+
+    # re order the list
+    subject_paths = sorted(subject_paths)
+
+    # empty dict to store the number of rejected epochs for each subject
+    rejected_epochs = {}
+
+    # loop through the subject paths
+    for subject_path in subject_paths:
+        subject_id = subject_path[-2:]
+
+        try:
+            # load the csv file containing the index of the rejected epochs
+            df = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'), header=None)
+            # store the number of rejected epochs for each subject
+            rejected_epochs[f'sub-{subject_id}'] = df.shape[0]
+            print(f'========== {subject_id} done ==========')
+        except:
+            print(f'no csv file for subject {subject_id}')
+            continue
+
+    # create a dataframe with the number of rejected epochs for each subject
+    df = pd.DataFrame.from_dict(rejected_epochs, orient='index', columns=['rejected_epochs'])
+
+    # save the dataframe as a csv file
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'heog-artifact-report')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'heog-artifact-report'))
+    df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'heog-artifact-report', 'heog-artifact-report-allsubj.csv'))
+
+    return df
