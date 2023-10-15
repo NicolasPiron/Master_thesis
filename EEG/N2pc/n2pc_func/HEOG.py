@@ -356,3 +356,271 @@ def report_heog_all_subj(input_dir, output_dir):
     df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'heog-artifact-report', 'heog-artifact-report-allsubj.csv'))
 
     return df
+
+def reject_heog_artifacts(subject_id, input_dir, output_dir):
+    ''' Reject the epochs containing HEOG artifacts.
+
+    Parameters
+    ----------
+    subject_id : str
+        Subject ID.
+    input_dir : str
+        Path to the input directory.
+    output_dir : str
+        Path to the output directory.
+    
+    Returns
+    -------
+    epochs : mne epochs
+        Epochs with HEOG artifacts rejected.
+    '''
+
+    subject_id = str(subject_id)
+    print(f'========== rejecting epochs for subject {subject_id} ==========')
+
+    # load epochs
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+
+    # load the csv file containing the index of the rejected epochs
+    df = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'), header=None)
+
+    # get the index of the rejected epochs
+    rejected_epochs = df[0].tolist()
+
+    # reject the epochs
+    epochs.drop(rejected_epochs)
+
+    # save the epochs
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', 'heog-artifact-rejected')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', 'heog-artifact-rejected'))
+    epochs.save(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', 'heog-artifact-rejected', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'), overwrite=True)
+
+    print(f'========== epochs rejected for subject {subject_id} ==========')
+
+    return epochs
+
+################################################################################
+################# FUNCTIONS FOR CLEANED EPOCHS N2PC PLOTS ######################
+################################################################################
+
+# These functions are adapted from ERP.py, that's why they are wierd and not very clean
+
+def to_evoked(subject_id, input_dir):
+    ''' This function converts the epochs to evoked objects and saves them in the subject directory.
+        It saves one evoked file by condition (i.e. bin).
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot.
+    task : str
+        The task to plot.
+    input_dir : str
+        The path to the directory containing the input data.
+    
+    Returns
+    -------
+    None
+    
+    '''
+    # load the epochs
+    file = os.path.join(input_dir, f'sub-{subject_id}/N2pc/cleaned_epochs/heog-artifact-rejected/sub-{subject_id}-cleaned_epochs-N2pc.fif')
+    epochs = mne.read_epochs(file)
+
+
+    # crop the epochs to the relevant time window
+    tmin = -0.2
+    tmax = 0.8
+    epochs.crop(tmin=tmin, tmax=tmax)
+        
+    # define the bins
+    bins = {'bin1' : ['dis_top/target_l','dis_bot/target_l'],
+            'bin2' : ['dis_top/target_r','dis_bot/target_r'],
+            'bin3' : ['no_dis/target_l'],
+            'bin4' : ['no_dis/target_r'],
+            'bin5' : ['dis_right/target_l'],
+            'bin6' : ['dis_left/target_r']}
+
+    # create evoked for each bin
+    evoked_list = [epochs[bin].average() for bin in bins.values()]
+
+    # create evoked for all the conditions
+    evoked_all = epochs.average()
+    
+    # rename the distractor mid conditions to simplify
+    evoked_1 = evoked_list[0]
+    evoked_2 = evoked_list[1]
+    evoked_1.comment = 'dis_mid/target_l'
+    evoked_2.comment = 'dis_mid/target_r'
+    
+    # replace the '/' that causes problems when saving
+    for evoked in evoked_list:
+        evoked.comment = evoked.comment.replace('/', '_')
+    
+    # save the evoked objects in subject directory
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', f'evoked-N2pc-clean')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', f'evoked-N2pc-clean'))
+    for evoked in evoked_list:
+        print(evoked.comment)
+        evoked.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', f'evoked-N2pc-clean', f'sub-{subject_id}-{evoked.comment}-ave.fif'), overwrite=True)
+    evoked_all.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', f'evoked-N2pc-clean', f'sub-{subject_id}-all-ave.fif'), overwrite=True)
+
+def get_evoked(subject_id, input_dir):
+    ''' This function loads the evoked files for a given subject and returns a dictionary
+    
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot.
+    input_dir : str
+        The path to the directory containing the input data.
+    
+    Returns
+    -------
+    bin_evoked : dict
+        A dictionary containing the evoked objects for each condition (i.e. bin).
+    '''
+
+    subject_id = str(subject_id)
+    evoked_path = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', f'evoked-N2pc-clean')
+    evoked_files = glob.glob(os.path.join(evoked_path, f'sub-{subject_id}-*.fif'))
+    # Load the evoked files
+    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
+    bin_dict = {'bin1' : 'dis_mid_target_l',
+            'bin2' : 'dis_mid_target_r',
+            'bin3' : 'no_dis_target_l',
+            'bin4' : 'no_dis_target_r',
+            'bin5' : 'dis_right_target_l',
+            'bin6' : 'dis_left_target_r'}
+
+    # Assign the evoked object that corresponds to the bin
+    bin_evoked = {}
+
+    for bin_name, comment in bin_dict.items():
+        for evoked in evoked_list:
+            if evoked.comment == comment:
+                bin_evoked[bin_name] = evoked
+                break 
+
+    # Rename the keys of the dict
+    prefix = 'evk_'
+    # Create a new dictionary with modified keys
+    bin_evoked = {prefix + key: value for key, value in bin_evoked.items()}
+
+    return bin_evoked
+
+def get_bins_data(subject_id, input_dir):
+    ''' This function extracts the N2pc ERP values for a given subject
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID OR 'GA' to get the grand average.
+    input_dir : str
+        The path to the directory containing the input data.
+
+    Returns
+    -------
+    PO7_data_nbin1 : numpy.ndarray
+        The N2pc ERP data for the Dis_Mid contra condition.
+    PO7_data_nbin2 : numpy.ndarray
+        The N2pc ERP data for the Dis_Mid ipsi condition.
+    PO7_data_nbin3 : numpy.ndarray
+        The N2pc ERP data for the No_Dis contra condition.
+    PO7_data_nbin4: numpy.ndarray
+        The N2pc ERP data for the No_Dis ipsi condition.
+    PO7_data_nbin5 : numpy.ndarray
+        The N2pc ERP data for the Dis_Contra contra condition.
+    PO7_data_nbin6 : numpy.ndarray
+        The N2pc ERP data for the Dis_Contra ipsi condition.
+    time : numpy.ndarray
+        The time axis for the ERP data.
+    '''
+    def get_evoked_data(subject_id, input_dir):
+
+        bin_evoked = get_evoked(subject_id, input_dir)
+        
+        # Define the channel indices for left (Lch) and right (Rch) channels
+        Lch = np.concatenate([np.arange(0, 27)])
+        Rch = np.concatenate([np.arange(33, 36), np.arange(38, 46), np.arange(48, 64)])
+
+        # Lateralize bins in order to be able to compute the N2pc
+        evk_bin1_R = bin_evoked['evk_bin1'].copy().pick(Rch)
+        evk_bin1_L = bin_evoked['evk_bin1'].copy().pick(Lch)
+        evk_bin2_R = bin_evoked['evk_bin2'].copy().pick(Rch)
+        evk_bin2_L = bin_evoked['evk_bin2'].copy().pick(Lch)
+        evk_bin3_R = bin_evoked['evk_bin3'].copy().pick(Rch)
+        evk_bin3_L = bin_evoked['evk_bin3'].copy().pick(Lch)
+        evk_bin4_R = bin_evoked['evk_bin4'].copy().pick(Rch)
+        evk_bin4_L = bin_evoked['evk_bin4'].copy().pick(Lch)
+        evk_bin5_R = bin_evoked['evk_bin5'].copy().pick(Rch)
+        evk_bin5_L = bin_evoked['evk_bin5'].copy().pick(Lch)
+        evk_bin6_R = bin_evoked['evk_bin6'].copy().pick(Rch)
+        evk_bin6_L = bin_evoked['evk_bin6'].copy().pick(Lch)
+
+        # Define functions to create the new bin operations
+        def bin_operator(data1, data2):
+            return 0.5 * data1 + 0.5 * data2
+        
+        # Create the new bins
+        nbin1 = bin_operator(evk_bin1_R.data, evk_bin2_L.data)
+        nbin2 = bin_operator(evk_bin1_L.data, evk_bin2_R.data)
+        nbin3 = bin_operator(evk_bin3_R.data, evk_bin4_L.data)
+        nbin4 = bin_operator(evk_bin3_L.data, evk_bin4_R.data)
+        nbin5 = bin_operator(evk_bin5_R.data, evk_bin6_L.data)
+        nbin6 = bin_operator(evk_bin5_L.data, evk_bin6_R.data)
+        
+        # Useful to plot the data
+        time = bin_evoked['evk_bin1'].times * 1000  # Convert to milliseconds
+
+        # Define the channel indices for (P7, P9, and) PO7
+        #P7_idx = bin_evoked['evk_bin1'].info['ch_names'].index('P7')
+        #P9_idx = bin_evoked['evk_bin1'].info['ch_names'].index('P9')
+        PO7_idx = bin_evoked['evk_bin1'].info['ch_names'].index('PO7')
+
+        # Extract the data for (P7, P9, and) PO7 electrodes
+        PO7_data_nbin1 = nbin1[PO7_idx]
+        PO7_data_nbin2 = nbin2[PO7_idx]
+        PO7_data_nbin3 = nbin3[PO7_idx]
+        PO7_data_nbin4 = nbin4[PO7_idx]
+        PO7_data_nbin5 = nbin5[PO7_idx]
+        PO7_data_nbin6 = nbin6[PO7_idx]
+        
+        return PO7_data_nbin1, PO7_data_nbin2, PO7_data_nbin3, PO7_data_nbin4, PO7_data_nbin5, PO7_data_nbin6, time
+
+    b1, b2, b3, b4, b5, b6, time = get_evoked_data(subject_id, input_dir)
+    
+    return b1, b2, b3, b4, b5, b6, time
+
+def plot_n2pc_clean(subject_id, input_dir, output_dir):
+
+    def create_erp_plot(subject_id, contra, ipsi, time, color, condition, output_dir):
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(time, contra, color=color, label=f'{condition} (Contralateral)')
+        plt.plot(time, ipsi, color=color, linestyle='dashed', label=f'{condition} (Ipsilateral)')
+        plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+        plt.axhline(y=0, color='black', linewidth=1)
+        plt.xlabel('Time (ms)')
+        plt.ylabel('Amplitude (uV)')
+        plt.title(f'Signal from Electrodes PO7 - {condition} Condition')
+        plt.legend()
+        plt.grid()
+        plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','heog-artifact', 'n2pc-plots-clean', f'sub-{subject_id}-PO7_{condition}_clean.png'))
+        plt.show(block=False)
+        plt.close()
+
+    d1, d2, d3, d4, d5, d6, time = get_bins_data(subject_id, input_dir)
+        
+    # Create output directory if it doesn't exist
+    if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}','N2pc','heog-artifact', 'n2pc-plots-clean')) == False:
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','N2pc','heog-artifact', 'n2pc-plots-clean'))
+
+    condition1 = 'Dis_Mid'
+    condition2 = 'No_Dis'
+    condition3 = 'Dis_Contra'
+    create_erp_plot(subject_id, d1, d2, time, 'blue', condition1, output_dir)
+    create_erp_plot(subject_id, d3, d4, time,'green', condition2, output_dir)
+    create_erp_plot(subject_id, d5, d6, time, 'red', condition3, output_dir)
+
+    pass

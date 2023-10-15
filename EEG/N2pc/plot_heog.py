@@ -22,6 +22,9 @@ def loop_over_subjects_heog(subject_list, input_dir, output_dir):
         try:
             heog.plot_heog_erp(subject_id, input_dir, output_dir)
             heog.rejection_report_heog_artifact(subject_id, input_dir, output_dir)
+            heog.to_evoked(subject_id, input_dir)
+            heog.reject_heog_artifacts(subject_id, input_dir, output_dir)
+            heog.plot_n2pc_clean(subject_id, input_dir, output_dir)
             print(f'================ Subject {subject_id} done ================')
         except:
             print(f'================ Subject {subject_id} failed ================')

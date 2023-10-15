@@ -6,7 +6,37 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import mne
 import math
-from file_management import add_sub0
+
+def add_sub0(list):
+    ''' Adds a "sub" and a 0 before the number of the subject
+        if the number has only one digit.
+
+    Parameters
+    ----------
+    list : list
+        The list of subjects to transform
+    
+    Returns
+    ----------
+    transformed_list : list
+        The transformed list of subjects
+
+    '''
+
+        # Transform the list of subjects to exclude into the format 'sub-xx'
+    sub_list = [f'sub-{subject}' for subject in list]
+
+    transformed_list = []
+    for item in sub_list:
+        # Split the string into two parts: 'sub-' and the number
+        parts = item.split('-')
+        if len(parts) == 2 and len(parts[1]) == 1:
+            # If the number has only one digit, add a '0' before it
+            transformed_list.append(f'sub-0{parts[1]}')
+        else:
+            transformed_list.append(item)
+    
+    return transformed_list
 
 
 def to_evoked(subject_id, task, input_dir):
