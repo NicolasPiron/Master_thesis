@@ -120,9 +120,9 @@ def get_resting_power_df(input_dir, output_dir):
                     left_power_mean = left_power.to_data_frame()[cluster_dict[cluster]['left']].mean(axis=1).mean(axis=0)
 
                     # Give better names to the values - better readability
-                    if freq == alpha_freqs:
+                    if freq.mean() == 10:
                         freq_ = 'alpha'
-                    elif freq == theta_freqs:
+                    elif freq.mean() == 6:
                         freq_ = 'theta'
                     
                     if condition == 'RESTINGSTATEOPEN':
@@ -164,7 +164,7 @@ def get_spectrum(subject_id, input_dir):
     epochs_open = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-RESTINGSTATEOPEN.fif'))
     epochs_closed = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-RESTINGSTATECLOSE.fif'))
 
-    # Remove bad epochs from info
+    # Remove bad channels from info
     epochs_open.info['bads'] = []
     epochs_closed.info['bads'] = []
 
@@ -197,7 +197,83 @@ def get_mean_freq(subject_id, input_dir, bands, picks):
     mean_power_closed = np.mean(channel_average_closed)
 
     return mean_power_open, mean_power_closed
-   
+
+def get_spectral_df(input_dir, output_dir):
+
+    # Define the subject list
+    subject_list = [os.path.basename(subj) for subj in glob.glob(os.path.join(input_dir, 'sub-*'))]
+
+    # Define the frequencies
+    alpha_freqs = np.arange(8, 13)
+    theta_freqs = np.arange(4, 9)
+    bands = [alpha_freqs, theta_freqs]
+
+    # Define the electrodes
+    cluster_dict = {'occipital': {'right':['O2', 'PO4', 'PO8'], 'left': ['O1', 'PO3', 'PO7']},
+                    'parietal' : {'right':['P2', 'CP2', 'CP4'], 'left':['P1', 'CP1', 'CP3']},
+                    'frontal':{'right':['FC2', 'FC4', 'F2'], 'left':['FC1', 'FC3', 'F1']},
+                    'total':{ 'right':['O2', 'PO4', 'PO8', 'P2', 'CP2', 'CP4', 'FC2', 'FC4', 'F2'],
+                             'left':['O1', 'PO3', 'PO7', 'P1', 'CP1', 'CP3', 'FC1', 'FC3', 'F1']}}
+
+    # Initiate the df
+    df = pd.DataFrame(columns=[['ID', 'eyes', 'freq band', 'cluster', 'side', 'mean power']])
+
+    # Create a counter to keep track of the rows and be able to correctly add the data to the df (bad idea, need a better solution)
+    counter = 0
+
+    # Loop over the subjects
+    for subject in subject_list:
+            
+            # Check if the files exist, if not, skip the subject
+            if not os.path.exists(os.path.join(input_dir, subject, 'RESTINGSTATEOPEN', 'cleaned_epochs', f'{subject}-cleaned_epochs-RESTINGSTATEOPEN.fif')) or not os.path.exists(os.path.join(input_dir, subject, 'RESTINGSTATECLOSE', 'cleaned_epochs', f'{subject}-cleaned_epochs-RESTINGSTATECLOSE.fif')):
+                print(f'========================= No resting state epochs found for {subject}')
+                continue
+    
+            subject = subject[-2:]
+            print(f'========================= working on {subject}')
+            # Loop over the frequencies
+            for freq in bands:
+                print(f'========================= working on {freq}')
+                # Loop over the clusters
+                for cluster in cluster_dict.keys():
+                    print(f'========================= working on {cluster}')
+                    # Loop over the conditions
+                    
+                    # Compute the mean power for right side, both conditions
+                    mean_power_open_right, mean_power_closed_right = get_mean_freq(subject_id=subject, input_dir=input_dir, bands=freq, picks=cluster_dict[cluster]['right'])
+
+                    # Compute the mean power for left side, both conditions
+                    mean_power_open_left, mean_power_closed_left = get_mean_freq(subject_id=subject, input_dir=input_dir, bands=freq, picks=cluster_dict[cluster]['left'])
+
+                    # Give better names to the values - better readability
+                    if freq.mean() == 10:
+                        freq_ = 'alpha'
+                    elif freq.mean() == 6:
+                        freq_ = 'theta'
+
+                    # Add the data to the df
+                    df.loc[counter] = [subject, 'open', freq_, cluster, 'right', mean_power_open_right]
+                    # Adjust the counter so that the next row is added correctly
+                    counter += 1
+                    df.loc[counter] = [subject, 'closed', freq_, cluster, 'right', mean_power_closed_right]
+                    counter += 1
+                    df.loc[counter] = [subject, 'open', freq_, cluster, 'left', mean_power_open_left]
+                    counter += 1
+                    df.loc[counter] = [subject, 'closed', freq_, cluster, 'left', mean_power_closed_left]
+                    counter += 1
+
+    # Scientific notification because very small values
+    pd.options.display.float_format = '{:.5e}'.format
+
+    # Save the df
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'resting-state-power-df')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state','resting-state-power-df'))
+    df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'resting-state-power-df', 'allsubj_resting_state_power_spectral_version.csv'))
+
+    print('========================= DONE :D')
+
+    return df
+
 def plot_resting_spectral_topo(subject_id, input_dir, output_dir, bands):
 
     # Get the spectrum objects
