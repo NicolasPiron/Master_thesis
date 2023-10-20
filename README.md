@@ -47,7 +47,7 @@ We have 3 different tasks.
               - func module 1
               - func module 2
               - ...
-- ET
+- Eye-tracking
     - Alpheye
 - toBIDS
     - files to get raw -> BIDS
