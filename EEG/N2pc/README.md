@@ -6,7 +6,7 @@ VS task Conditions (8) : - no distractor, target left or right
                          - midline distractor (top, bottom), target left or right
                          - side distractor, target left or right
 
-# Order of usage
+# Run the scripts in the right order
 
 ( /!\ The preprocessing via preproc_pipeline.py has to be done 1st)
 

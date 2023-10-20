@@ -1,1 +1,1 @@
-Function modules for the n2pc EEG signal
+modules for the analysis of the Visual search/n2pc EEG data
