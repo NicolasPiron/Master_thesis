@@ -4,7 +4,7 @@ Scripts for the analysis of the EEG, eyetracking and behavioral data used for my
 ## Table of content 
 
 - [data](#data)
-- [subject_organization](#subject-organization)
+- [subjects_organization](#subject-organization)
 - [file_organization](#file-organization)
 - [workflow](#typical-workflow)
 
@@ -18,7 +18,7 @@ We have 3 different tasks.
 
 - Free viewing task (simplified to Alpheye in most files): EEG, eyetracking and behavioral data
 
-# subject organization
+# subjects organization
 
 - The healthy participants are named from sub-01 to sub-24. Excluded participants (bad data quality - too many interpolated electrodes): [8, 9, 10, 11, 15]
 
