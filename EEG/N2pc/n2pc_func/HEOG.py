@@ -433,6 +433,7 @@ def report_heog_all_subj(input_dir, output_dir):
     data_list = [{'subject': key, **values} for key, values in data_dict.items()]
     # create a dataframe with the number of rejected epochs for each subject
     df = pd.DataFrame(data_list)
+    df.set_index('subject', inplace=True)
 
     # save the dataframe as a csv file
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'heog-artifact-report')):
