@@ -31,13 +31,22 @@ We have 3 different tasks.
 - EEG 
     - N2pc
         - files for analysis
-        - module
+        - function directory
+              - func module 1
+              - func module 2
+              - ...
     - resting-state
         - files for analysis
-        - module
+        - function directory
+              - func module 1
+              - func module 2
+              - ...
     - Alpheye
         - files for analysis
-        - module
+        - function directory
+              - func module 1
+              - func module 2
+              - ...
 - ET
     - Alpheye
 - toBIDS
