@@ -299,13 +299,49 @@ def rejection_report_heog_artifact(subject_id, input_dir, output_dir):
             print(f'saccade in epoch {i}')
             saccades.append(i)
 
+    # Create a dataframe based on the index of the rejected epoch, and add information about the condition of the epoch
+    df = pd.DataFrame(saccades, columns=['index'])
+
+    # Get the condition of each epoch : the full name and the category (to be able to do stats with the side of the lesion of the participants)
+    # The full condirion name
+    conditions = []
+    for sacc in saccades:
+        epoch_ = epochs[sacc]
+        condition = list(epoch_.event_id.keys())[0]
+        conditions.append(condition)
+
+    # Transform the dis_top and dis_bot conditions into dis_mid, but keep the side of the target
+    conditions_clean = []
+    for cond in conditions:
+        if 'dis_top' in cond or 'dis_bot' in cond:
+            if 'target_l' in cond:
+                conditions_clean.append('dis_mid/target_l')
+            elif 'target_r' in cond:
+                conditions_clean.append('dis_mid/target_r')
+        else:
+            conditions_clean.append(cond)
+
+    # The category of the condition
+    conditions_grouped = []
+    for cond in conditions_clean:
+        if 'dis_mid' in cond:
+            conditions_grouped.append('dis_mid')
+        elif 'no_dis' in cond:
+            conditions_grouped.append('no_dis')
+        elif 'dis_right' in cond or 'dis_left' in cond:
+            conditions_grouped.append('dis_lat')
+
+    # add them to the dataframe
+    df['condition'] = conditions_clean
+    df['category'] = conditions_grouped
+    
     print(f'======= rejection based on : {lower_threshold} - {upper_threshold} volts threshold ========')
     print(f'========== {len(saccades)} epochs rejected ==========')
     # create and save a csv file with the index of the rejected epochs
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list')):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list'))
-    df = pd.DataFrame(saccades) 
-    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'), index=False, header=False)
+    #df = pd.DataFrame(saccades) 
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'))
 
 def report_heog_all_subj(input_dir, output_dir):
     ''' Take all the csv files containing the index of the rejected epochs for each subject, and create a csv file with the number of rejected epochs for each subject.
@@ -331,7 +367,7 @@ def report_heog_all_subj(input_dir, output_dir):
     subject_paths = sorted(subject_paths)
 
     # empty dict to store the number of rejected epochs for each subject
-    rejected_epochs = {}
+    data_dict = {}
 
     # loop through the subject paths
     for subject_path in subject_paths:
@@ -339,16 +375,64 @@ def report_heog_all_subj(input_dir, output_dir):
 
         try:
             # load the csv file containing the index of the rejected epochs
-            df = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'), header=None)
+            df = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'))
+
+            # count the number of rejected epochs for each condition
+            try:
+                no_dis_target_r = df['condition'].value_counts()['no_dis/target_r']
+            except:
+                no_dis_target_r = 0
+            try:
+                no_dis_target_l = df['condition'].value_counts()['no_dis/target_l']
+            except:
+                no_dis_target_l = 0
+            try:
+                dis_mid_target_r = df['condition'].value_counts()['dis_mid/target_r']
+            except:
+                dis_mid_target_r = 0
+            try:
+                dis_mid_target_l = df['condition'].value_counts()['dis_mid/target_l']
+            except:
+                dis_mid_target_l = 0
+            try:
+                dis_right_target_l = df['condition'].value_counts()['dis_right/target_l']
+            except:
+                dis_right_target_l = 0
+            try:
+                dis_left_target_r = df['condition'].value_counts()['dis_left/target_r']
+            except:
+                dis_left_target_r = 0
+
+            no_dis = no_dis_target_r + no_dis_target_l
+            dis_mid = dis_mid_target_r + dis_mid_target_l
+            dis_lat = dis_right_target_l + dis_left_target_r
+            
+            total = len(df)
+
             # store the number of rejected epochs for each subject
-            rejected_epochs[f'sub-{subject_id}'] = df.shape[0]
+            rejected_epochs = {}
+            rejected_epochs['total'] = total
+            rejected_epochs['no_dis/target_r'] = no_dis_target_r
+            rejected_epochs['no_dis/target_l'] = no_dis_target_l
+            rejected_epochs['dis_mid/target_r'] = dis_mid_target_r
+            rejected_epochs['dis_mid/target_l'] = dis_mid_target_l
+            rejected_epochs['dis_right/target_l'] = dis_right_target_l
+            rejected_epochs['dis_left/target_r'] = dis_left_target_r
+            rejected_epochs['no_dis'] = no_dis
+            rejected_epochs['dis_mid'] = dis_mid
+            rejected_epochs['dis_lat'] = dis_lat
+            
+            # store the number of rejected epochs for each condition in the dict
+            data_dict[f'sub-{subject_id}'] = rejected_epochs
             print(f'========== {subject_id} done ==========')
         except:
             print(f'no csv file for subject {subject_id}')
             continue
 
+    # Flatten the nested dictionaries into a list of dictionaries
+    data_list = [{'subject': key, **values} for key, values in data_dict.items()]
     # create a dataframe with the number of rejected epochs for each subject
-    df = pd.DataFrame.from_dict(rejected_epochs, orient='index', columns=['rejected_epochs'])
+    df = pd.DataFrame(data_list)
 
     # save the dataframe as a csv file
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'heog-artifact-report')):
@@ -382,10 +466,10 @@ def reject_heog_artifacts(subject_id, input_dir, output_dir):
     epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
 
     # load the csv file containing the index of the rejected epochs
-    df = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'), header=None)
+    df = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'))
 
     # get the index of the rejected epochs
-    rejected_epochs = df[0].tolist()
+    rejected_epochs = df['index'].to_list()
 
     # reject the epochs
     epochs.drop(rejected_epochs)
