@@ -6,12 +6,172 @@ import mne
 import os
 import re
 
-
-
+### ================================================================================================
+### ==================================== N2PC ALPHA POWER PER EPOCH ================================
+### ============================================== FFT =============================================
 ### ================================================================================================
 
-### ==================================== N2PC ALPHA POWER PER EPOCH ================================
+# 3rd version of the functions. This time we compute the alpha power for each individual electrode using FFT.
+# For that we use the mne.time_frequency.Spectrum class. 
 
+def get_psd(subject_id, input_dir):
+
+    # load the epochs
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs',f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+    # clear bad channels
+    epochs.info['bads'] = []
+    # create spectrum object
+    spec = epochs.compute_psd(fmin=0, fmax=35)
+    print(f'========================= PSD for subject {subject_id} computed!')
+
+    return spec
+
+def get_mean_freq(spec, bands, picks, epoch_index):
+
+    # Get the equivalent indices of the bands in the data (from .get_data() method)
+    lower_bound = bands[0]*2
+    upper_bound = bands[1]*2+1
+
+    # Compute the mean of the epochs for each freq
+    spec_mean_power = spec.get_data(picks=picks)[epoch_index:epoch_index+1, :, lower_bound:upper_bound].mean(axis=2)
+    print(f'========================= Mean power for {picks} computed!')
+
+    return spec_mean_power
+
+def get_power_df_single_subj(subject_id, input_dir, output_dir):
+
+
+    # load the epochs
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs',f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+
+    # Get the spec object
+    spec = get_psd(subject_id, input_dir)
+
+    # Define the frequency bands
+    bands = {'theta' : np.arange(4, 9),
+         'alpha' : np.arange(8, 13),
+         'low_beta' : np.arange(12, 17),
+         'high_beta' : np.arange(16, 31)
+    
+    }
+
+    # Define the picks
+    channels = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3', 'FC1', 'C1', 'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7',
+      'PO3', 'O1', 'Iz', 'Oz', 'POz', 'Pz', 'CPz', 'Fpz', 'Fp2', 'AF8', 'AF4', 'AFz', 'Fz', 'F2', 'F4','F6', 'F8', 'FT8', 'FC6', 'FC4', 'FC2', 'FCz', 'Cz', 'C2', 'C4',
+        'C6', 'T8', 'TP8', 'CP6', 'CP4', 'CP2', 'P2', 'P4', 'P6', 'P8', 'P10', 'PO8', 'PO4', 'O2']
+
+    # Define the columns of the dataframe : subject ID, epoch index, epoch dropped, reset index, condition, target side,
+    # distractor position, theta Fp1, alpha Fp1, low beta Fp1, high beta Fp1, theta AF7, alpha AF7, low beta AF7, high beta AF7, etc...
+    ch_list = []
+    for ch in channels:
+        for band in ['theta', 'alpha', 'low_beta', 'high_beta']:
+            ch_list.append(f'{band}-{ch}')
+    columns = ['ID', 'epoch_index', 'epoch_dropped', 'index_reset', 'condition', 'target_side', 'distractor_position'] + ch_list
+
+    # Create the dataframe
+    df = pd.DataFrame(columns=columns)
+
+    # Populate the df
+    # Start by getting the epochs indices, the epochs status (dropped or not) and the reset indices
+
+    # Load the reject log
+    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
+    # Define the epochs status (rejected or not)
+    epochs_status = reject_log['bad_epochs']
+    
+    # Create row for each epoch
+    df['ID'] = [subject_id] * len(epochs_status)
+    df['epoch_index'] = range(1,len(epochs_status)+1)
+    df['epoch_dropped'] = epochs_status
+    
+    # Add a column that store the reset index of the epochs
+    index_val = 0
+    index_list = []
+
+    # Iterate through the 'epoch_dropped' column to create the reset index column
+    for row_number in range(len(df)):
+        if df.iloc[row_number, 2] == False:
+            index_list.append(index_val)
+            index_val += 1
+        else:
+            index_list.append(np.nan)
+
+    # Add the reset index column to the DataFrame
+    df['index_reset'] = index_list
+
+    # Fill the condition and the power columns
+    for row_number in range(len(df)):
+
+        if df.iloc[row_number, 2] == False:
+
+            # add condition
+            df.iloc[row_number, 4] = epochs.events[int(df['index_reset'].loc[row_number]),2]
+
+            # add target side
+            if df.iloc[row_number, 4] % 2 == 0:
+                df.iloc[row_number, 5] = 'right'
+            elif df.iloc[row_number, 4] % 2 != 0:
+                df.iloc[row_number,5] = 'left'
+
+            # add dis position
+            if df.iloc[row_number, 4] in [1,2,5,6]:
+                df.iloc[row_number, 6] = 'mid'
+            elif df.iloc[row_number, 4] in [3,4]:
+                df.iloc[row_number, 6] = 'nodis'
+            elif df.iloc[row_number, 4] in [7,8]:
+                df.iloc[row_number, 6] = 'lat'
+            
+            # Compute the mean power for each band and each electrode
+            for i, ch in enumerate(ch_list):
+                band, pick = ch.split('-')
+                power = get_mean_freq(spec, bands=bands[band], picks=pick, epoch_index=int(df['index_reset'].loc[row_number]))
+                df.iloc[row_number, i+7] = power[0][0] # +7 because the first 6 columns are not electrodes
+
+    print(f'========================= Dataframe created for subject {subject_id}!')
+    # save the dataframe
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'alpha-power-df')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}','N2pc', 'alpha-power-df'))
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'alpha-power-df', f'sub-{subject_id}-alpha-power-per-epoch_v2.csv'), index=False)
+    print(f'========================= Dataframe saved for subject {subject_id}!')
+
+    return df
+
+def get_power_df_all_subj(input_dir, output_dir):
+
+    # Get the list of all the subject directories
+    subject_list = [os.path.basename(subj) for subj in glob.glob(os.path.join(input_dir, 'sub-*'))]
+    # Sort the list
+    subject_list.sort()
+
+    # Create a list to store the dataframes
+    df_list = []
+
+    # Loop over the subject directories
+    for subject in subject_list:
+
+        subject_id = subject[-2:]
+        # Compute alpha power and save it in a dataframe
+        try:
+            df = get_power_df_single_subj(subject_id, input_dir, output_dir)
+            df_list.append(df)
+            print(f'==================== Dataframe created and saved for subject {subject_id}! :)')
+        except:
+            print(f"==================== No data (epochs or reject log) for subject {subject_id}! O_o'")
+            continue
+    
+    # Concatenate all dataframes in the list
+    big_df = pd.concat(df_list)
+
+    # Save dataframe as .csv file
+    if not os.path.exists(os.path.join(output_dir,'all_subj','N2pc', 'alpha-power-allsubj')):
+        os.makedirs(os.path.join(output_dir,'all_subj','N2pc', 'alpha-power-allsubj'))
+    big_df.to_csv(os.path.join(output_dir,'all_subj','N2pc', 'alpha-power-allsubj', 'alpha-power-per-epoch-allsubj_v2.csv'), index=False)
+
+    return big_df
+
+### ================================================================================================
+### ==================================== N2PC ALPHA POWER PER EPOCH ================================
+### ============================================== CWT =============================================
 ### ================================================================================================
 
 

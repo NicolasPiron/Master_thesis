@@ -1,4 +1,4 @@
-import functions.preproc as pp
+import preproc as pp
 import sys
 import os
 
