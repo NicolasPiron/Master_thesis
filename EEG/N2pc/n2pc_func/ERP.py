@@ -1095,7 +1095,7 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
     epochs = mne.read_epochs(file)
 
     # crop epochs to relevent time window
-    epochs.crop(tmin=0, tmax=0.4)
+    epochs.crop(tmin=0, tmax=0.8)
     
     # get the reeject log (preprocessing step) for the subject
     reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
@@ -1212,7 +1212,80 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
 
     print(f'========== df saved for subject {subject_id}')
 
+##### Find peak latency #####
 
+def get_peak_latency_grand_average(input_dir, output_dir, excluded_subjects_list):
+
+    # create the excluded subjects string
+    str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list]
+    excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+    
+    # Get the evoked data
+    stroke_dis_contra = mne.read_evokeds(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', 'stroke', 'stroke-dis_contra-ave.fif'))
+    stroke_dis_mid = mne.read_evokeds(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', 'stroke', 'stroke-dis_mid-ave.fif'))
+    stroke_no_dis = mne.read_evokeds(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', 'stroke', 'stroke-no_dis-ave.fif'))
+    control_dis_contra = mne.read_evokeds(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', 'control', f'control-excluded_subjects-{excluded_subjects_string}-dis_contra-ave.fif'))
+    control_dis_mid = mne.read_evokeds(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', 'control', f'control-excluded_subjects-{excluded_subjects_string}-dis_mid-ave.fif'))
+    control_no_dis = mne.read_evokeds(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', 'control', f'control-excluded_subjects-{excluded_subjects_string}-no_dis-ave.fif'))
+
+    # get the data
+    PO7_stroke_dis_contra = stroke_dis_contra[0].copy().pick('PO7').get_data()
+    PO8_stroke_dis_contra = stroke_dis_contra[0].copy().pick('PO8').get_data()
+    PO7_stroke_dis_mid = stroke_dis_mid[0].copy().pick('PO7').get_data()
+    PO8_stroke_dis_mid = stroke_dis_mid[0].copy().pick('PO8').get_data()
+    PO7_stroke_no_dis = stroke_no_dis[0].copy().pick('PO7').get_data()
+    PO8_stroke_no_dis = stroke_no_dis[0].copy().pick('PO8').get_data()
+    PO7_control_dis_contra = control_dis_contra[0].copy().pick('PO7').get_data()
+    PO8_control_dis_contra = control_dis_contra[0].copy().pick('PO8').get_data()
+    PO7_control_dis_mid = control_dis_mid[0].copy().pick('PO7').get_data()
+    PO8_control_dis_mid = control_dis_mid[0].copy().pick('PO8').get_data()
+    PO7_control_no_dis = control_no_dis[0].copy().pick('PO7').get_data()
+    PO8_control_no_dis = control_no_dis[0].copy().pick('PO8').get_data()
+
+    # create the diff PO7-PO8
+    diff_stroke_dis_contra = PO7_stroke_dis_contra - PO8_stroke_dis_contra
+    diff_stroke_dis_mid = PO7_stroke_dis_mid - PO8_stroke_dis_mid
+    diff_stroke_no_dis = PO7_stroke_no_dis - PO8_stroke_no_dis
+    diff_control_dis_contra = PO7_control_dis_contra - PO8_control_dis_contra
+    diff_control_dis_mid = PO7_control_dis_mid - PO8_control_dis_mid
+    diff_control_no_dis = PO7_control_no_dis - PO8_control_no_dis
+
+    # back to evoked object
+    info = mne.create_info(ch_names=['PO7'], sfreq=512, ch_types='eeg')
+    # empty dict to store the data, easier to loop through
+    peak_data = {}
+
+    peak_data['stroke dis_contra'] = mne.EvokedArray(diff_stroke_dis_contra, info, tmin=0)
+    peak_data['stroke dis_mid'] = mne.EvokedArray(diff_stroke_dis_mid, info, tmin=0)
+    peak_data['stroke no_dis'] = mne.EvokedArray(diff_stroke_no_dis, info, tmin=0)
+    peak_data['control dis_contra'] = mne.EvokedArray(diff_control_dis_contra, info, tmin=0)
+    peak_data['control dis_mid'] = mne.EvokedArray(diff_control_dis_mid, info, tmin=0)
+    peak_data['control no_dis'] = mne.EvokedArray(diff_control_no_dis, info, tmin=0)
+
+    # create a df to store the peak latencies
+    df = pd.DataFrame(columns=['population', 'condition', 'peak_latency', 'peak_amplitude'])
+
+    # define the shape using the number of evoked objects
+    df['population'] = np.zeros(len(peak_data))
+
+    # define the time window
+    tmin=0.2
+    tmax=0.4
+
+    # loop through the evoked objects to get the peak latencies and amplitudes and store them in the df
+    for i, evk in enumerate(peak_data.values()):
+        ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="pos", return_amplitude=True)
+        df.iloc[i, 0] = list(peak_data.keys())[i].split(' ')[0]
+        df.iloc[i, 1] = list(peak_data.keys())[i].split(' ')[1]
+        df.iloc[i, 2] = lat
+        df.iloc[i, 3] = amp
+
+    # save the df
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency'))
+    df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency', f'peak-latency-report.csv'))
+
+    return df
 
 ##### LEGACY CODE #####
 
