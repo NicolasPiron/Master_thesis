@@ -1146,8 +1146,8 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
             # get the data from the channels of interest
             PO7 = epochs[epoch_idx].get_data(picks=['PO7'])
             PO8 = epochs[epoch_idx].get_data(picks=['PO8'])
-            PO7 = PO7.reshape(206)
-            PO8 = PO8.reshape(206)
+            PO7 = PO7.reshape(410)
+            PO8 = PO8.reshape(410)
             
             # find where is ispsilateral and contralateral to the target
             epoch_id = epochs.events[epoch_idx][2]
