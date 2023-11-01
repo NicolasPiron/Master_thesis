@@ -1222,6 +1222,7 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
             diff_400_450 = diff[t_400:t_450].mean()
             diff_450_500 = diff[t_450:t_500].mean()
             diff_500_550 = diff[t_500:t_550].mean()
+            diff_550_600 = diff[t_550:t_600].mean()
             diff_200_300 = diff[t_200:t_300].mean()
             diff_300_400 = diff[t_300:t_400].mean()
             diff_400_500 = diff[t_400:t_500].mean()
@@ -1246,14 +1247,15 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
             df.iloc[row_number, 14] = diff_400_450
             df.iloc[row_number, 15] = diff_450_500
             df.iloc[row_number, 16] = diff_500_550
-            df.iloc[row_number, 17] = diff_200_300
-            df.iloc[row_number, 18] = diff_300_400
-            df.iloc[row_number, 19] = diff_400_500
-            df.iloc[row_number, 20] = diff_500_600
-            df.iloc[row_number, 21] = diff_200_400
-            df.iloc[row_number, 22] = diff_300_500
-            df.iloc[row_number, 23] = diff_400_600
-            df.iloc[row_number, 24] = diff_200_600
+            df.iloc[row_number, 17] = diff_550_600
+            df.iloc[row_number, 18] = diff_200_300
+            df.iloc[row_number, 19] = diff_300_400
+            df.iloc[row_number, 20] = diff_400_500
+            df.iloc[row_number, 21] = diff_500_600
+            df.iloc[row_number, 22] = diff_200_400
+            df.iloc[row_number, 23] = diff_300_500
+            df.iloc[row_number, 24] = diff_400_600
+            df.iloc[row_number, 25] = diff_200_600
     
     print(f'========== df created for subject {subject_id}')
 
