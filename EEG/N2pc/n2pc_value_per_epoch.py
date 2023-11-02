@@ -20,7 +20,7 @@ def loop_over_all_subj(input_dir, output_dir):
     
     # Loop over the subdirectories and create the dataframe for each subject
     for subj in subdirectories:
-        # Compute alpha power and save it in a dataframe
+        # Compute n2pc values and save them in a dataframe
         subject_id = subj[-2:]
 
         try:
@@ -37,7 +37,7 @@ def loop_over_all_subj(input_dir, output_dir):
         if os.path.exists(os.path.join(input_dir, subj, 'n2pc-values', f'{subj}-n2pc_values_per_epoch.csv')):
             df_list.append(pd.read_csv((os.path.join(input_dir, subj, 'n2pc-values', f'{subj}-n2pc_values_per_epoch.csv'))))
         else:
-            print(f"==================== No alpha power dataframe for subject {subj}! O_o'")
+            print(f"==================== No dataframe for subject {subj}! O_o'")
             missing_subj.append(subj)
     # Concatenate all dataframes in the list
     df = pd.concat(df_list)
