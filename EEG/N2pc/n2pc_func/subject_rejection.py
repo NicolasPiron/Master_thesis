@@ -102,7 +102,7 @@ def get_rejected_trials_proportion_all_subj(input_dir, output_dir):
             except:
                 print(f'================ Impossible to create the dataframe for {subject_id} ================')
                 continue
-        df_list.append(df)
+            df_list.append(df)
 
     # Concatenate all dataframes in the list
     df = pd.concat(df_list)
