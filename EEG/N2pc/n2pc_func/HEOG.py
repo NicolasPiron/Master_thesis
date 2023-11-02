@@ -270,8 +270,8 @@ def rejection_report_heog_artifact(subject_id, input_dir, output_dir):
 
         # plot and save the 3 waveformes
         fig, ax = plt.subplots(figsize=(10,5))
-        ax.plot(time, veog1, c='#FAB6C6', linestyle='--', label='VEOG1')
-        ax.plot(time, veog2, c='#B6F0FA', linestyle='--', label='VEOG2')
+        ax.plot(time, veog1, c='#FAB6C6', linestyle='--', label='HEOG1')
+        ax.plot(time, veog2, c='#B6F0FA', linestyle='--', label='HEOG2')
         ax.plot(time, diff, c='#FA2937', label='diff')
         ax.axvline(x=0, color='gray', linestyle='--', linewidth=1)
         ax.axhline(y=0, color='black', linewidth=1)

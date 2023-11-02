@@ -32,16 +32,16 @@ def loop_over_subjects_heog(subject_list, input_dir, output_dir):
             print(f'================ Subject {subject_id} failed -rejection_report_heog_artifact- ================')
             continue
         try:
-            heog.to_evoked(subject_id, input_dir)
-            print(f'================ Subject {subject_id} done -to_evoked- ================')
-        except:
-            print(f'================ Subject {subject_id} failed -to_evoked- ================')
-            continue
-        try:
             heog.reject_heog_artifacts(subject_id, input_dir, output_dir)
             print(f'================ Subject {subject_id} done -reject_heog_artifacts- ================')
         except:
             print(f'================ Subject {subject_id} failed -reject_heog_artifacts- ================')
+            continue
+        try:
+            heog.to_evoked(subject_id, input_dir)
+            print(f'================ Subject {subject_id} done -to_evoked- ================')
+        except:
+            print(f'================ Subject {subject_id} failed -to_evoked- ================')
             continue
         try:
             heog.plot_n2pc_clean(subject_id, input_dir, output_dir)
