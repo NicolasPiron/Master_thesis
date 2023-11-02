@@ -130,6 +130,7 @@ def get_rejected_trials_proportion_all_subj(input_dir, output_dir):
         data=proportion_df, kind="bar",
         x="ID", y="rejection proportion", hue='condition', palette="dark", alpha=.6, height=6)
     fig.refline(y=0.25, color='red')
+    fig.set_xticklabels(rotation = (45), fontsize = 10)
     fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'total-trial-rejection', 'trial_rejection-allsubj.png'), dpi=300)
 
     return None
@@ -167,6 +168,7 @@ def plot_rejection_proportion(subject_id, input_dir, output_dir):
     ax.legend()
     fig.set_size_inches([5,5])
     fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'total-trial-rejection', f'sub-{subject_id}-trial_rejection.png'), dpi=300)
+    plt.close(fig)
 
     return None
 
