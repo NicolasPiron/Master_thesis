@@ -468,17 +468,20 @@ def reject_heog_artifacts(subject_id, input_dir, output_dir):
 
     # load the csv file containing the index of the rejected epochs
     df = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'))
+    print('========== csv file loaded ==========')
 
     # get the index of the rejected epochs
     rejected_epochs = df['index'].to_list()
 
     # reject the epochs
     epochs.drop(rejected_epochs)
+    print('========== epochs rejected ==========')
 
     # save the epochs
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', 'heog-artifact-rejected')):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', 'heog-artifact-rejected'))
     epochs.save(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', 'heog-artifact-rejected', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'), overwrite=True)
+    print('========== epochs saved ==========')
 
     print(f'========== epochs rejected for subject {subject_id} ==========')
 

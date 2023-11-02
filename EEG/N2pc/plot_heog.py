@@ -21,13 +21,33 @@ def loop_over_subjects_heog(subject_list, input_dir, output_dir):
             subject_id = '0' + subject_id
         try:
             heog.plot_heog_erp(subject_id, input_dir, output_dir)
-            heog.rejection_report_heog_artifact(subject_id, input_dir, output_dir)
-            heog.to_evoked(subject_id, input_dir)
-            heog.reject_heog_artifacts(subject_id, input_dir, output_dir)
-            heog.plot_n2pc_clean(subject_id, input_dir, output_dir)
-            print(f'================ Subject {subject_id} done ================')
+            print(f'================ Subject {subject_id} done -plot_heog_erp- ================')
         except:
-            print(f'================ Subject {subject_id} failed ================')
+            print(f'================ Subject {subject_id} failed -plot_heog_erp- ================')
+            continue
+        try:
+            heog.rejection_report_heog_artifact(subject_id, input_dir, output_dir)
+            print(f'================ Subject {subject_id} done -rejection_report_heog_artifact- ================')
+        except:
+            print(f'================ Subject {subject_id} failed -rejection_report_heog_artifact- ================')
+            continue
+        try:
+            heog.to_evoked(subject_id, input_dir)
+            print(f'================ Subject {subject_id} done -to_evoked- ================')
+        except:
+            print(f'================ Subject {subject_id} failed -to_evoked- ================')
+            continue
+        try:
+            heog.reject_heog_artifacts(subject_id, input_dir, output_dir)
+            print(f'================ Subject {subject_id} done -reject_heog_artifacts- ================')
+        except:
+            print(f'================ Subject {subject_id} failed -reject_heog_artifacts- ================')
+            continue
+        try:
+            heog.plot_n2pc_clean(subject_id, input_dir, output_dir)
+            print(f'================ Subject {subject_id} done -plot_n2pc_clean- ================')
+        except:
+            print(f'================ Subject {subject_id} failed -plot_n2pc_clean- ================')
             continue
 
 
