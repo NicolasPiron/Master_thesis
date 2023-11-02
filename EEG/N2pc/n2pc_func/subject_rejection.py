@@ -95,6 +95,7 @@ def get_rejected_trials_proportion_all_subj(input_dir, output_dir):
         subject_id = subject[-2:]
         if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'total-trial-rejection', f'sub-{subject_id}-trial_rejection.csv')):
             print(f'================ Dataframe exists for subject {subject_id} ================')
+            df = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'total-trial-rejection', f'sub-{subject_id}-trial_rejection.csv'))
         else:
             try:
                 print(f'================ Dataframe does not exist for subject {subject_id} - creating it ================')
@@ -102,7 +103,7 @@ def get_rejected_trials_proportion_all_subj(input_dir, output_dir):
             except:
                 print(f'================ Impossible to create the dataframe for {subject_id} ================')
                 continue
-            df_list.append(df)
+        df_list.append(df)
 
     # Concatenate all dataframes in the list
     df = pd.concat(df_list)
@@ -122,12 +123,12 @@ def get_rejected_trials_proportion_all_subj(input_dir, output_dir):
                                                     'no_dis_rejected_proportion': 'No dis'})
 
     # Transform the dataframe from wide to long format
-    proportion_df = proportion_df.melt(id_vars=['ID'], var_name='condition', value_name='proportion')
+    proportion_df = proportion_df.melt(id_vars=['ID'], var_name='condition', value_name='rejection proportion')
 
     # Create a figure
     fig = sns.catplot(
         data=proportion_df, kind="bar",
-        x="ID", y="proportion", hue='condition', palette="dark", alpha=.6, height=6)
+        x="ID", y="rejection proportion", hue='condition', palette="dark", alpha=.6, height=6)
     fig.refline(y=0.25, color='red')
     fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'total-trial-rejection', 'trial_rejection-allsubj.png'), dpi=300)
 
