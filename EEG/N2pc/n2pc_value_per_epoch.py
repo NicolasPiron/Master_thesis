@@ -17,7 +17,8 @@ def loop_over_all_subj(input_dir, output_dir):
         for name in dirs:
             if name.startswith('sub-'):
                 subdirectories.append(name)
-    
+    subdirectories.sort()
+
     # Loop over the subdirectories and create the dataframe for each subject
     for subj in subdirectories:
         # Compute n2pc values and save thems in a dataframe

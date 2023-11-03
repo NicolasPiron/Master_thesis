@@ -66,7 +66,7 @@ def get_power_df_single_subj(subject_id, input_dir, output_dir):
     for ch in channels:
         for band in ['theta', 'alpha', 'low_beta', 'high_beta']:
             ch_list.append(f'{band}-{ch}')
-    columns = ['ID', 'epoch_index', 'epoch_dropped', 'index_reset', 'condition', 'target_side', 'distractor_position'] + ch_list
+    columns = ['ID', 'epoch_index', 'epoch_dropped', 'index_reset','saccade','condition', 'target_side', 'distractor_position'] + ch_list
 
     # Create the dataframe
     df = pd.DataFrame(columns=columns)
@@ -99,33 +99,40 @@ def get_power_df_single_subj(subject_id, input_dir, output_dir):
     # Add the reset index column to the DataFrame
     df['index_reset'] = index_list
 
+    # Load the csv file contaning the indices of epochs with saccades
+    saccades = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'))
+    # Create a list of the indices of the epochs with saccades
+    saccades_list = list(saccades['index'])
+    # Add a column that specifies if the epoch contains a saccade. FALSE if no saccade, TRUE if saccade. 
+    df['saccade'] = df['index_reset'].isin(saccades_list)
+
     # Fill the condition and the power columns
     for row_number in range(len(df)):
 
         if df.iloc[row_number, 2] == False:
 
             # add condition
-            df.iloc[row_number, 4] = epochs.events[int(df['index_reset'].loc[row_number]),2]
+            df.iloc[row_number, 5] = epochs.events[int(df['index_reset'].loc[row_number]),2]
 
             # add target side
-            if df.iloc[row_number, 4] % 2 == 0:
-                df.iloc[row_number, 5] = 'right'
-            elif df.iloc[row_number, 4] % 2 != 0:
-                df.iloc[row_number,5] = 'left'
+            if df.iloc[row_number, 5] % 2 == 0:
+                df.iloc[row_number, 6] = 'right'
+            elif df.iloc[row_number, 5] % 2 != 0:
+                df.iloc[row_number,6] = 'left'
 
             # add dis position
-            if df.iloc[row_number, 4] in [1,2,5,6]:
-                df.iloc[row_number, 6] = 'mid'
-            elif df.iloc[row_number, 4] in [3,4]:
-                df.iloc[row_number, 6] = 'nodis'
-            elif df.iloc[row_number, 4] in [7,8]:
-                df.iloc[row_number, 6] = 'lat'
+            if df.iloc[row_number, 5] in [1,2,5,6]:
+                df.iloc[row_number, 7] = 'mid'
+            elif df.iloc[row_number, 5] in [3,4]:
+                df.iloc[row_number, 7] = 'nodis'
+            elif df.iloc[row_number, 5] in [7,8]:
+                df.iloc[row_number, 7] = 'lat'
             
             # Compute the mean power for each band and each electrode
             for i, ch in enumerate(ch_list):
                 band, pick = ch.split('-')
                 power = get_mean_freq(spec, bands=bands[band], picks=pick, epoch_index=int(df['index_reset'].loc[row_number]))
-                df.iloc[row_number, i+7] = power[0][0] # +7 because the first 6 columns are not electrodes
+                df.iloc[row_number, i+8] = power[0][0] # +8 because the first 8 columns are not electrodes
 
     print(f'========================= Dataframe created for subject {subject_id}!')
     # save the dataframe

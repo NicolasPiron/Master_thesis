@@ -1103,10 +1103,10 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
     epochs_status = reject_log['bad_epochs']
 
     # initialize the df
-    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'condition', 'target_side', '150-200ms', '200-250ms',
+    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'index_reset', 'saccade', 'condition', 'target_side', '150-200ms', '200-250ms',
                                 '250-300ms', '260-310ms', '270-320ms', '280-330ms', '290-340ms', '300-350ms', '350-400ms',
                                 '400-450ms', '450-500ms', '500-550ms', '550-600ms', '200-300ms', '300-400ms', '400-500ms',
-                                '500-600ms', '200-400ms', '300-500ms', '400-600ms', 'total 200-600ms', 'index_reset'])
+                                '500-600ms', '200-400ms', '300-500ms', '400-600ms', 'total 200-600ms'])
     
     # create row for each epoch
     df['epoch_index'] = range(1,len(epochs_status)+1)
@@ -1128,6 +1128,13 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
 
     # add the index column to the DataFrame
     df['index_reset'] = index_list
+
+    # Load the csv file contaning the indices of epochs with saccades
+    saccades = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'))
+    # Create a list of the indices of the epochs with saccades
+    saccades_list = list(saccades['index'])
+    # Add a column that specifies if the epoch contains a saccade. FALSE if no saccade, TRUE if saccade. 
+    df['saccade'] = df['index_reset'].isin(saccades_list)
 
     # iterate through the rows of the DataFrame to fill the columns
     for row_number in range(len(df)):
@@ -1233,29 +1240,29 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
             diff_200_600 = diff[t_200:t_600].mean()
 
             # fill the dataframe with everything we just computed 
-            df.iloc[row_number, 3] = cond
-            df.iloc[row_number, 4] = target_side
-            df.iloc[row_number, 5] = diff_150_200
-            df.iloc[row_number, 6] = diff_200_250
-            df.iloc[row_number, 7] = diff_250_300
-            df.iloc[row_number, 8] = diff_260_310
-            df.iloc[row_number, 9] = diff_270_320
-            df.iloc[row_number, 10] = diff_280_330
-            df.iloc[row_number, 11] = diff_290_340
-            df.iloc[row_number, 12] = diff_300_350
-            df.iloc[row_number, 13] = diff_350_400
-            df.iloc[row_number, 14] = diff_400_450
-            df.iloc[row_number, 15] = diff_450_500
-            df.iloc[row_number, 16] = diff_500_550
-            df.iloc[row_number, 17] = diff_550_600
-            df.iloc[row_number, 18] = diff_200_300
-            df.iloc[row_number, 19] = diff_300_400
-            df.iloc[row_number, 20] = diff_400_500
-            df.iloc[row_number, 21] = diff_500_600
-            df.iloc[row_number, 22] = diff_200_400
-            df.iloc[row_number, 23] = diff_300_500
-            df.iloc[row_number, 24] = diff_400_600
-            df.iloc[row_number, 25] = diff_200_600
+            df.iloc[row_number, 5] = cond
+            df.iloc[row_number, 6] = target_side
+            df.iloc[row_number, 7] = diff_150_200
+            df.iloc[row_number, 8] = diff_200_250
+            df.iloc[row_number, 9] = diff_250_300
+            df.iloc[row_number, 10] = diff_260_310
+            df.iloc[row_number, 11] = diff_270_320
+            df.iloc[row_number, 12] = diff_280_330
+            df.iloc[row_number, 13] = diff_290_340
+            df.iloc[row_number, 14] = diff_300_350
+            df.iloc[row_number, 15] = diff_350_400
+            df.iloc[row_number, 16] = diff_400_450
+            df.iloc[row_number, 17] = diff_450_500
+            df.iloc[row_number, 18] = diff_500_550
+            df.iloc[row_number, 19] = diff_550_600
+            df.iloc[row_number, 20] = diff_200_300
+            df.iloc[row_number, 21] = diff_300_400
+            df.iloc[row_number, 22] = diff_400_500
+            df.iloc[row_number, 23] = diff_500_600
+            df.iloc[row_number, 24] = diff_200_400
+            df.iloc[row_number, 25] = diff_300_500
+            df.iloc[row_number, 26] = diff_400_600
+            df.iloc[row_number, 27] = diff_200_600
     
     print(f'========== df created for subject {subject_id}')
 
