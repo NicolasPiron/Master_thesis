@@ -20,7 +20,7 @@ def loop_over_all_subj(input_dir, output_dir):
     
     # Loop over the subdirectories and create the dataframe for each subject
     for subj in subdirectories:
-        # Compute n2pc values and save them in a dataframe
+        # Compute n2pc values and save thems in a dataframe
         subject_id = subj[-2:]
 
         try:
@@ -34,8 +34,8 @@ def loop_over_all_subj(input_dir, output_dir):
     df_list = []
     missing_subj = []
     for subj in subdirectories:
-        if os.path.exists(os.path.join(input_dir, subj, 'n2pc-values', f'{subj}-n2pc_values_per_epoch.csv')):
-            df_list.append(pd.read_csv((os.path.join(input_dir, subj, 'n2pc-values', f'{subj}-n2pc_values_per_epoch.csv'))))
+        if os.path.exists(os.path.join(input_dir, subj,'N2pc', 'n2pc-values', f'{subj}-n2pc_values_per_epoch.csv')):
+            df_list.append(pd.read_csv((os.path.join(input_dir, subj,'N2pc', 'n2pc-values', f'{subj}-n2pc_values_per_epoch.csv'))))
         else:
             print(f"==================== No dataframe for subject {subj}! O_o'")
             missing_subj.append(subj)
