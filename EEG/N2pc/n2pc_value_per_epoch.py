@@ -42,9 +42,9 @@ def loop_over_all_subj(input_dir, output_dir):
     # Concatenate all dataframes in the list
     df = pd.concat(df_list)
     # Save dataframe as .csv file
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'n2pc-values', 'n2pc-values-per-epoch')):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'n2pc-values', 'n2pc-values-per-epoch'))
-    df.to_csv(os.path.join(output_dir, 'all_subj', 'n2pc-values', 'n2pc-values-per-epoch', 'n2pc_values_per_epoch-allsubj.csv'), index=False)
+    if not os.path.exists(os.path.join(output_dir,'N2pc', 'all_subj', 'n2pc-values', 'n2pc-values-per-epoch')):
+        os.makedirs(os.path.join(output_dir,'N2pc', 'all_subj', 'n2pc-values', 'n2pc-values-per-epoch'))
+    df.to_csv(os.path.join(output_dir,'N2pc', 'all_subj', 'n2pc-values', 'n2pc-values-per-epoch', 'n2pc_values_per_epoch-allsubj.csv'), index=False)
     print(f'==================== Dataframe created and saved for all subjects! :) (except for {missing_subj})')
 
 
