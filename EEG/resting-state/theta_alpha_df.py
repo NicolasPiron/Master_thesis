@@ -11,5 +11,5 @@ input_dir, output_dir = get_paths()
 #####################################################################
 
 if __name__ == '__main__':
-    get_resting_power_df(input_dir, output_dir)
+    #get_resting_power_df(input_dir, output_dir)
     get_spectral_df(input_dir, output_dir)

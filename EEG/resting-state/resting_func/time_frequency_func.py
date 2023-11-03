@@ -203,20 +203,23 @@ def get_spectral_df(input_dir, output_dir):
     # Define the subject list
     subject_list = [os.path.basename(subj) for subj in glob.glob(os.path.join(input_dir, 'sub-*'))]
 
-    # Define the frequencies
-    alpha_freqs = np.arange(8, 13)
-    theta_freqs = np.arange(4, 9)
-    bands = [alpha_freqs, theta_freqs]
+     # Define the frequency bands
+    bands = {'theta' : np.arange(4, 9),
+         'alpha' : np.arange(8, 13),
+         'low_beta' : np.arange(12, 17),
+         'high_beta' : np.arange(16, 31)
+    }
 
-    # Define the electrodes
-    cluster_dict = {'occipital': {'right':['O2', 'PO4', 'PO8'], 'left': ['O1', 'PO3', 'PO7']},
-                    'parietal' : {'right':['P2', 'CP2', 'CP4'], 'left':['P1', 'CP1', 'CP3']},
-                    'frontal':{'right':['FC2', 'FC4', 'F2'], 'left':['FC1', 'FC3', 'F1']},
-                    'total':{ 'right':['O2', 'PO4', 'PO8', 'P2', 'CP2', 'CP4', 'FC2', 'FC4', 'F2'],
-                             'left':['O1', 'PO3', 'PO7', 'P1', 'CP1', 'CP3', 'FC1', 'FC3', 'F1']}}
+    # Define the picks
+    channels = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3', 'FC1', 'C1', 'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7',
+      'PO3', 'O1', 'Iz', 'Oz', 'POz', 'Pz', 'CPz', 'Fpz', 'Fp2', 'AF8', 'AF4', 'AFz', 'Fz', 'F2', 'F4','F6', 'F8', 'FT8', 'FC6', 'FC4', 'FC2', 'FCz', 'Cz', 'C2', 'C4',
+        'C6', 'T8', 'TP8', 'CP6', 'CP4', 'CP2', 'P2', 'P4', 'P6', 'P8', 'P10', 'PO8', 'PO4', 'O2']
+    
+
+    columns = ['ID','condition', 'freq_band', 'electrode', 'side', 'mean_power']
 
     # Initiate the df
-    df = pd.DataFrame(columns=[['ID', 'eyes', 'freq band', 'cluster', 'side', 'mean power']])
+    df = pd.DataFrame(columns=[columns])
 
     # Create a counter to keep track of the rows and be able to correctly add the data to the df (bad idea, need a better solution)
     counter = 0
@@ -232,35 +235,31 @@ def get_spectral_df(input_dir, output_dir):
             subject = subject[-2:]
             print(f'========================= working on {subject}')
             # Loop over the frequencies
-            for freq in bands:
+            for band, freq in bands.items():
                 print(f'========================= working on {freq}')
                 # Loop over the clusters
-                for cluster in cluster_dict.keys():
-                    print(f'========================= working on {cluster}')
+                for channel in channels:
+                    print(f'========================= working on {channel}')
                     # Loop over the conditions
                     
-                    # Compute the mean power for right side, both conditions
-                    mean_power_open_right, mean_power_closed_right = get_mean_freq(subject_id=subject, input_dir=input_dir, bands=freq, picks=cluster_dict[cluster]['right'])
+                    # Compute the mean power for the channel, both conditions
+                    mean_power_open, mean_power_closed = get_mean_freq(subject_id=subject, input_dir=input_dir, bands=freq, picks=channel)
 
-                    # Compute the mean power for left side, both conditions
-                    mean_power_open_left, mean_power_closed_left = get_mean_freq(subject_id=subject, input_dir=input_dir, bands=freq, picks=cluster_dict[cluster]['left'])
-
-                    # Give better names to the values - better readability
-                    if freq.mean() == 10:
-                        freq_ = 'alpha'
-                    elif freq.mean() == 6:
-                        freq_ = 'theta'
+                    # Find the side of the channel
+                    if channel[-1] == 'z':
+                        side = 'midline'
+                    elif int(channel[-1]) % 2 == 0:
+                        side = 'right'
+                    elif int(channel[-1]) % 2 != 0:
+                        side = 'left'
 
                     # Add the data to the df
-                    df.loc[counter] = [subject, 'open', freq_, cluster, 'right', mean_power_open_right]
+                    df.loc[counter] = [subject, 'open', band, channel, side, mean_power_open]
                     # Adjust the counter so that the next row is added correctly
                     counter += 1
-                    df.loc[counter] = [subject, 'closed', freq_, cluster, 'right', mean_power_closed_right]
+                    df.loc[counter] = [subject, 'closed', band, channel, side, mean_power_closed]
                     counter += 1
-                    df.loc[counter] = [subject, 'open', freq_, cluster, 'left', mean_power_open_left]
-                    counter += 1
-                    df.loc[counter] = [subject, 'closed', freq_, cluster, 'left', mean_power_closed_left]
-                    counter += 1
+
 
     # Scientific notification because very small values
     pd.options.display.float_format = '{:.5e}'.format
