@@ -263,7 +263,7 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
     excluded_subjects_list : list
         List of subjects to be excluded from the grand average.
     population : str
-        Population (control or stroke).
+        Population, can be 'stroke', 'young_control' or 'old_control'.
 
     Returns
     -------
@@ -318,17 +318,23 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
     
         subject_list = get_non_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=exclude_subjects)
 
-        if population == 'control':
+        if population == 'old_control':
 
-            # keep only the control subjects (i.e. subject IDs < 50)
+            # keep only the old control subjects (i.e. subject IDs < 50)
             subject_list = [subject for subject in subject_list if int(subject[-2:]) < 50]
+            print(f'====================== subjects list, control population : {subject_list}')
+
+        elif population == 'young_control':
+
+            # keep only the young control subjects (i.e. subjects IDs > 69)
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 69]
             print(f'====================== subjects list, control population : {subject_list}')
             
 
         elif population == 'stroke':
 
-            # keep only the stroke subjects (i.e. subject IDs > 50)
-            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 50]
+            # keep only the stroke subjects (i.e. subject IDs > 50, but < 70)
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 50 and int(subject[-2:]) < 70]
             print(f'====================== subjects list, stroke population : {subject_list}')
 
 
@@ -369,11 +375,14 @@ def combine_evoked(subject_id, input_dir, output_dir, exclude_subjects=False, ex
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population)):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population))
         
-        if population == 'control':
+        if population == 'old_control':
             str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
             excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        elif population == 'young_control':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 69]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
         elif population == 'stroke':
-            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50]
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50 and sub < 70]
             excluded_subjects_string = '_'.join(str_excluded_subjects_list)
 
         if exclude_subjects == True:
@@ -563,7 +572,7 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
     excluded_subjects_list : list
         List of subjects to be excluded from the grand average.
     population : str
-        Population (control or stroke).
+        Population (old_control, young_control or stroke).
     
     Returns
     -------
@@ -639,17 +648,23 @@ def get_bins_data(subject_id, input_dir, exclude_subjects=False, excluded_subjec
         
         subject_list = get_non_excluded_subjects_list(excluded_subjects_list, input_dir, exclude_subjects=exclude_subjects)
         
-        if population == 'control':
+        if population == 'old_control':
 
             # keep only the control subjects (i.e. subject IDs < 50)
             subject_list = [subject for subject in subject_list if int(subject[-2:]) < 50]
             print(f'====================== subjects list, control population : {subject_list}')
-            
+
+        elif population == 'young_control':
+                
+            # keep only the control subjects (i.e. subjects IDs > 69)
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 69]
+            print(f'====================== subjects list, control population : {subject_list}')
+        
 
         elif population == 'stroke':
 
-            # keep only the stroke subjects (i.e. subject IDs > 50)
-            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 50]
+            # keep only the stroke subjects (i.e. subject IDs > 50, but < 70)
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 50 and int(subject[-2:]) < 70]
             print(f'====================== subjects list, stroke population : {subject_list}')
             
         # initialize lists to store the data for each subject
@@ -714,7 +729,7 @@ def plot_n2pc_all_cond(subject_id, input_dir, output_dir, exclude_subjects=False
     excluded_subjects_list : list
         List of subjects to be excluded from the grand average.
     population : str
-        Population (control or stroke).
+        Population (old_control, young_control or stroke).
     
     Returns
     -------
@@ -733,7 +748,7 @@ def plot_n2pc_all_cond(subject_id, input_dir, output_dir, exclude_subjects=False
 
             subject_list = get_all_subjects_list(input_dir)
 
-        if population == 'control':
+        if population == 'old_control':
 
             # keep only the control subjects (i.e. subject IDs < 50)
             subject_list = [subject for subject in subject_list if int(subject[-2:]) < 50]
@@ -744,13 +759,24 @@ def plot_n2pc_all_cond(subject_id, input_dir, output_dir, exclude_subjects=False
 
             print(f'====================== subjects list, control population : {subject_list}')
 
-        elif population == 'stroke':
-
-            # keep only the stroke subjects (i.e. subject IDs > 50)
-            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 50]
+        elif population == 'young_control':
+                    
+            # keep only the control subjects (i.e. subjects IDs > 69)
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 69]
 
             # get a string with the excluded subjects IDs
-            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50]
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 69]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+
+            print(f'====================== subjects list, control population : {subject_list}')
+
+        elif population == 'stroke':
+
+            # keep only the stroke subjects (i.e. subject IDs > 50, but < 70)
+            subject_list = [subject for subject in subject_list if int(subject[-2:]) > 50 and int(subject[-2:]) < 70]
+
+            # get a string with the excluded subjects IDs
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50 and sub < 70]
             excluded_subjects_string = '_'.join(str_excluded_subjects_list)
 
             print(f'====================== subjects list, stroke population : {subject_list}')
@@ -841,7 +867,7 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
     excluded_subjects_list : list
         List of subjects to be excluded from the grand average.
     population : str
-        Population (control or stroke).
+        Population (old_control, young_control or stroke).
 
     Returns
     -------
@@ -905,13 +931,15 @@ def plot_n2pc(subject_id, input_dir, output_dir, exclude_subjects=False, exclude
         if os.path.exists(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', population, 'n2pc-waveform')) == False:
             os.makedirs(os.path.join(output_dir, 'all_subj','N2pc','n2pc-plots', population, 'n2pc-waveform'))
         
-        if population == 'control':
+        if population == 'old_control':
             str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
             excluded_subjects_string = '_'.join(str_excluded_subjects_list)
-        elif population == 'stroke':
-            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50]
+        elif population == 'young_control':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 69]
             excluded_subjects_string = '_'.join(str_excluded_subjects_list)
-        
+        elif population == 'stroke':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50 and sub < 70]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
     else:
         
         d1, d2, d3, d4, d5, d6, time = get_bins_data(subject_id, input_dir)
@@ -968,7 +996,7 @@ def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, e
     excluded_subjects_list : list
         List of subjects to be excluded from the grand average.
     population : str
-        Population (control or stroke).
+        Population (old_control, young_control or stroke).
 
     Returns
     -------
@@ -1053,11 +1081,14 @@ def get_n2pc_values(subject_id, input_dir, output_dir, exclude_subjects=False, e
         if not os.path.exists(os.path.join(output_dir, 'all_subj','N2pc', 'n2pc-values', population)):
             os.makedirs(os.path.join(output_dir, 'all_subj','N2pc', 'n2pc-values', population))
 
-        if population == 'control':
+        if population == 'old_control':
             str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub < 50]
             excluded_subjects_string = '_'.join(str_excluded_subjects_list)
+        elif population == 'young_control':
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 69]
+            excluded_subjects_string = '_'.join(str_excluded_subjects_list)
         elif population == 'stroke':
-            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50]
+            str_excluded_subjects_list = [str(sub) for sub in excluded_subjects_list if sub > 50 and sub < 70]
             excluded_subjects_string = '_'.join(str_excluded_subjects_list)
             
         title = f'{population}-excluded_subjects-{excluded_subjects_string}'
