@@ -38,6 +38,9 @@ def load_data(subject_id, task, input_path, plot_data=True):
         raw = mne.io.read_raw_bdf(file)
         raw.load_data()
 
+        # crop the data to 3 minutes
+        raw.crop(tmin=0,tmax=180)
+
         # Plot the raw data to select bad channels
         if plot_data == True:
             raw.plot(scalings='auto')
