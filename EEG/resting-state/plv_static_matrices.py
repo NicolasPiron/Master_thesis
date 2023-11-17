@@ -24,8 +24,12 @@ if __name__ == '__main__':
     for group_name, group_list in group_dict.items():
         for metric in metric_list:
             for freqs in freqs_list:
-                df_open_group, df_closed_group = static_connectivity.create_conn_matrix_group(group_list, metric, freqs, input_dir, output_dir)
-                static_connectivity.plot_and_save_group_matrix(df_open_group, df_closed_group, group_name, metric, freqs, output_dir)
+                try:
+                    df_open_group, df_closed_group = static_connectivity.create_conn_matrix_group(group_list, metric, freqs, input_dir, output_dir)
+                    static_connectivity.plot_and_save_group_matrix(df_open_group, df_closed_group, group_name, metric, freqs, output_dir)
+                except:
+                    print(f'Could not create matrix for {group_name}, {metric}, {freqs}')
+                    continue
 
 
 
