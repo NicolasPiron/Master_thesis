@@ -149,6 +149,8 @@ def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir)
 
     for subject_id in subject_list:
 
+        subject_id = str(subject_id).zfill(2)
+
         try:
             if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.csv')) and os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv')):
                 print(f'===== Loading connectivity matrices for subject {subject_id} =====')
