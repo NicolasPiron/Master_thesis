@@ -203,6 +203,10 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
     # get the channel names
     chan_names = df_open_group.index.values
 
+    # transform the dataframes into 2D arrays
+    df_open_group = df_open_group.values
+    df_closed_group = df_closed_group.values
+
     # Plot group average connectivity matrix, 1 plot for each condition. Add title with subject ID, condition and frequency band.
     # Also add a colorbar to each plot.
     def plot_conn_matrix(conn_matrix, condition):
@@ -235,6 +239,10 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
     fig_open_circle = plot_conn_circle(df_open_group, 'open') 
     fig_closed_circle = plot_conn_circle(df_closed_group, 'closed')
     print(f'===== Connectivity plots created for {population} =====')
+
+    # transform the 2D arrays back into dataframes
+    df_open_group = pd.DataFrame(df_open_group, columns=chan_names, index=chan_names)
+    df_closed_group = pd.DataFrame(df_closed_group, columns=chan_names, index=chan_names)
 
     # Save figures
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs')):
