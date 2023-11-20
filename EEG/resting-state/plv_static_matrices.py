@@ -16,7 +16,7 @@ thal_control = [sub for sub in stroke if sub not in pulvinar]
 group_dict = {'old_control':old_control, 'young_control':young_control, 'stroke':stroke, 'thal_control':thal_control, 'pulvinar':pulvinar}
 
 # Define parameters
-metric_list = ['plv', 'pli']
+metric_list = ['coh', 'plv', 'ciplv', 'pli', 'wpli']
 freqs_list = [np.arange(4,9), np.arange(8, 13), np.arange(12, 17), np.arange(16, 31)]
 
 if __name__ == '__main__':
