@@ -17,7 +17,7 @@ group_dict = {'old_control':old_control, 'young_control':young_control, 'stroke'
 
 # Define parameters
 metric_list = ['plv', 'pli']
-freqs_list = [np.arange(4,9), np.arange(8, 13, 1), np.arange, np.arange(12, 17), np.arange(16, 31)]
+freqs_list = [np.arange(4,9), np.arange(8, 13), np.arange(12, 17), np.arange(16, 31)]
 
 if __name__ == '__main__':
 

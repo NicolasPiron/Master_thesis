@@ -69,7 +69,7 @@ def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir)
         ax.set_yticks(np.arange(len(chan_names)))
         ax.set_xticklabels(chan_names, rotation=90, fontsize=8)
         ax.set_yticklabels(chan_names, fontsize=8)
-        im0 = ax.imshow(conn_matrix)
+        im0 = ax.imshow(conn_matrix, vmin=0, vmax=1)
         fig.colorbar(im0, shrink=0.81)
 
         return fig
@@ -227,8 +227,8 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
         ax.set_yticks(np.arange(len(chan_names)))
         ax.set_xticklabels(chan_names, rotation=90, fontsize=8)
         ax.set_yticklabels(chan_names, fontsize=8)
-        im0 = ax.imshow(conn_matrix)
-        fig.colorbar(im0, shrink=0.81)
+        im0 = ax.imshow(conn_matrix, vmin=0, vmax=1)
+        fig.colorbar(im0,shrink=0.81)
 
         return fig
     
