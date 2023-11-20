@@ -78,7 +78,7 @@ def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir)
 
         fig, ax = plt.subplots(figsize=(8, 8), facecolor='black',
                        subplot_kw=dict(polar=True))
-        plot_connectivity_circle(conn_matrix, node_names=chan_names,n_lines=300,
+        plot_connectivity_circle(conn_matrix, node_names=chan_names,n_lines=300, vmin=0, vmax=1,
                                 title=f'Subject {subject_id} - {metric} - {freqs[0]}-{freqs[-1]} Hz', ax=ax, show=False)
         fig.tight_layout()
     
@@ -236,7 +236,7 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
 
         fig, ax = plt.subplots(figsize=(8, 8), facecolor='black',
                        subplot_kw=dict(polar=True))
-        plot_connectivity_circle(conn_matrix, node_names=chan_names,n_lines=300,
+        plot_connectivity_circle(conn_matrix, node_names=chan_names,n_lines=300, vmin=0, vmax=1,
                                 title=f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz', ax=ax, show=False)
         fig.tight_layout()
     
