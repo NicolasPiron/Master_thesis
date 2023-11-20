@@ -21,6 +21,16 @@ freqs_list = [np.arange(4,9), np.arange(8, 13), np.arange(12, 17), np.arange(16,
 
 if __name__ == '__main__':
 
+    for subject in subject_list:
+        subject_id = str(subject_id).zfill(2)
+        for metric in metric_list:
+            for freqs in freqs_list:
+                try:
+                    static_connectivity.create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir)
+                except:
+                    print(f'Could not create matrix for subject {subject}, {metric}, {freqs}')
+                    continue
+
     for group_name, group_list in group_dict.items():
         group_list = sorted(group_list)
         for metric in metric_list:
