@@ -22,7 +22,7 @@ freqs_list = [np.arange(4,9), np.arange(8, 13), np.arange(12, 17), np.arange(16,
 if __name__ == '__main__':
 
     for subject in subject_list:
-        subject_id = str(subject_id).zfill(2)
+        subject_id = str(subject).zfill(2)
         for metric in metric_list:
             for freqs in freqs_list:
                 try:
