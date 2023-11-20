@@ -169,8 +169,18 @@ def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir)
             continue
 
     # Create group average connectivity matrix
-    df_open_group = pd.concat(matrices_open, axis=0).groupby(level=0).mean()
-    df_closed_group = pd.concat(matrices_closed, axis=0).groupby(level=0).mean()
+    df_open_group = 0
+    df_closed_group = 0
+    for i in range(len(matrices_open)):
+        if i == 0:
+            df_open_group = matrices_open[i].copy()
+            df_closed_group = matrices_closed[i].copy()
+        else:
+            df_open_group += matrices_open[i].copy()
+            df_closed_group += matrices_closed[i].copy()
+    df_open_group = df_open_group/len(matrices_open)
+    df_closed_group = df_closed_group/len(matrices_closed)
+
     print(f'===== Group average connectivity matrices created. Subjects {subject_data_not_found} were not included =====')
 
     return df_open_group, df_closed_group
