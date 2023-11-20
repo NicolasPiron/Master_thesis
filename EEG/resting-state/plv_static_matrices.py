@@ -7,7 +7,7 @@ import numpy as np
 input_dir, output_dir = get_paths()
 subject_list = get_subject_list()
 
-pulvinar = [1, 3, 9]
+pulvinar = [51, 53, 59]
 old_control = [sub for sub in subject_list if sub < 50]
 young_control = [sub for sub in subject_list if sub > 69]
 stroke = [sub for sub in subject_list if sub > 49 and sub < 70]
