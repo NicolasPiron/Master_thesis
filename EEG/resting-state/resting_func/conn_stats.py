@@ -237,70 +237,130 @@ def nbs_bct_corr_z(corr_arr, thresh, y_vec, k=1000, extent=True, verbose=False):
     return pvals, adj, null
 
 
-def get_nbs_inputs(subject_list, metric, freqs, condition, input_dir):
+def get_nbs_inputs(input_dir, *population_dicts):
     ''' Gets you the matrices and the y_vec in the right format for the NBS function.
 
     Parameters
     ----------
-    subject_list : list
-        list of subjects to include in the analysis
-    metric : str
-        metric to use for the analysis (coh, plv, ciplv, pli, wpli)
-    freqs : list
-        list of frequencies to use for the analysis
-    condition : str
-        condition to use for the analysis (RESTINGSTATEOPEN, RESTINGSTATECLOSE)
     input_dir : str
         path to the input directory
+    population_dicts : list of dicts
+        dictionary with the following keys:
+        - subject_list : list with the subjects to be included in the analysis
+        - metric : str with the metric to be used
+        - freqs : list with the frequencies to be included in the analysis
+        - condition : str with the condition to be included in the analysis
     
     Returns
     -------
     stacked_matrices : np.ndarray
         3D array with the matrices of each subject stacked
     group_vec : np.ndarray
-        vector with the group of each subject (0 = old control, 1 = young controls, 2 = pulvinar, 3 for the thal_control)
+        vector with the group of each subject (0 = 1st group, 1 = 2nd group, etc)
     '''
     def get_subjects_df_list(subject_list, metric, freqs, condition, input_dir):
         '''
         Create a list with the matrix (df) of each subject. Transform each matrix to fill the upper triangle with the lower triangle values.
         '''
         matrix_list = []
+        subject_list = sorted(subject_list)
         for subject in subject_list:
             subject_id = str(subject).zfill(2)
-            cnd_abrv = condition[12:].lower()
+            if condition == 'RESTINGSTATEOPEN':
+                cnd_abrv = 'open'
+            elif condition == 'RESTINGSTATECLOSE':
+                cnd_abrv = 'closed'
             df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{cnd_abrv}.csv'), index_col=0)
             df = np.triu(df.T, 1) + df
             matrix_list.append(df)
-        matrix_list.sort()
         return matrix_list
 
-    def stack_matrices(matrix_list):
+    def stack_matrices(*mat_lst):
         '''
         Stack the matrices of each subject in a 3D array
         '''
-        stacked_matrices = np.stack(matrix_list, axis=-1)
-        return stacked_matrices
+        new_lst=[]
+        for lst in mat_lst:
+            for mat in lst:
+                new_lst.append(mat)
+        stacked_mat = np.stack(new_lst, axis=-1)
+        return stacked_mat
 
-    def get_group_vec(subject_list):
+    def get_group_vec(*lists):
         '''
         Create a vector with the a value for each subject that represent its group
         '''
-        pul= [51, 53, 59]
         group_vec = []
-        for subject in subject_list:
-            if subject < 50:
-                group_vec.append(0)
-            elif subject > 69:
-                group_vec.append(1)
-            elif subject in pul:
-                group_vec.append(2)
-            elif subject > 49 and subject < 70 and subject not in pul:
-                group_vec.append(3)
+        for i, lst in enumerate(lists):
+            group_vec.extend([i]*len(lst))
         return np.array(group_vec)
+    
 
-    matrix_list = get_subjects_df_list(subject_list, metric, freqs, condition, input_dir)
-    stacked_matrices = stack_matrices(matrix_list)
-    group_vec = get_group_vec(subject_list)
+    matrix_lists = []
+    for pop_dict in population_dicts:
+        subj_list = pop_dict['subject_list']
+        metric_val = pop_dict['metric']
+        freqs_val = pop_dict['freqs']
+        condition_val = pop_dict['condition']
+        
+        matrix_list = get_subjects_df_list(subj_list, metric_val, freqs_val, condition_val, input_dir)
+        matrix_lists.append(matrix_list)
+
+
+    stacked_matrices = stack_matrices(*matrix_lists)
+    group_vec = get_group_vec(*matrix_lists)
 
     return stacked_matrices, group_vec
 
+def nbs_report(pvals, adj, null, thresh, output_dir, *names):
+    ''' Create a report with the results of the NBS analysis. 
+
+    Parameters
+    ----------
+    pvals : np.ndarray
+        p-values of the NBS analysis
+    adj : np.ndarray
+        adjacency matrix of the NBS analysis
+    null : np.ndarray
+        null distribution of the NBS analysis
+    output_dir : str
+        path to the output directory
+    names : list
+        list with the names of the comparisons
+
+    Returns
+    -------
+    None   
+    '''
+
+    # Create a string with the names of the comparisons
+    names_str = ''
+    for i, name in enumerate(names):
+        if i < len(names)-1:
+            names_str += name + '_VS_'
+        else:
+            names_str += name
+    
+    # Create a dataframe with only the pvalues
+    pvals_df = pd.DataFrame(pvals, columns=['pvals'])
+    # Create a column with the names of the comparisons
+    pvals_df['comparison'] = names_str
+    pvals_df['thresh'] = thresh
+
+    names_str = names_str + '_' +str(thresh).replace('.', '')
+
+    # Create a dataframe with the null distribution 
+    null_df = pd.DataFrame(null)
+
+    # Create a dataframe with the adjacency matrix
+    # Get the channels names to use them as columns and index
+    ref_matrix = pd.read_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'old_control', 'conn_data', 'old_control-static-plv-4-8-open.csv'), index_col=0)
+    chan_names = ref_matrix.index.values
+    adj_df = pd.DataFrame(adj, columns=chan_names, index=chan_names)
+
+    # Save the dataframes
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str)):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str))
+    pvals_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str, 'pvals.csv'))
+    null_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str, 'null.csv'))
+    adj_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str, 'adj.csv'))
