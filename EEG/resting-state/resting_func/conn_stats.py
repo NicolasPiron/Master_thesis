@@ -1,5 +1,6 @@
 from __future__ import division
 import os
+import glob
 import numpy as np
 import pandas as pd
 import numpy as np
@@ -364,3 +365,25 @@ def nbs_report(pvals, adj, null, thresh, output_dir, *names):
     pvals_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str, 'pvals.csv'))
     null_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str, 'null.csv'))
     adj_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str, 'adj.csv'))
+
+def global_pval_df(input_dir, output_dir):
+
+    nbs_dir = os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results')
+    nbs_list = sorted(glob.glob(nbs_dir + '/*'))
+
+    df_list = []
+
+    for lst in nbs_list:
+
+        pval_file = pd.read_csv(os.path.join(lst, 'pvals.csv'))
+        df_list.append(pval_file)
+
+    # stack the dfs
+    full_df = pd.concat(df_list, axis=0)
+
+    # save the df
+    if os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals'))
+    full_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals', 'all_pvals.csv'))
+
+    return full_df

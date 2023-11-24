@@ -1,11 +1,17 @@
-from resting_func.conn_stats import get_nbs_inputs, nbs_bct_corr_z, nbs_report
+from resting_func.conn_stats import get_nbs_inputs, nbs_bct_corr_z, nbs_report, global_pval_df
 from resting_func.set_paths import get_paths
 import numpy as np
+import pandas as pd
+import os
+import glob
 from itertools import combinations
 
-if __name__ == '__main__':
+input_dir, output_dir = get_paths()
 
-    input_dir, output_dir = get_paths()
+def run_nbs():
+    '''
+    Runs NBS on all combinations of groups, with different thresholds, frequencies and conditions
+    '''
 
     group_dict = {'old_control': [1, 2, 3, 4, 6, 7, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23],
                     'young_control': [70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83],
@@ -14,18 +20,15 @@ if __name__ == '__main__':
                     'pulvinar': [51, 53, 59]
     }
     pairs = list(combinations(group_dict.keys(), 2))
-
     freqs_dict = {'theta': np.arange(4, 9),
                     'alpha': np.arange(8, 13),
                     'low_beta': np.arange(12, 17),
                     'high_beta': np.arange(16, 31),
     }
-
     thresh_list = [0.00001, 0.0001, 0.001, 0.01, 0.05]
-
     condition_list = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
-
     metric='plv'
+
     for pair in pairs:
         for thresh in thresh_list:
             for i, freqs in enumerate(freqs_dict.values()):
@@ -67,4 +70,8 @@ if __name__ == '__main__':
                         name2 = f'{prefix2}-{freq_string}-closed'
 
                     nbs_report(pvals, adj, null, thresh, output_dir, name1, name2)
+    return None
 
+if __name__ == '__main__':
+    run_nbs()
+    global_pval_df(input_dir, output_dir)
