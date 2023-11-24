@@ -29,8 +29,8 @@ def run_nbs():
     condition_list = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
     metric='plv'
 
-    for pair in pairs:
-        for thresh in thresh_list:
+    for thresh in thresh_list:
+        for pair in pairs:
             for i, freqs in enumerate(freqs_dict.values()):
                 for condition in condition_list:
 
