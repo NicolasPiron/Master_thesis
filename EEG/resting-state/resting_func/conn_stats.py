@@ -381,7 +381,7 @@ def global_pval_df(input_dir, output_dir):
 
     # stack the dfs
     full_df = pd.concat(df_list, axis=0)
-    
+
     # save the df
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals')):
         os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals'))
@@ -399,35 +399,40 @@ def plot_bin_mat(input_dir):
 
     for lst in nbs_list:
 
-        df = pd.read_csv(os.path.join(lst, 'adj.csv'), index_col=0)
+        try:
 
-        # Select only the upper triangle
-        x = np.tril(df)
-        ticks = df.index
-        df = pd.DataFrame(x, index=ticks, columns=ticks)
+            df = pd.read_csv(os.path.join(lst, 'adj.csv'), index_col=0)
 
-        title = 'pval: ' + lst.split('_')[-1]
+            # Select only the upper triangle
+            x = np.tril(df)
+            ticks = df.index
+            df = pd.DataFrame(x, index=ticks, columns=ticks)
 
-        def add_square(ax, xy, size):
-            red_square=plt.Rectangle((xy), size[0], size[1], linewidth=2, edgecolor='red', facecolor=(1, 0 ,0, 0.3))
-            ax.add_patch(red_square)
-        def add_triangle(ax, xy):
-            triangle = plt.Polygon(xy, closed=True, edgecolor='red', facecolor=(1, 0, 0, 0.3))
-            ax.add_patch(triangle)
-        fig=plt.figure(figsize=(10, 10))
-        ax=sns.heatmap(df, cbar=False, square=True, xticklabels=True, yticklabels=True)
-        ax.set_title(title, fontsize=20)
-        xys=[(3, 56), (19, 56), (37, 56), (3, 37), (3,19), (19, 37)]
-        sizes=[(8, 7), (7, 7), (10, 7), (8, 10), (8, 7), (7,10)]
-        triangle_vertices = [[(3, 3), (11, 11), (3, 11)], [(19, 19), (26, 26), (19, 26)], [(37, 37), (47, 47), (37, 47)], 
-                            [(56, 56), (56, 63), (63, 63)]]
-        for i, xy in enumerate(xys):
-            add_square(ax, xy, sizes[i])
-        for i, vert in enumerate(triangle_vertices):
-            add_triangle(ax, vert)
-        fig.savefig(os.path.join(lst, 'binary_matrix.png'))
-        plt.close()
-        print('===== binary matrix was saved =====')
-        print(f'===== {lst} =====')
+            title = 'pval: ' + lst.split('_')[-1]
+
+            def add_square(ax, xy, size):
+                red_square=plt.Rectangle((xy), size[0], size[1], linewidth=2, edgecolor='red', facecolor=(1, 0 ,0, 0.3))
+                ax.add_patch(red_square)
+            def add_triangle(ax, xy):
+                triangle = plt.Polygon(xy, closed=True, edgecolor='red', facecolor=(1, 0, 0, 0.3))
+                ax.add_patch(triangle)
+            fig=plt.figure(figsize=(10, 10))
+            ax=sns.heatmap(df, cbar=False, square=True, xticklabels=True, yticklabels=True)
+            ax.set_title(title, fontsize=20)
+            xys=[(3, 56), (19, 56), (37, 56), (3, 37), (3,19), (19, 37)]
+            sizes=[(8, 7), (7, 7), (10, 7), (8, 10), (8, 7), (7,10)]
+            triangle_vertices = [[(3, 3), (11, 11), (3, 11)], [(19, 19), (26, 26), (19, 26)], [(37, 37), (47, 47), (37, 47)], 
+                                [(56, 56), (56, 63), (63, 63)]]
+            for i, xy in enumerate(xys):
+                add_square(ax, xy, sizes[i])
+            for i, vert in enumerate(triangle_vertices):
+                add_triangle(ax, vert)
+            fig.savefig(os.path.join(lst, 'binary_matrix.png'))
+            plt.close()
+            print('===== binary matrix was saved =====')
+            print(f'===== {lst} =====')
+        except:
+            print('===== binary matrix was not saved =====')
+            print(f'===== {lst} =====')
 
     return None
