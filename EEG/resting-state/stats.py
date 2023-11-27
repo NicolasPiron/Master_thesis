@@ -1,4 +1,4 @@
-from resting_func.conn_stats import get_nbs_inputs, nbs_bct_corr_z, nbs_report, global_pval_df
+from resting_func.conn_stats import get_nbs_inputs, nbs_bct_corr_z, nbs_report, global_pval_df, plot_bin_mat
 from resting_func.set_paths import get_paths
 import numpy as np
 import pandas as pd
@@ -73,5 +73,6 @@ def run_nbs():
     return None
 
 if __name__ == '__main__':
-    run_nbs()
+    #run_nbs()
     global_pval_df(input_dir, output_dir)
+    plot_bin_mat(input_dir)
