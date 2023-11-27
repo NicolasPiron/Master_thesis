@@ -376,8 +376,14 @@ def global_pval_df(input_dir, output_dir):
 
     for lst in nbs_list:
 
-        pval_file = pd.read_csv(os.path.join(lst, 'pvals.csv'))
-        df_list.append(pval_file)
+        try:
+            pval_file = pd.read_csv(os.path.join(lst, 'pvals.csv'))
+            df_list.append(pval_file)
+            print('===== pvals.csv was added to the list =====')
+            print(f'===== {lst} =====')
+        except:
+            print('===== pvals.csv was not added to the list =====')
+            print(f'===== {lst} =====')
 
     # stack the dfs
     full_df = pd.concat(df_list, axis=0)
