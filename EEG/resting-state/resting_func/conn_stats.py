@@ -414,7 +414,7 @@ def plot_bin_mat(input_dir):
             ticks = df.index
             df = pd.DataFrame(x, index=ticks, columns=ticks)
 
-            title = 'pval: ' + lst.split('_')[-1]
+            title = 'thresh: ' + lst.split('_')[-1]
 
             def add_square(ax, xy, size):
                 red_square=plt.Rectangle((xy), size[0], size[1], linewidth=2, edgecolor='red', facecolor=(1, 0 ,0, 0.3))
