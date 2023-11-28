@@ -25,7 +25,7 @@ def run_nbs():
                     'low_beta': np.arange(12, 17),
                     'high_beta': np.arange(16, 31),
     }
-    thresh_list = [0.00001, 0.0001, 0.001, 0.01, 0.05]
+    thresh_list = [0.5, 0.6, 0.7]
     condition_list = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
     metric='plv'
 
@@ -73,6 +73,6 @@ def run_nbs():
     return None
 
 if __name__ == '__main__':
-    #run_nbs()
+    run_nbs()
     global_pval_df(input_dir, output_dir)
     plot_bin_mat(input_dir)
