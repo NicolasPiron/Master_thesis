@@ -1,4 +1,5 @@
 from resting_func.conn_stats import get_nbs_inputs, nbs_bct_corr_z, nbs_report, global_pval_df, plot_bin_mat
+from resting_func.static_connectivity import create_significant_conn_mat, plot_significant_conn_mat
 from resting_func.set_paths import get_paths
 import numpy as np
 import pandas as pd
@@ -15,7 +16,6 @@ def run_nbs():
 
     group_dict = {'old_control': [1, 2, 3, 4, 6, 7, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23],
                     'young_control': [70, 71, 72, 73, 74, 75, 76, 77, 78],
-                    'stroke': [51, 52, 53, 54, 55, 56, 58, 59, 60],
                     'thal_control': [52, 54, 55, 56, 58, 59, 60],
                     'pulvinar': [51, 53, 59]
     }
@@ -53,6 +53,7 @@ def run_nbs():
                     mat_list, y_vec = get_nbs_inputs(input_dir, pop_dict1, pop_dict2)
 
                     # Run NBS
+                    print(f'Running NBS for {pair[0]} vs {pair[1]} for {freqs} Hz, {condition} condition, threshold {thresh}')
                     pvals, adj, null = nbs_bct_corr_z(mat_list, thresh=thresh, y_vec=y_vec)
 
                     # Save report
@@ -76,3 +77,6 @@ if __name__ == '__main__':
     run_nbs()
     global_pval_df(input_dir, output_dir)
     plot_bin_mat(input_dir)
+    create_significant_conn_mat(input_dir, output_dir)
+    plot_significant_conn_mat(input_dir, output_dir)
+
