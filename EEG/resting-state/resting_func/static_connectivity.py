@@ -3,9 +3,11 @@ import re
 import mne
 from mne_connectivity import spectral_connectivity_time
 from mne_connectivity.viz import plot_connectivity_circle
+from mne.viz import circular_layout
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from colour import Color
 
 def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir):
     ''' 
@@ -468,8 +470,52 @@ def plot_significant_conn_mat(input_dir, output_dir):
         mat_fig_2 = plot_conn_matrix(sign_df_2, grp2, 'plv', freq2, cond2)
         plt.close()
         print(f'Connectivity plots created for {dir}')
-
         mat_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.png'))
         mat_fig_2.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.png'))
         print(f'Connectivity plots saved for {dir}')
 
+        # Create connectivity circle. This time, we need to reorder the channels to create a circle that makes sense topologically.
+
+        # Create a gradient
+        red = Color("red")
+        colors = list(red.range_to(Color("blue"),64))
+        color_list = [col.get_rgb() for col in colors]
+
+        # Reorder channels
+        new_node_order= ['Fpz', 'AFz', 'Fz', 'FCz', 'Cz','Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3','FC1', 'C1',
+                        'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7', 'PO3','O1', 'Iz', 'Oz', 'POz',
+                        'Pz', 'CPz', 'O2', 'PO4', 'PO8', 'P10', 'P8', 'P6', 'P4', 'P2', 'CP2', 'CP4',
+                        'CP6', 'TP8', 'T8', 'C6', 'C4', 'C2', 'FC2', 'FC4', 'FC6', 'FT8', 'F8', 'F6', 'F4', 'F2', 'AF4', 'AF8','Fp2']
+
+        # Reorder colors
+        chan_names = sign_df_1.index.values
+        index_list=[]
+        for ch_name in chan_names:
+            new_idx = new_node_order.index(ch_name)
+            index_list.append(new_idx)
+        correct_order = [color_list[i] for i in index_list]
+
+        # Create node angles
+        node_angles = circular_layout(chan_names, new_node_order, start_pos=74,
+                                    group_boundaries=[0, 5, 32, 37], group_sep=3)
+
+        # Define a function to plot the connectivity circle - adjusted
+        def plot_conn_circle(conn_matrix, chan_names, population, metric, freqs, condition):
+            conn_matrix = conn_matrix.values
+            fig, ax = plt.subplots(figsize=(8, 8), facecolor='black',
+                            subplot_kw=dict(polar=True))
+            plot_connectivity_circle(conn_matrix, node_names=chan_names, node_angles=node_angles, node_colors=correct_order,
+                                    vmin=0.6, vmax=1, n_lines=300,
+                                    title= f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz' ,
+                                    ax=ax, show=False)
+            fig.tight_layout()
+            return fig
+        
+        circle_fig_1 = plot_conn_circle(sign_df_1, chan_names, grp1, 'plv', freq1, cond1)
+        plt.close()
+        circle_fig_2 = plot_conn_circle(sign_df_2, chan_names, grp2, 'plv', freq2, cond2)
+        plt.close()
+        print(f'Connectivity circles created for {dir}')
+        circle_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign-circle.png'))
+        circle_fig_2.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign-circle.png'))
+        print(f'Connectivity circles saved for {dir}')
