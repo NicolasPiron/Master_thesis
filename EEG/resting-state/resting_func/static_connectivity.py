@@ -1,4 +1,5 @@
 import os
+import re
 import mne
 from mne_connectivity import spectral_connectivity_time
 from mne_connectivity.viz import plot_connectivity_circle
@@ -7,7 +8,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir):
-    ''' Create connectivity matrix for a single subject, for a single metric and frequency band. 
+    ''' 
+    Create connectivity matrix for a single subject, for a single metric and frequency band. 
     Plot the connectivity matrix and save it as 2 png files (circle and matrix). Save the connectivity matrix as a csv file.
     
     Parameters
@@ -118,8 +120,8 @@ def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir)
     return df_open, df_closed
 
 def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir):
-    ''' Create connectivity matrices for a group of subjects, for a single metric and frequency band (2 conditions - eyes open and closed).
-
+    ''' 
+    Create connectivity matrices for a group of subjects, for a single metric and frequency band (2 conditions - eyes open and closed).
 
     Parameters
     ----------
@@ -186,8 +188,37 @@ def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir)
     return df_open_group, df_closed_group
 
 
+def plot_conn_matrix(conn_matrix, population, metric, freqs, condition):
+
+    chan_names = conn_matrix.index.values
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.set_title(f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz')
+    ax.set_xticks(np.arange(len(chan_names)))
+    ax.set_yticks(np.arange(len(chan_names)))
+    ax.set_xticklabels(chan_names, rotation=90, fontsize=8)
+    ax.set_yticklabels(chan_names, fontsize=8)
+    im0 = ax.imshow(conn_matrix, vmin=0, vmax=1)
+    fig.colorbar(im0,shrink=0.81)
+
+    return fig
+    
+def plot_conn_circle(conn_matrix, population, metric, freqs, condition):
+
+    chan_names = conn_matrix.index.values
+
+    fig, ax = plt.subplots(figsize=(8, 8), facecolor='black',
+                    subplot_kw=dict(polar=True))
+    plot_connectivity_circle(conn_matrix, node_names=chan_names,n_lines=300,
+                            title=f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz', ax=ax, show=False)
+    fig.tight_layout()
+
+    return fig
+
+
 def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metric, freqs, output_dir):
-    ''' Plot and save group average connectivity matrices for a single metric and frequency band (2 conditions - eyes open and closed).
+    ''' 
+    Plot and save group average connectivity matrices for a single metric and frequency band (2 conditions - eyes open and closed).
 
     Parameters
     ----------
@@ -209,38 +240,11 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
     None.
     '''
 
-
-    # get the channel names
     chan_names = df_open_group.index.values
 
     # transform the dataframes into 2D arrays
     df_open_group = df_open_group.values
     df_closed_group = df_closed_group.values
-
-    # Plot group average connectivity matrix, 1 plot for each condition. Add title with subject ID, condition and frequency band.
-    # Also add a colorbar to each plot.
-    def plot_conn_matrix(conn_matrix, condition):
-
-        fig, ax = plt.subplots(figsize=(10, 10))
-        ax.set_title(f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz')
-        ax.set_xticks(np.arange(len(chan_names)))
-        ax.set_yticks(np.arange(len(chan_names)))
-        ax.set_xticklabels(chan_names, rotation=90, fontsize=8)
-        ax.set_yticklabels(chan_names, fontsize=8)
-        im0 = ax.imshow(conn_matrix, vmin=0, vmax=1)
-        fig.colorbar(im0,shrink=0.81)
-
-        return fig
-    
-    def plot_conn_circle(conn_matrix, condition):
-
-        fig, ax = plt.subplots(figsize=(8, 8), facecolor='black',
-                       subplot_kw=dict(polar=True))
-        plot_connectivity_circle(conn_matrix, node_names=chan_names,n_lines=300,
-                                title=f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz', ax=ax, show=False)
-        fig.tight_layout()
-    
-        return fig
 
     fig_open = plot_conn_matrix(df_open_group, 'open')
     plt.close()
@@ -269,3 +273,203 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
     df_open_group.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'conn_data', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.csv'))
     df_closed_group.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'conn_data', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv'))
     print(f'===== Connectivity matrices saved for {population} =====')
+
+def find_elements_in_dir_name(dir_name):
+    '''
+    Find the different elements in a directory name. The directory name should be formatted as follows:
+    group1-frequency1-condition1_VS_group2-frequency2-condition2
+
+    Parameters
+    ----------
+    dir_name : str
+        Directory name.
+    
+    Returns
+    -------
+    grp1 : str
+        Group 1 name.
+    grp2 : str
+        Group 2 name.
+    freq1 : str
+        Frequency 1 name.
+    freq2 : str
+        Frequency 2 name.
+    cond1 : str
+        Condition 1 name.
+    cond2 : str
+        Condition 2 name.
+    '''
+
+    element_list = re.split('[_-]', dir_name)
+
+    name_pattern = re.compile(r'(old|young|stroke|pulvinar|thal)')
+    frequency_pattern = re.compile(r'(theta|alpha|low|high)')
+    condition_pattern = re.compile(r'(open|closed)')
+
+    groups = []
+    frequencies = []
+    conditions = []
+
+    for element in element_list:
+        if name_pattern.search(element):
+            groups.append(name_pattern.search(element).group())
+        elif frequency_pattern.search(element):
+            frequencies.append(frequency_pattern.search(element).group())
+        elif condition_pattern.search(element):
+            conditions.append(condition_pattern.search(element).group())
+
+    grp1 = groups[0]
+    grp2 = groups[-1]
+    freq1 = frequencies[0]
+    freq2 = frequencies[-1]
+    cond1 = conditions[0]
+    cond2 = conditions[-1]
+
+    return grp1, grp2, freq1, freq2, cond1, cond2
+
+def load_conn_mat(input_dir, group, freq, cond):
+    '''
+    Load connectivity matrix for a specific group, frequency and condition.
+
+    Parameters
+    ----------
+    group : str
+        Group name.
+    freq : str
+        Frequency name.
+    cond : str
+        Condition name.
+
+    Returns
+    -------
+    df : pandas dataframe
+        Connectivity matrix.
+    '''
+    if group == 'old':
+        full_group = 'old_control'
+    elif group == 'young':
+        full_group = 'young_control'
+    elif group == 'thal':
+        full_group = 'thal_control'
+    elif group == 'stroke':
+        full_group = 'stroke'
+    elif group == 'pulvinar':
+        full_group = 'pulvinar'
+
+    if freq == 'theta':
+        freq = [4, 8]
+    elif freq == 'alpha':
+        freq = [8, 12]
+    elif freq == 'low':
+        freq = [12, 16]
+    elif freq == 'high':
+        freq = [16, 30]
+
+    print(f'Loading connectivity matrix for {group} - {freq} - {cond}')
+    df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', full_group, 'conn_data', f'{full_group}-static-plv-{freq[0]}-{freq[1]}-{cond}.csv'), index_col=0)
+    print(f'Connectivity matrix for {group} - {freq} - {cond} loaded')
+
+    return df
+
+def multiply_by_adjacency_matrix(df, adjacency_matrix):
+    '''
+    Multiply connectivity matrix by adjacency matrix to keep only the significant connexions.
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        Connectivity matrix.
+    adjacency_matrix : pandas dataframe
+        Adjacency matrix.
+    
+    Returns
+    -------
+    df : pandas dataframe
+        Connectivity matrix with only significant connexions.
+    '''
+    df = df.copy()
+    print('Multiplying connectivity matrix by adjacency matrix')
+    for i in range(len(df)):
+        for j in range(len(df)):
+            df.iloc[i, j] = df.iloc[i, j] * adjacency_matrix.iloc[i, j]
+    print('Connectivity matrix multiplied by adjacency matrix')
+    return df
+    
+def create_significant_conn_mat(input_dir, output_dir):
+
+    # List all directories in nbs_results
+    nbs_results = os.listdir(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results'))
+    nbs_results.remove('all_pvals')
+    try:
+        nbs_results.remove('.DS_Store')
+    except:
+        pass
+
+
+    for dir in nbs_results:
+        # Load adjacency matrix
+        adjacency_matrix = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, 'adj.csv'), index_col=0)
+        print(f'Adjacency matrix loaded for {dir}')
+        # Load connectivity matrices
+        grp1, grp2, freq1, freq2, cond1, cond2 = find_elements_in_dir_name(dir)
+
+        df_1 = load_conn_mat(input_dir, grp1, freq1, cond1)
+        df_2 = load_conn_mat(input_dir, grp2, freq2, cond2)
+
+        sign_df_1 = multiply_by_adjacency_matrix(df_1, adjacency_matrix)
+        sign_df_2 = multiply_by_adjacency_matrix(df_2, adjacency_matrix)
+
+        name_1 = f'{grp1}-{freq1}-{cond1}'
+        name_2 = f'{grp2}-{freq2}-{cond2}'
+        sign_df_1.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.csv'))
+        sign_df_2.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.csv'))
+        print(f'Significant connectivity matrices saved for {dir}')
+
+def plot_significant_conn_mat(input_dir, output_dir):
+
+    # List all directories in nbs_results
+    nbs_results = os.listdir(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results'))
+    nbs_results.remove('all_pvals')
+    try:
+        nbs_results.remove('.DS_Store')
+    except:
+        pass
+
+    for dir in nbs_results:
+       
+        grp1, grp2, freq1, freq2, cond1, cond2 = find_elements_in_dir_name(dir)
+        name_1 = f'{grp1}-{freq1}-{cond1}'
+        name_2 = f'{grp2}-{freq2}-{cond2}'
+
+        if freq1 == 'theta':
+            freq1 = [4, 8]
+        elif freq1 == 'alpha':
+            freq1 = [8, 12]
+        elif freq1 == 'low':
+            freq1 = [12, 16]
+        elif freq1 == 'high':
+            freq1 = [16, 30]
+
+        if freq2 == 'theta':
+            freq2 = [4, 8]
+        elif freq2 == 'alpha':
+            freq2 = [8, 12]
+        elif freq2 == 'low':
+            freq2 = [12, 16]
+        elif freq2 == 'high':
+            freq2 = [16, 30]
+       
+        sign_df_1 = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.csv'), index_col=0)
+        sign_df_2 = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.csv'), index_col=0)
+        print(f'Significant connectivity matrices loaded for {dir}')
+
+        mat_fig_1 = plot_conn_matrix(sign_df_1, grp1, 'plv', freq1, cond1)
+        plt.close()
+        mat_fig_2 = plot_conn_matrix(sign_df_2, grp2, 'plv', freq2, cond2)
+        plt.close()
+        print(f'Connectivity plots created for {dir}')
+
+        mat_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.png'))
+        mat_fig_2.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.png'))
+        print(f'Connectivity plots saved for {dir}')
+
