@@ -360,6 +360,9 @@ def nbs_report(pvals, adj, null, thresh, output_dir, *names):
     chan_names = ref_matrix.index.values
     adj_df = pd.DataFrame(adj, columns=chan_names, index=chan_names)
 
+    # There is a bug that makes the adj_df hold values above 1.0
+    adj_df = adj_df.applymap(lambda x: 1 if x > 1 else x)
+
     # Save the dataframes
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str)):
         os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str))

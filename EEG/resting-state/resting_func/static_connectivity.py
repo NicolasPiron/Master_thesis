@@ -412,6 +412,8 @@ def create_significant_conn_mat(input_dir, output_dir):
         # Load adjacency matrix
         adjacency_matrix = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, 'adj.csv'), index_col=0)
         print(f'Adjacency matrix loaded for {dir}')
+        # Make sure adjacency matrix only contains 0 and 1
+        adjacency_matrix = adjacency_matrix.applymap(lambda x: 1 if x > 1 else x)
         # Load connectivity matrices
         grp1, grp2, freq1, freq2, cond1, cond2 = find_elements_in_dir_name(dir)
 
