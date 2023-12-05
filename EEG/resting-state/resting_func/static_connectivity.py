@@ -9,6 +9,102 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from colour import Color
 
+def plot_conn_matrix(conn_matrix, population, metric, freqs, condition):
+    '''
+    Plot connectivity matrix for a single population, metric, frequency band and condition.
+    Only to plot poplutation average connectivity matrix.
+
+    Parameters
+    ----------
+    conn_matrix : pandas dataframe
+        Connectivity matrix.
+    population : str
+        Population name (based on the subject list given in create_conn_matrix_group)
+    metric : str
+        Connectivity metric (i.e. plv or pli).
+    freqs : list
+        List of frequencies to be used for connectivity analysis.
+    condition : str
+        Condition name (i.e. open or closed).
+    
+    Returns
+    -------
+    fig : matplotlib figure
+        Connectivity matrix.
+    '''
+
+    chan_names = conn_matrix.index.values
+    conn_matrix = conn_matrix.values
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.set_title(f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz')
+    ax.set_xticks(np.arange(len(chan_names)))
+    ax.set_yticks(np.arange(len(chan_names)))
+    ax.set_xticklabels(chan_names, rotation=90, fontsize=8)
+    ax.set_yticklabels(chan_names, fontsize=8)
+    im0 = ax.imshow(conn_matrix, vmin=0, vmax=1)
+    fig.colorbar(im0,shrink=0.81)
+
+    return fig
+    
+def plot_conn_circle(conn_matrix, population, metric, freqs, condition):
+    '''
+    Plot connectivity circle for a single population, metric, frequency band and condition.
+
+    Parameters
+    ----------
+    conn_matrix : pandas dataframe
+        Connectivity matrix.
+    population : str
+        Population name (based on the subject list given in create_conn_matrix_group)
+    metric : str
+        Connectivity metric (i.e. plv or pli).
+    freqs : list
+        List of frequencies to be used for connectivity analysis.
+    condition : str
+        Condition name (i.e. open or closed).
+
+    Returns
+    -------
+    fig : matplotlib figure
+        Connectivity circle.
+    '''
+
+    # Create a gradient
+    red = Color("red")
+    colors = list(red.range_to(Color("blue"),64))
+    color_list = [col.get_rgb() for col in colors]
+
+    # Reorder channels
+    new_node_order= ['Fpz', 'AFz', 'Fz', 'FCz', 'Cz','Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3','FC1', 'C1',
+                    'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7', 'PO3','O1', 'Iz', 'Oz', 'POz',
+                    'Pz', 'CPz', 'O2', 'PO4', 'PO8', 'P10', 'P8', 'P6', 'P4', 'P2', 'CP2', 'CP4',
+                    'CP6', 'TP8', 'T8', 'C6', 'C4', 'C2', 'FC2', 'FC4', 'FC6', 'FT8', 'F8', 'F6', 'F4', 'F2', 'AF4', 'AF8','Fp2']
+
+    # Reorder colors
+    chan_names = conn_matrix.index.values
+    index_list=[]
+    for ch_name in chan_names:
+        new_idx = new_node_order.index(ch_name)
+        index_list.append(new_idx)
+    correct_order = [color_list[i] for i in index_list]
+
+    # Create node angles
+    node_angles = circular_layout(chan_names, new_node_order, start_pos=74,
+                                group_boundaries=[0, 5, 32, 37], group_sep=3)
+
+    conn_matrix = conn_matrix.values
+
+    fig, ax = plt.subplots(figsize=(8, 8), facecolor='black',
+                    subplot_kw=dict(polar=True))
+    plot_connectivity_circle(conn_matrix, node_names=chan_names, node_angles=node_angles, node_colors=correct_order,
+                            vmin=0.6, vmax=1, n_lines=300,
+                            title= f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz' ,
+                            ax=ax, show=False)
+
+
+    return fig
+
 def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir):
     ''' 
     Create connectivity matrix for a single subject, for a single metric and frequency band. 
@@ -56,6 +152,7 @@ def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir)
     rs_closed_epochs.pick_types(eeg=True)
     print('===== EEG channels selected =====')
 
+    # Get channel names, important for plotting
     chan_names = rs_open_epochs.ch_names
 
     # Create connectivity matrix
@@ -80,12 +177,34 @@ def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir)
     
     def plot_conn_circle(conn_matrix):
 
+    # Create a gradient
+        red = Color("red")
+        colors = list(red.range_to(Color("blue"),64))
+        color_list = [col.get_rgb() for col in colors]
+
+        # Reorder channels
+        new_node_order= ['Fpz', 'AFz', 'Fz', 'FCz', 'Cz','Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3','FC1', 'C1',
+                        'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7', 'PO3','O1', 'Iz', 'Oz', 'POz',
+                        'Pz', 'CPz', 'O2', 'PO4', 'PO8', 'P10', 'P8', 'P6', 'P4', 'P2', 'CP2', 'CP4',
+                        'CP6', 'TP8', 'T8', 'C6', 'C4', 'C2', 'FC2', 'FC4', 'FC6', 'FT8', 'F8', 'F6', 'F4', 'F2', 'AF4', 'AF8','Fp2']
+
+        # Reorder colors
+        index_list=[]
+        for ch_name in chan_names:
+            new_idx = new_node_order.index(ch_name)
+            index_list.append(new_idx)
+        correct_order = [color_list[i] for i in index_list]
+
+        # Create node angles
+        node_angles = circular_layout(chan_names, new_node_order, start_pos=74,
+                                    group_boundaries=[0, 5, 32, 37], group_sep=3)
+
         fig, ax = plt.subplots(figsize=(8, 8), facecolor='black',
-                       subplot_kw=dict(polar=True))
-        plot_connectivity_circle(conn_matrix, node_names=chan_names,n_lines=300,
-                                title=f'Subject {subject_id} - {metric} - {freqs[0]}-{freqs[-1]} Hz', ax=ax, show=False)
-        fig.tight_layout()
-    
+                        subplot_kw=dict(polar=True))
+        plot_connectivity_circle(conn_matrix, node_names=chan_names, node_angles=node_angles, node_colors=correct_order,
+                                vmin=0.6, vmax=1, n_lines=300,
+                                title= f'Subject {subject_id} - {metric} - {freqs[0]}-{freqs[-1]} Hz' ,
+                                ax=ax, show=False)
         return fig
 
     fig_open = plot_conn_matrix(rs_open_conn_2D)
@@ -189,35 +308,6 @@ def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir)
 
     return df_open_group, df_closed_group
 
-
-def plot_conn_matrix(conn_matrix, population, metric, freqs, condition):
-
-    chan_names = conn_matrix.index.values
-
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.set_title(f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz')
-    ax.set_xticks(np.arange(len(chan_names)))
-    ax.set_yticks(np.arange(len(chan_names)))
-    ax.set_xticklabels(chan_names, rotation=90, fontsize=8)
-    ax.set_yticklabels(chan_names, fontsize=8)
-    im0 = ax.imshow(conn_matrix, vmin=0, vmax=1)
-    fig.colorbar(im0,shrink=0.81)
-
-    return fig
-    
-def plot_conn_circle(conn_matrix, population, metric, freqs, condition):
-
-    chan_names = conn_matrix.index.values
-
-    fig, ax = plt.subplots(figsize=(8, 8), facecolor='black',
-                    subplot_kw=dict(polar=True))
-    plot_connectivity_circle(conn_matrix, node_names=chan_names,n_lines=300,
-                            title=f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz', ax=ax, show=False)
-    fig.tight_layout()
-
-    return fig
-
-
 def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metric, freqs, output_dir):
     ''' 
     Plot and save group average connectivity matrices for a single metric and frequency band (2 conditions - eyes open and closed).
@@ -242,23 +332,13 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
     None.
     '''
 
-    chan_names = df_open_group.index.values
-
-    # transform the dataframes into 2D arrays
-    df_open_group = df_open_group.values
-    df_closed_group = df_closed_group.values
-
-    fig_open = plot_conn_matrix(df_open_group, 'open')
+    fig_open = plot_conn_matrix(df_open_group, population, metric, freqs, 'open')
     plt.close()
-    fig_closed = plot_conn_matrix(df_closed_group, 'closed')
+    fig_closed = plot_conn_matrix(df_closed_group, population, metric, freqs, 'closed')
     plt.close()
-    fig_open_circle = plot_conn_circle(df_open_group, 'open') 
-    fig_closed_circle = plot_conn_circle(df_closed_group, 'closed')
+    fig_open_circle = plot_conn_circle(df_open_group, population, metric, freqs, 'open') 
+    fig_closed_circle = plot_conn_circle(df_closed_group, population, metric, freqs, 'closed')
     print(f'===== Connectivity plots created for {population} =====')
-
-    # transform the 2D arrays back into dataframes
-    df_open_group = pd.DataFrame(df_open_group, columns=chan_names, index=chan_names)
-    df_closed_group = pd.DataFrame(df_closed_group, columns=chan_names, index=chan_names)
 
     # Save figures
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs')):
@@ -475,47 +555,10 @@ def plot_significant_conn_mat(input_dir, output_dir):
         mat_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.png'))
         mat_fig_2.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.png'))
         print(f'Connectivity plots saved for {dir}')
-
-        # Create connectivity circle. This time, we need to reorder the channels to create a circle that makes sense topologically.
-
-        # Create a gradient
-        red = Color("red")
-        colors = list(red.range_to(Color("blue"),64))
-        color_list = [col.get_rgb() for col in colors]
-
-        # Reorder channels
-        new_node_order= ['Fpz', 'AFz', 'Fz', 'FCz', 'Cz','Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3','FC1', 'C1',
-                        'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7', 'PO3','O1', 'Iz', 'Oz', 'POz',
-                        'Pz', 'CPz', 'O2', 'PO4', 'PO8', 'P10', 'P8', 'P6', 'P4', 'P2', 'CP2', 'CP4',
-                        'CP6', 'TP8', 'T8', 'C6', 'C4', 'C2', 'FC2', 'FC4', 'FC6', 'FT8', 'F8', 'F6', 'F4', 'F2', 'AF4', 'AF8','Fp2']
-
-        # Reorder colors
-        chan_names = sign_df_1.index.values
-        index_list=[]
-        for ch_name in chan_names:
-            new_idx = new_node_order.index(ch_name)
-            index_list.append(new_idx)
-        correct_order = [color_list[i] for i in index_list]
-
-        # Create node angles
-        node_angles = circular_layout(chan_names, new_node_order, start_pos=74,
-                                    group_boundaries=[0, 5, 32, 37], group_sep=3)
-
-        # Define a function to plot the connectivity circle - adjusted
-        def plot_conn_circle(conn_matrix, chan_names, population, metric, freqs, condition):
-            conn_matrix = conn_matrix.values
-            fig, ax = plt.subplots(figsize=(8, 8), facecolor='black',
-                            subplot_kw=dict(polar=True))
-            plot_connectivity_circle(conn_matrix, node_names=chan_names, node_angles=node_angles, node_colors=correct_order,
-                                    vmin=0.6, vmax=1, n_lines=300,
-                                    title= f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz' ,
-                                    ax=ax, show=False)
-            fig.tight_layout()
-            return fig
         
-        circle_fig_1 = plot_conn_circle(sign_df_1, chan_names, grp1, 'plv', freq1, cond1)
+        circle_fig_1 = plot_conn_circle(sign_df_1, grp1, 'plv', freq1, cond1)
         plt.close()
-        circle_fig_2 = plot_conn_circle(sign_df_2, chan_names, grp2, 'plv', freq2, cond2)
+        circle_fig_2 = plot_conn_circle(sign_df_2, grp2, 'plv', freq2, cond2)
         plt.close()
         print(f'Connectivity circles created for {dir}')
         circle_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign-circle.png'))
