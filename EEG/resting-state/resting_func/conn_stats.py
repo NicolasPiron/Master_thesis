@@ -390,12 +390,15 @@ def global_pval_df(input_dir, output_dir):
 
     # stack the dfs
     full_df = pd.concat(df_list, axis=0)
+    # take only the significant pvals
+    sign_df = full_df[full_df['pvals'] < 0.05]
 
-    # save the df
+    # save the dfs
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals')):
         os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals'))
         print('===== all_pvals directory was created =====')
     full_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals', 'all_pvals.csv'))
+    sign_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals', 'sign_pvals.csv'))
 
     return full_df
 
