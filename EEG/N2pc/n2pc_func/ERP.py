@@ -1287,10 +1287,15 @@ def all_peak_latencies_report(input_dir, outputdir):
     # concat the peak latencies of the 4 populations
     df_list = []
     for directory in os.listdir(os.path.join(input_dir, 'all_subj', 'N2pc', 'peak-latency')):
-        df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'peak-latency', directory, f'peak-latency-{directory}.csv'))
-        df_list.append(df)
+        try:
+            df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'peak-latency', directory, f'peak-latency-{directory}.csv'))
+            df_list.append(df)
+            print(f'========= peak latency df for population {directory} added to the list')
+        except:
+            print(f'========= no peak latency df for population {directory}')
+            continue
 
-    df = pd.concat(df_list)
+    df = pd.concat(df_list, axis=0)
     print('========= all populations peak latencies df concatenated')
     if not os.path.exists(os.path.join(outputdir, 'all_subj', 'N2pc', 'peak-latency')):
         os.makedirs(os.path.join(outputdir, 'all_subj', 'N2pc', 'peak-latency'))
@@ -1309,7 +1314,7 @@ def all_peak_latencies_report(input_dir, outputdir):
                 print(f'========= no peak latency df for subject {directory}')
                 continue
 
-    df = pd.concat(df_list)
+    df = pd.concat(df_list, axis=0)
     print('========= all subject peak latencies df concatenated')
     df.to_csv(os.path.join(outputdir, 'all_subj', 'N2pc', 'peak-latency', 'all_subjects_peak_latencies.csv'))
     print('========= all subjects peak latencies df saved')
