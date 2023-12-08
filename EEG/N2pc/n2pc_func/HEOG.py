@@ -695,7 +695,6 @@ def plot_n2pc_clean(subject_id, input_dir, output_dir):
         plt.legend()
         plt.grid()
         plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','heog-artifact', 'n2pc-plots-clean', f'sub-{subject_id}-PO7_{condition}_clean.png'))
-        plt.show(block=False)
         plt.close()
 
     d1, d2, d3, d4, d5, d6, time = get_bins_data(subject_id, input_dir)
