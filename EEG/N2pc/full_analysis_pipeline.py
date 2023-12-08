@@ -57,6 +57,11 @@ for subject_id in full_subject_list:
     except:
         print(f'Error with subject {subject_id} during get_n2pc_values_single_subj')
         pass
+    try:
+        erp.get_peak_latency_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+    except:
+        print(f'Error with subject {subject_id} during get_peak_latency_single_subj')
+        pass
 
 for population, subject_list in population_dict.items():
     try:
@@ -94,4 +99,15 @@ for population, subject_list in population_dict.items():
     except:
         print(f'Error with population {population} during get_peak_latency_grand_average')
         pass
+    try:
+        erp.get_peak_latency_grand_average(input_dir=input_dir, output_dir=output_dir, population=population)
+    except:
+        print(f'Error with population {population} during get_peak_latency_population')
+        pass
+
+try:
+    erp.all_peak_latencies_report(input_dir=input_dir, output_dir=output_dir)
+except:
+    print(f'Error with all_peak_latencies_report')
+    pass
 
