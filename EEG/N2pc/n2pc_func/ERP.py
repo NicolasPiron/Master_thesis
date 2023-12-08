@@ -314,6 +314,8 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
     evoked_dict = load_combined_evoked(evoked_list)
     # plot the topomaps
     for bin_, evoked in evoked_dict.items():
+        # reset the bad channels
+        evoked.info['bads'] = []
         topo = evoked.plot_topomap(times=[0.1, 0.15, 0.2, 0.25, 0.3], show=False)
         if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo')):
             os.makedirs(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo')
@@ -344,6 +346,8 @@ def plot_erp_topo_population(input_dir, output_dir, population):
     evoked_dict = load_combined_evoked(evoked_list)
     # plot the topomaps
     for bin_, evoked in evoked_dict.items():
+        # reset the bad channels
+        evoked.info['bads'] = []
         topo = evoked.plot_topomap(times=[0.1, 0.15, 0.2, 0.25, 0.3], show=False)
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo')):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo'))
@@ -382,6 +386,7 @@ def plot_spectral_topo_single_subj(subject_id, input_dir, output_dir):
     # transform the evoked objects into spectrum objects
     spectrum_dict = {}
     for key, value in evoked_dict.items():
+        value.info['bads'] = []
         spectrum_dict[key] = value.compute_psd()
 
     # plot the spectrum for alpha and beta frequency bands
@@ -422,13 +427,14 @@ def plot_spectral_topo_population(input_dir, output_dir, population):
     # transform the evoked objects into spectrum objects
     spectrum_dict = {}
     for key, value in evoked_dict.items():
+        value.info['bads'] = []
         spectrum_dict[key] = value.compute_psd()
     
     # plot the spectrum for alpha and beta frequency bands
     bands = {'Alpha (8-12 Hz)': (8, 12), 'Beta (12-30 Hz)': (12, 30)}
 
     for bin_, spectrum in spectrum_dict.items():
-        plot = spectrum.plot_topomap(bands=bands, vlim=(0,100), res=512, show=False)
+        plot = spectrum.plot_topomap(bands=bands, vlim=(0,50), res=512, show=False)
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population)):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population))
         bin_name = bin_.split(' ')[-1]
