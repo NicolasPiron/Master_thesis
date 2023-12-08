@@ -1288,7 +1288,7 @@ def all_peak_latencies_report(input_dir, outputdir):
     df_list = []
     for directory in os.listdir(os.path.join(input_dir, 'all_subj', 'N2pc', 'peak-latency')):
         try:
-            df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'peak-latency', directory, f'peak-latency-{directory}.csv'))
+            df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'peak-latency', directory, f'peak-latency-{directory}.csv'), index_col=0)
             df_list.append(df)
             print(f'========= peak latency df for population {directory} added to the list')
         except:
@@ -1307,7 +1307,7 @@ def all_peak_latencies_report(input_dir, outputdir):
     for directory in os.listdir(os.path.join(input_dir)):
         if directory.startswith('sub-'):
             try:
-                df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'peak-latency', f'sub-{directory}-peak-latency.csv'))
+                df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'peak-latency', f'{directory}-peak-latency.csv'), index_col=0)
                 df_list.append(df)
                 print(f'========= peak latency df for subject {directory} added to the list')
             except:
