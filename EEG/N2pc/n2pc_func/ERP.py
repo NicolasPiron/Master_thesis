@@ -312,11 +312,20 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
         print('====================== no file found')
     evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_combined_files]
     evoked_dict = load_combined_evoked(evoked_list)
+
+    evoked_dict['mid_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_mid']], weights=[-1, 1])
+    evoked_dict['contra_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_contra']], weights=[-1, 1])
+    evoked_dict['mid_minus_nodis'].comment = 'mid_minus_nodis'
+    evoked_dict['contra_minus_nodis'].comment = 'contra_minus_nodis'
+
+    print(evoked_dict)
+
+
     # plot the topomaps
     for bin_, evoked in evoked_dict.items():
         # reset the bad channels
         evoked.info['bads'] = []
-        topo = evoked.plot_topomap(times=[0.1, 0.15, 0.2, 0.25, 0.3], show=False)
+        topo = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], show=False)
         if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo')):
             os.makedirs(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo')
         bin_name = bin_.split(' ')[-1]
@@ -348,11 +357,19 @@ def plot_erp_topo_population(input_dir, output_dir, population):
     for bin_, evoked in evoked_dict.items():
         # reset the bad channels
         evoked.info['bads'] = []
-        topo = evoked.plot_topomap(times=[0.1, 0.15, 0.2, 0.25, 0.3], show=False)
+        topo = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=(-5, 5), show=False)
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo')):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo'))
         bin_name = bin_.split(' ')[-1]
         topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', f'{population}-topo-{bin_name}.png'))
+
+    evoked_dict['mid_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_mid']], weights=[-1, 1])
+    evoked_dict['contra_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_contra']], weights=[-1, 1])
+    name_lst = ['mid_minus_nodis', 'contra_minus_nodis']
+    for i, diff_evk in enumerate([evoked_dict['mid_minus_nodis'], evoked_dict['contra_minus_nodis']]):
+        diff_evk.info['bads']=[]
+        topo = diff_evk.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=(-0.8, 0.8), show=False)
+        topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', f'{population}-topo-{name_lst[i]}.png'))
 
 
 def plot_spectral_topo_single_subj(subject_id, input_dir, output_dir):
@@ -785,6 +802,7 @@ def plot_n2pc_population(input_dir, output_dir, subject_list, population):
         plt.figure(figsize=(10, 6))
         plt.plot(time, contra, color=color, label=f'{condition} (Contralateral)')
         plt.plot(time, ipsi, color=color, linestyle='dashed', label=f'{condition} (Ipsilateral)')
+        plt.ylim(-0.000006, 0.000004)
         plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
         plt.axhline(y=0, color='black', linewidth=1)
         plt.xlabel('Time (ms)')
@@ -805,7 +823,7 @@ def plot_n2pc_population(input_dir, output_dir, subject_list, population):
         plt.plot(time, diff_cond1, color='blue', label=f'Dis_Mid')
         plt.plot(time, diff_cond2, color='green', label=f'No_Dis')
         plt.plot(time, diff_cond3, color='red', label=f'Dis_Contra')
-        plt.ylim(-0.000001, 0.0000014)
+        plt.ylim(-0.0000015, 0.0000018)
         plt.axvline(x=0, color='gray', linestyle='--', linewidth=1)
         plt.axhline(y=0, color='black', linewidth=1)
         plt.xlabel('Time (ms)')
