@@ -389,7 +389,7 @@ def plot_erp_topo_population(input_dir, output_dir, population):
         topo = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=(-5, 5), show=False)
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo')):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo'))
-        bin_name = bin_.split(' ')[-1]
+        bin_name = bin_.replace('/', '_')
         topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', f'{population}-topo-{bin_name}.png'))
 
     evoked_dict['mid_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_mid']], weights=[-1, 1])
