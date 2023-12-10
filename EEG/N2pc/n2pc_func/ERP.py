@@ -7,38 +7,6 @@ import seaborn as sns
 import mne
 import math
 
-def add_sub0(list):
-    ''' Adds a "sub" and a 0 before the number of the subject
-        if the number has only one digit.
-
-    Parameters
-    ----------
-    list : list
-        The list of subjects to transform
-    
-    Returns
-    ----------
-    transformed_list : list
-        The transformed list of subjects
-
-    '''
-
-        # Transform the list of subjects to exclude into the format 'sub-xx'
-    sub_list = [f'sub-{subject}' for subject in list]
-
-    transformed_list = []
-    for item in sub_list:
-        # Split the string into two parts: 'sub-' and the number
-        parts = item.split('-')
-        if len(parts) == 2 and len(parts[1]) == 1:
-            # If the number has only one digit, add a '0' before it
-            transformed_list.append(f'sub-0{parts[1]}')
-        else:
-            transformed_list.append(item)
-    
-    return transformed_list
-
-
 def to_evoked(subject_id, input_dir):
     ''' This function converts the epochs to evoked objects and saves them in the subject directory.
         It saves one evoked file by condition (i.e. bin).
@@ -98,6 +66,62 @@ def to_evoked(subject_id, input_dir):
         print(evoked.comment)
         evoked.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}-{evoked.comment}-ave.fif'), overwrite=True)
     evoked_all.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}-all-ave.fif'), overwrite=True)
+
+
+def to_evoked_population(input_dir, output_dir, subject_list, population):
+
+    # create lists of evoked objects for each condition
+    dis_mid_target_l_list = []
+    dis_mid_target_r_list = []
+    no_dis_target_l_list = []
+    no_dis_target_r_list = []
+    dis_right_target_l_list = []
+    dis_left_target_r_list = []
+
+    for subject in subject_list:
+        file = os.path.join(input_dir, f'sub-{subject}/N2pc/cleaned_epochs/sub-{subject}-cleaned_epochs-N2pc.fif')
+        epochs = mne.read_epochs(file)
+        # crop the epochs to the relevant time window
+        tmin = -0.2
+        tmax = 0.8
+        epochs.crop(tmin=tmin, tmax=tmax)
+        
+        # get the evoked objects for each condition
+        dis_mid_target_l = epochs['dis_top/target_l','dis_bot/target_l'].average()
+        dis_mid_target_r = epochs['dis_top/target_r','dis_bot/target_r'].average()
+        no_dis_target_l = epochs['no_dis/target_l'].average()
+        no_dis_target_r = epochs['no_dis/target_r'].average()
+        dis_right_target_l = epochs['dis_right/target_l'].average()
+        dis_left_target_r = epochs['dis_left/target_r'].average()
+
+        # append the evoked objects to the lists
+        dis_mid_target_l_list.append(dis_mid_target_l)
+        dis_mid_target_r_list.append(dis_mid_target_r)
+        no_dis_target_l_list.append(no_dis_target_l)
+        no_dis_target_r_list.append(no_dis_target_r)
+        dis_right_target_l_list.append(dis_right_target_l)
+        dis_left_target_r_list.append(dis_left_target_r)
+
+    # combine the evoked objects
+    dis_mid_target_l_combined = mne.combine_evoked(dis_mid_target_l_list, weights='equal')
+    dis_mid_target_r_combined = mne.combine_evoked(dis_mid_target_r_list, weights='equal')
+    no_dis_target_l_combined = mne.combine_evoked(no_dis_target_l_list, weights='equal')
+    no_dis_target_r_combined = mne.combine_evoked(no_dis_target_r_list, weights='equal')
+    dis_right_target_l_combined = mne.combine_evoked(dis_right_target_l_list, weights='equal')
+    dis_left_target_r_combined = mne.combine_evoked(dis_left_target_r_list, weights='equal')
+
+    # save the combined evoked objects
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population)):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population))
+
+    dis_mid_target_l_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-dis_mid_target_l-ave.fif'), overwrite=True)
+    dis_mid_target_r_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-dis_mid_target_r-ave.fif'), overwrite=True)
+    no_dis_target_l_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-no_dis_target_l-ave.fif'), overwrite=True)
+    no_dis_target_r_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-no_dis_target_r-ave.fif'), overwrite=True)
+    dis_right_target_l_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-dis_right_target_l-ave.fif'), overwrite=True)
+    dis_left_target_r_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-dis_left_target_r-ave.fif'), overwrite=True)
+
+    return None
 
 def combine_evoked_all(input_dir, subject_list):
     ''' Takes a list of subjects and concatenates the evoked objects for each subject.
@@ -308,18 +332,19 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
 
     # load data and store it in a dictionary
     evoked_combined_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'combined', f'sub-{subject_id}*.fif'))
+    evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}*.fif'))
+    if len(evoked_files) == 0:
+        print('====================== no file found - evoked files (not combined)')
     if len(evoked_combined_files) == 0:
-        print('====================== no file found')
-    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_combined_files]
+        print('====================== no file found - evoked files (combined)')
+    all_evoked_files = evoked_combined_files + evoked_files
+    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in all_evoked_files]
     evoked_dict = load_combined_evoked(evoked_list)
 
     evoked_dict['mid_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_mid']], weights=[-1, 1])
     evoked_dict['contra_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_contra']], weights=[-1, 1])
     evoked_dict['mid_minus_nodis'].comment = 'mid_minus_nodis'
     evoked_dict['contra_minus_nodis'].comment = 'contra_minus_nodis'
-
-    print(evoked_dict)
-
 
     # plot the topomaps
     for bin_, evoked in evoked_dict.items():
@@ -328,7 +353,7 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
         topo = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], show=False)
         if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo')):
             os.makedirs(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo')
-        bin_name = bin_.split(' ')[-1]
+        bin_name = bin_.replace('/', '_')
         topo.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', f'sub-{subject_id}-topo-{bin_name}.png'))
 
 def plot_erp_topo_population(input_dir, output_dir, population):
@@ -349,9 +374,13 @@ def plot_erp_topo_population(input_dir, output_dir, population):
 
     # load data and store it in a dictionary
     evoked_combined_files = glob.glob(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, f'{population}*.fif'))
+    evoked_files = glob.glob(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}*.fif'))
+    if len(evoked_files) == 0:
+        print('====================== no file found - evoked files (not combined)')
     if len(evoked_combined_files) == 0:
-        print('====================== no file found')
-    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_combined_files]
+        print('====================== no file found - evoked files (combined)')
+    all_evoked_files = evoked_combined_files + evoked_files
+    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in all_evoked_files]
     evoked_dict = load_combined_evoked(evoked_list)
     # plot the topomaps
     for bin_, evoked in evoked_dict.items():
@@ -370,92 +399,6 @@ def plot_erp_topo_population(input_dir, output_dir, population):
         diff_evk.info['bads']=[]
         topo = diff_evk.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=(-0.8, 0.8), show=False)
         topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', f'{population}-topo-{name_lst[i]}.png'))
-
-
-def plot_spectral_topo_single_subj(subject_id, input_dir, output_dir):
-    '''
-    
-    Parameters
-    ----------
-    subject_id : str
-        The subject ID to plot. Can be 'GA' to plot the grand average.
-    input_dir : str
-        The path to the directory containing the input data.
-    output_dir : str
-        The path to the directory where the output will be saved.
-
-    Returns
-    -------
-    None
-    '''
-
-    subject_id = str(subject_id)
-
-    print(f'====================== plotting for {subject_id}')
-
-    # load data and store it in a dictionary
-    evoked_combined_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'combined', f'sub-{subject_id}*.fif'))
-    if len(evoked_combined_files) == 0:
-        print('====================== no file found')
-    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_combined_files]
-    evoked_dict = load_combined_evoked(evoked_list)
-
-    # transform the evoked objects into spectrum objects
-    spectrum_dict = {}
-    for key, value in evoked_dict.items():
-        value.info['bads'] = []
-        spectrum_dict[key] = value.compute_psd()
-
-    # plot the spectrum for alpha and beta frequency bands
-    bands = {'Alpha (8-12 Hz)': (8, 12), 'Beta (12-30 Hz)': (12, 30)}
-
-    for bin_, spectrum in spectrum_dict.items():
-        plot = spectrum.plot_topomap(bands=bands, vlim='joint', res=512, show=False)
-        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'spectral-topo')):
-            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'spectral-topo'))
-        bin_name = bin_.split(' ')[-1]
-        plot.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'spectral-topo', f'sub-{subject_id}-spectral-topo-{bin_name}.png'))
-
-
-def plot_spectral_topo_population(input_dir, output_dir, population):
-    '''
-    
-    Parameters
-    ----------
-    input_dir : str
-        The path to the directory containing the input data.
-    output_dir : str
-        The path to the directory where the output will be saved.
-    population : str
-        Population (thal_control, old_controls, young_controls or pulvinar).
-
-    Returns
-    -------
-    None
-    '''
-    
-    # load data and store it in a dictionary
-    evoked_combined_files = glob.glob(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, f'{population}*.fif'))
-    if len(evoked_combined_files) == 0:
-        print('====================== no file found')
-    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_combined_files]
-    evoked_dict = load_combined_evoked(evoked_list)
-    
-    # transform the evoked objects into spectrum objects
-    spectrum_dict = {}
-    for key, value in evoked_dict.items():
-        value.info['bads'] = []
-        spectrum_dict[key] = value.compute_psd()
-    
-    # plot the spectrum for alpha and beta frequency bands
-    bands = {'Alpha (8-12 Hz)': (8, 12), 'Beta (12-30 Hz)': (12, 30)}
-
-    for bin_, spectrum in spectrum_dict.items():
-        plot = spectrum.plot_topomap(bands=bands, vlim=(0,50), res=512, show=False)
-        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population)):
-            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population))
-        bin_name = bin_.split(' ')[-1]
-        plot.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population, f'{population}-spectral-topo-{bin_name}.png'))
 
 
 def get_evoked_data_single_subj(subject_id, input_dir):    
@@ -1341,4 +1284,33 @@ def all_peak_latencies_report(input_dir, outputdir):
 
 ##### LEGACY CODE #####
 
+def add_sub0(list):
+    ''' Adds a "sub" and a 0 before the number of the subject
+        if the number has only one digit.
 
+    Parameters
+    ----------
+    list : list
+        The list of subjects to transform
+    
+    Returns
+    ----------
+    transformed_list : list
+        The transformed list of subjects
+
+    '''
+
+        # Transform the list of subjects to exclude into the format 'sub-xx'
+    sub_list = [f'sub-{subject}' for subject in list]
+
+    transformed_list = []
+    for item in sub_list:
+        # Split the string into two parts: 'sub-' and the number
+        parts = item.split('-')
+        if len(parts) == 2 and len(parts[1]) == 1:
+            # If the number has only one digit, add a '0' before it
+            transformed_list.append(f'sub-0{parts[1]}')
+        else:
+            transformed_list.append(item)
+    
+    return transformed_list

@@ -1,10 +1,370 @@
 import mne
 import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 import glob
 import mne
 import os
 import re
+
+### ================================================================================================
+### ========================================== PSD  ================================================
+### ================================================================================================
+
+def get_psd_conditions_single_subj(subject_id, input_dir):
+    '''
+    Compute the spectrum for each condition for a single subject. Save the spectrum in npy format + the info in fif format.
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot. 2 digits format (e.g. 01).
+    input_dir : str
+        The path to the directory containing the input data.
+
+    Returns
+    -------
+    psd_dict : dict
+        A dictionary containing the PSD for each condition.
+        {'dis_mid_target_l': dis_mid_target_l, ...}
+
+    '''
+    
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+    epochs.info['bads'] = []
+    # crop the epochs to the relevant time window
+    tmin = -0.2
+    tmax = 0.8
+    epochs.crop(tmin=tmin, tmax=tmax)
+
+    dis_mid_target_l = epochs['dis_top/target_l','dis_bot/target_l']
+    dis_mid_target_r = epochs['dis_top/target_r','dis_bot/target_r']
+    no_dis_target_l = epochs['no_dis/target_l']
+    no_dis_target_r = epochs['no_dis/target_r']
+    dis_right_target_l = epochs['dis_right/target_l']
+    dis_left_target_r = epochs['dis_left/target_r']
+
+    # compute the spectrum for each bin
+    psd_dict = {}
+    for bin_, epochs in zip(['dis_mid_target_l', 'dis_mid_target_r', 'no_dis_target_l', 'no_dis_target_r', 'dis_right_target_l', 'dis_left_target_r', 'all'],
+                                [dis_mid_target_l, dis_mid_target_r, no_dis_target_l, no_dis_target_r, dis_right_target_l, dis_left_target_r, epochs]):
+        psd_dict[bin_] = epochs.compute_psd(fmin=1, fmax=30).average()
+        freqs = psd_dict[bin_].freqs
+
+    
+    # add 3 conditions that are the average of the 2 sides of each cond (dis_mid, no_dis, dis_lat)
+    # we need to swap the sides when the target is on the right side -> so it's like the target is on the left side
+
+    pairs = [[psd_dict['dis_mid_target_l'], psd_dict['dis_mid_target_r']],
+            [psd_dict['no_dis_target_l'], psd_dict['no_dis_target_r']],
+            [psd_dict['dis_right_target_l'], psd_dict['dis_left_target_r']]]
+
+    # find right and left channels
+    ch_names = psd_dict['dis_mid_target_l'].ch_names
+    LCh = []
+    RCh = []
+    for i, ch in enumerate(ch_names):
+        if str(ch[-1]) == 'z':
+            print(f'central channel {ch} -> not included in lateral channels list')
+        elif int(ch[-1]) % 2 == 0:
+            RCh.append(i)
+        elif int(ch[-1]) %2 != 2:
+            LCh.append(i) 
+
+    pair_names = ['dis_mid', 'no_dis', 'dis_lat']
+    for i, pair in enumerate(pairs):
+    # the right target psd will be laterally swapped so it is like the target is on the left
+        to_swap = pair[1]
+        data = to_swap.get_data()
+        swapped_data = data.copy()
+        swapped_data[RCh] = data[LCh]
+        swapped_data[LCh] = data[RCh]
+        average = np.mean([pair[0].get_data(), swapped_data], axis=0)
+        swapped_psd = mne.time_frequency.SpectrumArray(average, to_swap.info, freqs)
+        psd_dict[pair_names[i]] = swapped_psd
+
+    # save each spectrum in npy format (idk why but I can't retrieve the spectrum from hdf5 files)
+    # save the info as well
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'spectrum')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'spectrum'))
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'freqs')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'freqs'))
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'info')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'info'))
+
+    for bin_, spectrum in psd_dict.items():
+        np.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'spectrum', f'sub-{subject_id}-psd-{bin_}.npy'), spectrum.get_data())
+        np.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'freqs', f'sub-{subject_id}-psd-freqs.npy'), spectrum.freqs)
+        spectrum.info.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'info', f'sub-{subject_id}-psd-info-{bin_}.fif'))
+        print(f'====================== spectral data saved for {subject_id} - {bin_}')
+
+    return psd_dict
+
+def load_psd_single_subj(subject_id, input_dir):
+    '''
+    Load the PSD data for each condition for a single subject.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot. 2 digits format (e.g. 01).
+    input_dir : str
+        The path to the directory containing the input data.
+
+    Returns
+    -------
+    psd_dict : dict
+        A dictionary containing the PSD for each condition.
+        {'dis_mid_target_l': dis_mid_target_l, ...}
+
+    '''
+    if os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'spectrum', f'sub-{subject_id}-psd-all.npy')):
+        psd_dict = {}
+        for bin_ in ['dis_mid_target_l', 'dis_mid_target_r', 'no_dis_target_l', 'no_dis_target_r', 'dis_right_target_l', 'dis_left_target_r', 'dis_mid', 'no_dis', 'dis_lat', 'all']:
+            spec = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'spectrum', f'sub-{subject_id}-psd-{bin_}.npy'))
+            info = mne.io.read_info(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'info', f'sub-{subject_id}-psd-info-{bin_}.fif'))
+            freqs = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', 'freqs', f'sub-{subject_id}-psd-freqs.npy'))
+            spec_object = mne.time_frequency.SpectrumArray(spec, info, freqs)
+            psd_dict[bin_] = spec_object
+            print(f'====================== spectral data loaded for {subject_id} - {bin_}')
+    else:
+        psd_dict = get_psd_conditions_single_subj(subject_id, input_dir)
+
+    return psd_dict
+
+def get_psd_condition_population(input_dir, output_dir, subject_list, population):
+    '''
+    Compute the spectrum for each participant, then averages the spectra objects by condition
+    and plot the mean topography of the scalp for the population.
+    
+    Parameters
+    ----------
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str 
+        The path to the directory where the output will be saved.
+    population : str
+        Population (thal_control, old_controls, young_controls or pulvinar).
+
+    Returns
+    -------
+    None
+    '''
+    
+    # create list to store the spectra data (np.arrays)
+    dis_mid_target_l_list = []
+    dis_mid_target_r_list = []
+    no_dis_target_l_list = []
+    no_dis_target_r_list = []
+    dis_right_target_l_list = []
+    dis_left_target_r_list = []
+    dis_mid_list = []
+    no_dis_list = []
+    dis_lat_list = []
+    all_list = []
+
+    # loop over the subjects and append the spectra data to the lists
+    for subject in subject_list:
+
+        psd_dict = load_psd_single_subj(subject, input_dir)
+
+        # append the spectra data to the lists
+        dis_mid_target_l_list.append(psd_dict['dis_mid_target_l'].get_data())
+        dis_mid_target_r_list.append(psd_dict['dis_mid_target_r'].get_data())
+        no_dis_target_l_list.append(psd_dict['no_dis_target_l'].get_data())
+        no_dis_target_r_list.append(psd_dict['no_dis_target_r'].get_data())
+        dis_right_target_l_list.append(psd_dict['dis_right_target_l'].get_data())
+        dis_left_target_r_list.append(psd_dict['dis_left_target_r'].get_data())
+        dis_mid_list.append(psd_dict['dis_mid'].get_data())
+        no_dis_list.append(psd_dict['no_dis'].get_data())
+        dis_lat_list.append(psd_dict['dis_lat'].get_data())
+        all_list.append(psd_dict['all'].get_data())
+
+        # get the frequency axis
+        freqs = psd_dict['dis_mid_target_l'].freqs
+        print(f'====================== spectral data loaded for {subject}')
+
+    # combine the spectra data
+    dis_mid_target_l_combined = np.mean(dis_mid_target_l_list, axis=0)
+    dis_mid_target_r_combined = np.mean(dis_mid_target_r_list, axis=0)
+    no_dis_target_l_combined = np.mean(no_dis_target_l_list, axis=0)
+    no_dis_target_r_combined = np.mean(no_dis_target_r_list, axis=0)
+    dis_right_target_l_combined = np.mean(dis_right_target_l_list, axis=0)
+    dis_left_target_r_combined = np.mean(dis_left_target_r_list, axis=0)
+    dis_mid_combined = np.mean(dis_mid_list, axis=0)
+    no_dis_combined = np.mean(no_dis_list, axis=0)
+    dis_lat_combined = np.mean(dis_lat_list, axis=0)
+    all_combined = np.mean(all_list, axis=0)
+    print(f'====================== spectral data combined for {population}')
+
+    spectrum_dict = {'dis_mid_target_l': dis_mid_target_l_combined, 'dis_mid_target_r': dis_mid_target_r_combined, 'no_dis_target_l': no_dis_target_l_combined,
+                    'no_dis_target_r': no_dis_target_r_combined, 'dis_right_target_l': dis_right_target_l_combined, 'dis_left_target_r': dis_left_target_r_combined,
+                        'dis_mid': dis_mid_combined, 'no_dis': no_dis_combined, 'dis_lat': dis_lat_combined, 'all': all_combined}
+
+
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', population))
+    for bin_, spectrum in spectrum_dict.items():
+        try:
+            np.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'spectrum', population, f'{population}-psd-{bin_}.npy'), spectrum)
+            np.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'freqs', population, f'{population}-psd-freqs.npy'), freqs)
+            spectrum_dict[bin_].info.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'info', population, f'{population}-psd-info-{bin_}.fif'))
+            print(f'====================== spectral data saved for {population} - {bin_}')
+        except:
+            print(f'====================== spectral data not saved for {population} - {bin_}')
+            continue
+
+    # back to spectrum objects if we use this function to get the dict (i.e if we don't pass through the load_psd_population function)
+    dis_mid_target_l_combined = mne.time_frequency.SpectrumArray(dis_mid_target_l_combined, info=spectrum_dict['dis_mid_target_l'].info, freqs=freqs)
+    dis_mid_target_r_combined = mne.time_frequency.SpectrumArray(dis_mid_target_r_combined, info=spectrum_dict['dis_mid_target_r'].info, freqs=freqs)
+    no_dis_target_l_combined = mne.time_frequency.SpectrumArray(no_dis_target_l_combined, info=spectrum_dict['no_dis_target_l'].info, freqs=freqs)
+    no_dis_target_r_combined = mne.time_frequency.SpectrumArray(no_dis_target_r_combined, info=spectrum_dict['no_dis_target_r'].info, freqs=freqs)
+    dis_right_target_l_combined = mne.time_frequency.SpectrumArray(dis_right_target_l_combined, info=spectrum_dict['dis_right_target_l'].info, freqs=freqs)
+    dis_left_target_r_combined = mne.time_frequency.SpectrumArray(dis_left_target_r_combined, info=spectrum_dict['dis_left_target_r'].info, freqs=freqs)
+    dis_mid_combined = mne.time_frequency.SpectrumArray(dis_mid_combined, info=spectrum_dict['dis_mid'].info, freqs=freqs)
+    no_dis_combined = mne.time_frequency.SpectrumArray(no_dis_combined, info=spectrum_dict['no_dis'].info, freqs=freqs)
+    dis_lat_combined = mne.time_frequency.SpectrumArray(dis_lat_combined, info=spectrum_dict['dis_lat'].info, freqs=freqs)
+    all_combined = mne.time_frequency.SpectrumArray(all_combined, info=spectrum_dict['all'].info, freqs=freqs)
+    print(f'====================== spectral data converted to SpectrumArray for {population}')
+
+    return spectrum_dict
+
+def load_psd_population(input_dir, output_dir, subject_list, population):
+    '''
+    Load the PSD data for each condition for a population.
+
+    Parameters
+    ----------
+    input_dir : str
+        The path to the directory containing the input data.
+    population : str
+        Population (thal_control, old_controls, young_controls or pulvinar).
+
+    Returns
+    -------
+    psd_dict : dict
+        A dictionary containing the PSD for each condition.
+        {'dis_mid_target_l': dis_mid_target_l, ...}
+
+    '''
+    if os.path.exists(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'spectrum', population, f'{population}-psd-all.npy')):
+        psd_dict = {}
+        for bin_ in ['dis_mid_target_l', 'dis_mid_target_r', 'no_dis_target_l', 'no_dis_target_r', 'dis_right_target_l', 'dis_left_target_r', 'dis_mid', 'no_dis', 'dis_lat', 'all']:
+            spec = np.load(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', population, f'{population}-psd-{bin_}.npy'))
+            info = mne.io.read_info(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', population, f'{population}-psd-info-{bin_}.fif'))
+            freqs = np.load(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', population, f'{population}-psd-freqs.npy'))
+            spec_object = mne.time_frequency.SpectrumArray(spec, info, freqs)
+            psd_dict[bin_] = spec_object    
+    else:
+        psd_dict = get_psd_condition_population(input_dir, output_dir, subject_list, population)
+
+    print(f'====================== spectral data loaded for {population} - {bin_}')
+
+    return psd_dict
+
+def plot_spectral_topo_single_subj(subject_id, input_dir, output_dir):
+    '''
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot. 2 digits format (e.g. 01).
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+
+    Returns
+    -------
+    None
+    '''
+
+    print(f'====================== plotting spectral topo for {subject_id}')
+
+    spectrum_dict = load_psd_single_subj(subject_id, input_dir)
+
+    # plot the spectrum for theta, alpha, low and high beta frequency bands
+    bands = {'Theta (4-8 Hz)': (4, 8), 'Alpha (8-12 Hz)': (8, 12), 'low_Beta (12-30 Hz)': (12, 16), 'high_Beta (16-30 Hz)': (16, 30)}
+
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'spectral-topo')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'spectral-topo'))
+        print(f'====================== spectral topo dir created for {subject_id}')
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data'))
+        print(f'====================== psd dir created for {subject_id}')
+
+    for bin_, spectrum in spectrum_dict.items():
+        plot = spectrum.plot_topomap(bands=bands, res=512, show=False)
+
+        plot.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'spectral-topo', f'sub-{subject_id}-spectral-topo-{bin_}.png'))
+        # Idk why but the save method doesn't work for the 2nd (dis_mid_target_r) spectrum object
+        try:
+            spectrum.save(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', f'sub-{subject_id}-psd-{bin_}.hdf5'), overwrite=True)
+        except:
+            print(f'====================== spectral data not saved for {subject_id} - {bin_}')
+            continue
+
+def plot_spectral_topo_population(input_dir, output_dir, subject_list, population):
+
+    spectrum_dict = load_psd_population(input_dir, output_dir, subject_list, population)
+    
+    bands = {'Theta (4-8 Hz)': (4, 8), 'Alpha (8-12 Hz)': (8, 12), 'low_Beta (12-30 Hz)': (12, 16), 'high_Beta (16-30 Hz)': (16, 30)}
+    for bin_, spectrum in spectrum_dict.items():
+        plot = spectrum.plot_topomap(bands=bands, res=512, show=False)
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population))
+        plot.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population, f'{population}-spectral-topo-{bin_}.png'))
+        
+        print(f'====================== spectral data saved for {population} - {bin_}')
+
+def plot_psd_single_subj(subject_id, input_dir, output_dir):
+
+    print(f'====================== plotting psd for {subject_id}')
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-plots')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-plots'))
+        print(f'====================== psd plots dir created for {subject_id}')
+
+    spectrum_dict = load_psd_single_subj(subject_id, input_dir)
+
+    for bin_, spectrum in spectrum_dict.items():
+        fig, ax = plt.subplots()
+        spectrum.plot(average=True, dB=False, ci_alpha=0.2, show=False, axes=ax)
+        ax.set_ylabel('Power')
+        ax.set_title(f'sub-{subject_id} - {bin_}')
+        fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-plots', f'sub-{subject_id}-psd-{bin_}.png'))
+        print(f'====================== psd saved for {subject_id} - {bin_}')
+
+    fig, ax = plt.subplots()
+    spectrum_dict['dis_mid'].plot(average=True, dB=False, ci_alpha=0.1,  show=False, axes=ax, color='red')
+    spectrum_dict['dis_lat'].plot(average=True, dB=False, ci_alpha=0.1, show=False, axes=ax, color='blue')
+    spectrum_dict['no_dis'].plot(average=True, dB=False, ci_alpha=0.1, show=False, axes=ax, color='green')
+    ax.set_title(f'sub-{subject_id} - dis_mid vs dis_lat vs no_dis')
+    ax.set_ylabel('Power')
+    fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-plots', f'sub-{subject_id}-psd-3conds.png'))
+
+
+def plot_psd_population(input_dir, output_dir, subject_list, population):
+
+    spectrum_dict = load_psd_population(input_dir, output_dir, subject_list, population)
+
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population)):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population))
+        print(f'====================== psd plots dir created for {population}')
+
+    for bin_, spectrum in spectrum_dict.items():
+        fig, ax = plt.subplots()
+        spectrum.plot(average=True, dB=False, ci_alpha=0.2, show=False, axes=ax)
+        ax.set_ylabel('Power')
+        ax.set_title(f'{population} - {bin_}')
+        fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population, f'{population}-psd-{bin_}.png'))
+        print(f'====================== psd saved for {population} - {bin_}')
+
+    fig, ax = plt.subplots()
+    spectrum_dict['dis_mid'].plot(average=True, dB=False, ci_alpha=0.1,  show=False, axes=ax, color='red')
+    spectrum_dict['dis_lat'].plot(average=True, dB=False, ci_alpha=0.1, show=False, axes=ax, color='blue')
+    spectrum_dict['no_dis'].plot(average=True, dB=False, ci_alpha=0.1, show=False, axes=ax, color='green')
+    ax.set_title(f'{population} - dis_mid vs dis_lat vs no_dis')
+    ax.set_ylabel('Power')
+    fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population, f'{population}-psd-3conds.png'))
+    
 
 ### ================================================================================================
 ### ==================================== N2PC ALPHA POWER PER EPOCH ================================
@@ -465,292 +825,3 @@ def all_subj_alpha_epoch(input_dir, output_dir):
     return big_df
 
 
-### ================================================================================================
-### ======================================= LEGACY CODE ============================================
-### ================================================================================================
-
-### NOT USED ANYMORE : MIGHT HAVE PROBLEMS WITH THE NEW FILE ORGANIZATION!!
-
-def sort_epochs(subject_id : str, input_dir : str):
-    ''' Takes the epochs object and returns a list of epochs objects sorted by condition.
-        
-        the original order of the epochs is as follows: 
-        'dis_top/target_l': 1,
-        'dis_top/target_r': 2,
-        'no_dis/target_l': 3,
-        'no_dis/target_r': 4,
-        'dis_bot/target_l': 5,
-        'dis_bot/target_r': 6,
-        'dis_right/target_l': 7,
-        'dis_left/target_r': 8
-
-    Parameters
-    ----------
-    subject_id : str
-        The subject ID.
-    input_dir : str
-        The path to the directory containing all the subject directories
-
-    Returns
-    -------
-    sorted_epochs : list of mne.Epochs
-        A list of epochs sorted by condition. The order of the epochs is as follows:
-        ['no_dis/target_l',
-        'no_dis/target_r',
-        'dis_right/target_l',
-        'dis_left/target_r',
-        'dis_mid/target_l',
-        'dis_mid/target_r']
-    '''
-
-    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
-
-    event_ids = epochs.event_id
-    
-    sorted_epochs = []
-    
-    for event in event_ids.keys():
-        
-        condition = epochs[event]
-        sorted_epochs.append(condition)
-
-    # concatenate the the files when the target is on the same side but the distractor is bot or top
-    
-    dis_vert_target_l = mne.concatenate_epochs([sorted_epochs[0], sorted_epochs[4]])
-    dis_vert_target_r = mne.concatenate_epochs([sorted_epochs[1], sorted_epochs[5]])
-    
-    sorted_epochs.append(dis_vert_target_l)
-    sorted_epochs.append(dis_vert_target_r)
-    
-    # remove useless files
-    
-    indices_to_remove = [0, 1, 4, 5]
-    
-    # reverse to avoid index shifting issues
-    
-    indices_to_remove.sort(reverse=True)
-    for index in indices_to_remove:
-        del sorted_epochs[index]
-    
-    return sorted_epochs  
-
-
-
-def compute_alpha_by_side(sorted_epochs : list):
-    ''' Takes a list of epochs objects sorted by conditions and returns 2 lists of alpha band mean power values (8-12Hz), one for each side of the head.
-
-    Parameters
-    ----------
-    sorted_epochs : list of mne.Epochs
-        a list of epochs objects sorted by condition. The order of the epochs is as follows:
-        'no_dis/target_l',
-        'no_dis/target_r',
-        'dis_right/target_l',
-        'dis_left/target_r',
-        'dis_mid/target_l',
-        'dis_mid/target_r'
-
-    Returns
-    -------
-    right_power_list : list of float
-        a list of alpha band mean power values (8-12Hz) for the right side of the head for each epochs object in sorted_epochs (condition)
-
-    left_power_list : list of float
-        a list of alpha band mean power values (8-12Hz) for the left side of the head for each epochs object in sorted_epochs (condition)
-    '''
-    freqs = np.arange(8, 13)
-    right_elecs=[ 'O2', 'PO4', 'PO8']
-    left_elecs=['O1', 'PO3', 'PO7']
-
-    n_cycles = freqs / 2.
-    time_bandwidth = 4.
-    baseline = None  # no baseline correction
-    n_jobs = 1  # number of parallel jobs to run
-    
-    right_power_list = []
-    left_power_list = []
-
-    # compute alpha power and append it to right/left_power_list
-    for i in range(len(sorted_epochs)):
-        right_power = mne.time_frequency.tfr_morlet(sorted_epochs[i], freqs=freqs, n_cycles=n_cycles, picks=right_elecs,
-                                                use_fft=True, return_itc=False, decim=1,
-                                                n_jobs=n_jobs, verbose=True)
-        right_power_mean = right_power.to_data_frame()[right_elecs].mean(axis=1).mean(axis=0)
-        right_power_list.append(right_power_mean)
-
-        left_power= mne.time_frequency.tfr_morlet(sorted_epochs[i], freqs=freqs, n_cycles=n_cycles, picks=left_elecs,
-                                                use_fft=True, return_itc=False, decim=1,
-                                                n_jobs=n_jobs, verbose=True)
-        left_power_mean = left_power.to_data_frame()[left_elecs].mean(axis=1).mean(axis=0)
-        left_power_list.append(left_power_mean)
-    
-    return right_power_list, left_power_list
-
-
-def extract_conditions(epochs_list : list):
-    ''' Takes a list of epochs objects and returns a list of strings containing the conditions.
-    
-    Parameters
-    ----------
-    epochs_list : list of mne.Epochs
-        a list of epochs objects sorted by condition. 
-    
-    Returns
-    -------
-    conditions : list of str
-        a list of strings containing the conditions.
-    '''
-    conditions = []
-    string_conditions = []
-
-    for i in epochs_list:
-
-        cond = list(i.event_id.keys())
-        conditions.append(cond)
-        
-    for index, cond in enumerate(conditions):
-        
-        if len(cond) == 2 and 'target_l' in conditions[index][0]:
-            conditions[index] = ['dis_mid/target_l']
-        elif len(cond) == 2 and 'target_r' in conditions[index][0]:
-            conditions[index] = ['dis_mid/target_r']
-            
-    string_conditions = [cond[0] for cond in conditions]
-    
-    return string_conditions
-
-def alpha_power_df(conditions : list, right_power_list: list, left_power_list : list):
-    ''' Takes a list of conditions, a list of alpha power values for the right side of the head and a list of alpha power values for the left side of the head and 
-        returns a dataframe containing the conditions, the target side, the distractor side, the alpha side relative to the target and the mean alpha power.
-
-    Parameters
-    ----------
-    conditions : list of str
-        a list of strings containing the conditions.
-
-    right_power_list : list of float
-        a list of alpha band mean power values (8-12Hz) for the right side of the head for each epochs object in sorted_epochs (condition)
-    
-    left_power_list : list of float
-        a list of alpha band mean power values (8-12Hz) for the left side of the head for each epochs object in sorted_epochs (condition)
-
-    Returns
-    -------
-    df : pandas dataframe
-        a dataframe containing the conditions, the target side, the distractor side, the side of recording relative to the target (ipsi or contralateral) and the mean alpha power value.
-    '''
-    df = pd.DataFrame(columns=[['condition','target_side', 'distractor_side', 'alpha_side', 'alpha_power']])
-    
-    df['condition'] = conditions * 2
-    
-    df ['alpha_power'] = right_power_list + left_power_list
-    
-    for row_number in range(len(df)):
-        
-        # add target side
-        if 'target_l' in df.iloc[row_number, 0]:
-            df.iloc[row_number, 1] = 'left'
-        elif 'target_r' in df.iloc[row_number, 0]:
-            df.iloc[row_number, 1] = 'right'
-        
-        # add distractor side
-        if 'dis_mid' in df.iloc[row_number, 0]:
-            df.iloc[row_number, 2] = 'mid'
-        elif 'dis_right' in df.iloc[row_number, 0] or 'dis_left' in df.iloc[row_number, 0]:
-            df.iloc[row_number, 2] = 'lat'
-        elif 'no_dis' in df.iloc[row_number, 0]:
-            df.iloc[row_number, 2] = 'nodis'
-
-        # add alpha side
-        if row_number <= 5:
-            if 'target_l' in df.iloc[row_number, 0]:
-                df.iloc[row_number, 3] = 'contra'
-            elif 'target_r' in df.iloc[row_number, 0]:
-                df.iloc[row_number,3] = 'ipsi'
-        else:
-            if 'target_l' in df.iloc[row_number, 0]:
-                df.iloc[row_number,3] = 'ipsi'
-            elif 'target_r' in df.iloc[row_number, 0]:
-                df.iloc[row_number,3] = 'contra'
-        
-    return df
-
-def single_subj_alpha_assymetry(subject_id : str, input_dir : str, output_dir : str):
-
-    # Use the functions defined above to create a dataframe with the alpha power score for each side for each condition
-    sorted_epochs = sort_epochs(subject_id, input_dir)
-    right, left = compute_alpha_by_side(sorted_epochs)
-    conditions = extract_conditions(sorted_epochs)
-    df = alpha_power_df(conditions, right, left)
-
-    df.insert(0, 'ID', subject_id)
-
-    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df')):
-        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df'))
-    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'alpha-power-df', f'sub-{subject_id}-alpha-power-assymetry.csv'))
-
-    return df
-
-### ======================================== ALL SUBJECTS ==========================================
-
-def alpha_assymetry_all_subj(input_dir, output_dir):
-    ''' Create a dataframe for all subjects with the alpha score for each side
-    
-    Parameters:
-    ----------
-    Input_dir : str
-        The path to the directory containing the epochs objects for each subject
-    output_dir : str
-        The path to the directory where the dataframe will be saved
-    
-    Returns
-    ----------
-    big_df : pandas.DataFrame
-        A dataframe with the alpha power score for each side for each subject
-        
-    '''
-    big_df = pd.DataFrame()
-
-    # Empty list to store the files
-    all_subj_files = []
-
-    # Loop over the directories to access the files
-    directories = glob.glob(os.path.join(input_dir, 'sub*'))
-    for directory in directories:
-        file = glob.glob(os.path.join(directory, 'cleaned_epochs', 'sub*N2pc.fif'))
-        all_subj_files.append(file[0])
-    all_subj_files.sort()
-
-    # Pattern to extract the subject ID
-    pattern = r'sub-(\d{2})-cleaned'
-    
-    for subject in all_subj_files:
-        
-        # Extract the subject ID
-        match = re.search(pattern, subject)
-        if match:
-            subj_id = match.group(1)
-        else:
-            print("No match found in:", subject)
-        
-        print(f'========================= working on {subj_id}')
-        
-        epochs = sort_epochs(subj_id, input_dir)
-    
-        right_power_list, left_power_list = compute_alpha_by_side(epochs)
-        
-        conditions = extract_conditions(epochs)
-        
-        subj_df = alpha_power_df(conditions, right_power_list, left_power_list)
-        
-        subj_df.insert(0, 'ID', str(subj_id))
-        
-        big_df = pd.concat([big_df, subj_df], ignore_index=True)
-        
-        print(f'========================= data from {subj_id} added to the dataframe :D')
-    
-    if not os.path.exists(os.path.join(output_dir, 'alpha-power-df')):
-        os.makedirs(os.path.join(output_dir, 'alpha-power-df'))
-    big_df.to_csv(os.path.join(output_dir, 'alpha-power-df', 'all_subj_alpha_power_assymetry.csv'))
-    
-    return big_df
