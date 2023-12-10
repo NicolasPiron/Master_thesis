@@ -330,6 +330,7 @@ def plot_psd_single_subj(subject_id, input_dir, output_dir):
         ax.set_ylabel('Power')
         ax.set_title(f'sub-{subject_id} - {bin_}')
         fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-plots', f'sub-{subject_id}-psd-{bin_}.png'))
+        plt.close()
         print(f'====================== psd saved for {subject_id} - {bin_}')
 
     fig, ax = plt.subplots()
@@ -339,6 +340,7 @@ def plot_psd_single_subj(subject_id, input_dir, output_dir):
     ax.set_title(f'sub-{subject_id} - dis_mid vs dis_lat vs no_dis')
     ax.set_ylabel('Power')
     fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-plots', f'sub-{subject_id}-psd-3conds.png'))
+    plt.close()
 
 
 def plot_psd_population(input_dir, output_dir, subject_list, population):
@@ -355,6 +357,7 @@ def plot_psd_population(input_dir, output_dir, subject_list, population):
         ax.set_ylabel('Power')
         ax.set_title(f'{population} - {bin_}')
         fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population, f'{population}-psd-{bin_}.png'))
+        plt.close()
         print(f'====================== psd saved for {population} - {bin_}')
 
     fig, ax = plt.subplots()
@@ -364,6 +367,7 @@ def plot_psd_population(input_dir, output_dir, subject_list, population):
     ax.set_title(f'{population} - dis_mid vs dis_lat vs no_dis')
     ax.set_ylabel('Power')
     fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population, f'{population}-psd-3conds.png'))
+    plt.close()
     
 
 ### ================================================================================================
