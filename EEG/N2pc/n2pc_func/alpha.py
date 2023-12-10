@@ -149,7 +149,7 @@ def get_psd_condition_population(input_dir, output_dir, subject_list, population
     -------
     None
     '''
-    
+    print(f'====================== computing spectral data for {population}')
     # create list to store the spectra data (np.arrays)
     dis_mid_target_l_list = []
     dis_mid_target_r_list = []
@@ -201,29 +201,34 @@ def get_psd_condition_population(input_dir, output_dir, subject_list, population
                         'dis_mid': dis_mid_combined, 'no_dis': no_dis_combined, 'dis_lat': dis_lat_combined, 'all': all_combined}
 
 
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', population)):
-            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', population))
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'spectrum', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'spectrum', population))
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'freqs', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'freqs', population))
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'info', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'info', population))
+
     for bin_, spectrum in spectrum_dict.items():
         try:
             np.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'spectrum', population, f'{population}-psd-{bin_}.npy'), spectrum)
             np.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'freqs', population, f'{population}-psd-freqs.npy'), freqs)
-            spectrum_dict[bin_].info.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'info', population, f'{population}-psd-info-{bin_}.fif'))
+            psd_dict[bin_].info.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'info', population, f'{population}-psd-info-{bin_}.fif'))
             print(f'====================== spectral data saved for {population} - {bin_}')
         except:
             print(f'====================== spectral data not saved for {population} - {bin_}')
             continue
 
     # back to spectrum objects if we use this function to get the dict (i.e if we don't pass through the load_psd_population function)
-    dis_mid_target_l_combined = mne.time_frequency.SpectrumArray(dis_mid_target_l_combined, info=spectrum_dict['dis_mid_target_l'].info, freqs=freqs)
-    dis_mid_target_r_combined = mne.time_frequency.SpectrumArray(dis_mid_target_r_combined, info=spectrum_dict['dis_mid_target_r'].info, freqs=freqs)
-    no_dis_target_l_combined = mne.time_frequency.SpectrumArray(no_dis_target_l_combined, info=spectrum_dict['no_dis_target_l'].info, freqs=freqs)
-    no_dis_target_r_combined = mne.time_frequency.SpectrumArray(no_dis_target_r_combined, info=spectrum_dict['no_dis_target_r'].info, freqs=freqs)
-    dis_right_target_l_combined = mne.time_frequency.SpectrumArray(dis_right_target_l_combined, info=spectrum_dict['dis_right_target_l'].info, freqs=freqs)
-    dis_left_target_r_combined = mne.time_frequency.SpectrumArray(dis_left_target_r_combined, info=spectrum_dict['dis_left_target_r'].info, freqs=freqs)
-    dis_mid_combined = mne.time_frequency.SpectrumArray(dis_mid_combined, info=spectrum_dict['dis_mid'].info, freqs=freqs)
-    no_dis_combined = mne.time_frequency.SpectrumArray(no_dis_combined, info=spectrum_dict['no_dis'].info, freqs=freqs)
-    dis_lat_combined = mne.time_frequency.SpectrumArray(dis_lat_combined, info=spectrum_dict['dis_lat'].info, freqs=freqs)
-    all_combined = mne.time_frequency.SpectrumArray(all_combined, info=spectrum_dict['all'].info, freqs=freqs)
+    dis_mid_target_l_combined = mne.time_frequency.SpectrumArray(dis_mid_target_l_combined, info=psd_dict['dis_mid_target_l'].info, freqs=freqs)
+    dis_mid_target_r_combined = mne.time_frequency.SpectrumArray(dis_mid_target_r_combined, info=psd_dict['dis_mid_target_r'].info, freqs=freqs)
+    no_dis_target_l_combined = mne.time_frequency.SpectrumArray(no_dis_target_l_combined, info=psd_dict['no_dis_target_l'].info, freqs=freqs)
+    no_dis_target_r_combined = mne.time_frequency.SpectrumArray(no_dis_target_r_combined, info=psd_dict['no_dis_target_r'].info, freqs=freqs)
+    dis_right_target_l_combined = mne.time_frequency.SpectrumArray(dis_right_target_l_combined, info=psd_dict['dis_right_target_l'].info, freqs=freqs)
+    dis_left_target_r_combined = mne.time_frequency.SpectrumArray(dis_left_target_r_combined, info=psd_dict['dis_left_target_r'].info, freqs=freqs)
+    dis_mid_combined = mne.time_frequency.SpectrumArray(dis_mid_combined, info=psd_dict['dis_mid'].info, freqs=freqs)
+    no_dis_combined = mne.time_frequency.SpectrumArray(no_dis_combined, info=psd_dict['no_dis'].info, freqs=freqs)
+    dis_lat_combined = mne.time_frequency.SpectrumArray(dis_lat_combined, info=psd_dict['dis_lat'].info, freqs=freqs)
+    all_combined = mne.time_frequency.SpectrumArray(all_combined, info=psd_dict['all'].info, freqs=freqs)
     print(f'====================== spectral data converted to SpectrumArray for {population}')
 
     return spectrum_dict
@@ -247,17 +252,19 @@ def load_psd_population(input_dir, output_dir, subject_list, population):
 
     '''
     if os.path.exists(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'spectrum', population, f'{population}-psd-all.npy')):
+        print(f'====================== spectral data already computed for {population}')
         psd_dict = {}
         for bin_ in ['dis_mid_target_l', 'dis_mid_target_r', 'no_dis_target_l', 'no_dis_target_r', 'dis_right_target_l', 'dis_left_target_r', 'dis_mid', 'no_dis', 'dis_lat', 'all']:
-            spec = np.load(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', population, f'{population}-psd-{bin_}.npy'))
-            info = mne.io.read_info(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', population, f'{population}-psd-info-{bin_}.fif'))
-            freqs = np.load(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', population, f'{population}-psd-freqs.npy'))
+            spec = np.load(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'spectrum', population, f'{population}-psd-{bin_}.npy'))
+            info = mne.io.read_info(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'info', population, f'{population}-psd-info-{bin_}.fif'))
+            freqs = np.load(os.path.join(input_dir, 'all_subj', 'N2pc', 'psd', 'psd-data', 'freqs', population, f'{population}-psd-freqs.npy'))
             spec_object = mne.time_frequency.SpectrumArray(spec, info, freqs)
             psd_dict[bin_] = spec_object    
     else:
+        print(f'====================== spectral data not computed for {population}')
         psd_dict = get_psd_condition_population(input_dir, output_dir, subject_list, population)
 
-    print(f'====================== spectral data loaded for {population} - {bin_}')
+    print(f'====================== spectral data loaded for {population}')
 
     return psd_dict
 
@@ -293,14 +300,9 @@ def plot_spectral_topo_single_subj(subject_id, input_dir, output_dir):
 
     for bin_, spectrum in spectrum_dict.items():
         plot = spectrum.plot_topomap(bands=bands, res=512, show=False)
-
         plot.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'spectral-topo', f'sub-{subject_id}-spectral-topo-{bin_}.png'))
-        # Idk why but the save method doesn't work for the 2nd (dis_mid_target_r) spectrum object
-        try:
-            spectrum.save(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'psd-data', f'sub-{subject_id}-psd-{bin_}.hdf5'), overwrite=True)
-        except:
-            print(f'====================== spectral data not saved for {subject_id} - {bin_}')
-            continue
+        print(f'====================== spectral data saved for {subject_id} - {bin_}')
+
 
 def plot_spectral_topo_population(input_dir, output_dir, subject_list, population):
 
