@@ -489,25 +489,30 @@ def create_significant_conn_mat(input_dir, output_dir):
 
 
     for dir in nbs_results:
-        # Load adjacency matrix
-        adjacency_matrix = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, 'adj.csv'), index_col=0)
-        print(f'Adjacency matrix loaded for {dir}')
-        # Make sure adjacency matrix only contains 0 and 1
-        adjacency_matrix = adjacency_matrix.applymap(lambda x: 1 if x > 1 else x)
-        # Load connectivity matrices
-        grp1, grp2, freq1, freq2, cond1, cond2 = find_elements_in_dir_name(dir)
 
-        df_1 = load_conn_mat(input_dir, grp1, freq1, cond1)
-        df_2 = load_conn_mat(input_dir, grp2, freq2, cond2)
+        try:
+            # Load adjacency matrix
+            adjacency_matrix = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, 'adj.csv'), index_col=0)
+            print(f'Adjacency matrix loaded for {dir}')
+            # Make sure adjacency matrix only contains 0 and 1
+            adjacency_matrix = adjacency_matrix.applymap(lambda x: 1 if x > 1 else x)
+            # Load connectivity matrices
+            grp1, grp2, freq1, freq2, cond1, cond2 = find_elements_in_dir_name(dir)
 
-        sign_df_1 = multiply_by_adjacency_matrix(df_1, adjacency_matrix)
-        sign_df_2 = multiply_by_adjacency_matrix(df_2, adjacency_matrix)
+            df_1 = load_conn_mat(input_dir, grp1, freq1, cond1)
+            df_2 = load_conn_mat(input_dir, grp2, freq2, cond2)
 
-        name_1 = f'{grp1}-{freq1}-{cond1}'
-        name_2 = f'{grp2}-{freq2}-{cond2}'
-        sign_df_1.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.csv'))
-        sign_df_2.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.csv'))
-        print(f'Significant connectivity matrices saved for {dir}')
+            sign_df_1 = multiply_by_adjacency_matrix(df_1, adjacency_matrix)
+            sign_df_2 = multiply_by_adjacency_matrix(df_2, adjacency_matrix)
+
+            name_1 = f'{grp1}-{freq1}-{cond1}'
+            name_2 = f'{grp2}-{freq2}-{cond2}'
+            sign_df_1.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.csv'))
+            sign_df_2.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.csv'))
+            print(f'Significant connectivity matrices saved for {dir}')
+        except:
+            print(f'Error with {dir}')
+            continue
 
 def plot_significant_conn_mat(input_dir, output_dir):
 
@@ -521,46 +526,51 @@ def plot_significant_conn_mat(input_dir, output_dir):
 
     for dir in nbs_results:
        
-        grp1, grp2, freq1, freq2, cond1, cond2 = find_elements_in_dir_name(dir)
-        name_1 = f'{grp1}-{freq1}-{cond1}'
-        name_2 = f'{grp2}-{freq2}-{cond2}'
+        try:
 
-        if freq1 == 'theta':
-            freq1 = [4, 8]
-        elif freq1 == 'alpha':
-            freq1 = [8, 12]
-        elif freq1 == 'low':
-            freq1 = [12, 16]
-        elif freq1 == 'high':
-            freq1 = [16, 30]
+            grp1, grp2, freq1, freq2, cond1, cond2 = find_elements_in_dir_name(dir)
+            name_1 = f'{grp1}-{freq1}-{cond1}'
+            name_2 = f'{grp2}-{freq2}-{cond2}'
 
-        if freq2 == 'theta':
-            freq2 = [4, 8]
-        elif freq2 == 'alpha':
-            freq2 = [8, 12]
-        elif freq2 == 'low':
-            freq2 = [12, 16]
-        elif freq2 == 'high':
-            freq2 = [16, 30]
-       
-        sign_df_1 = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.csv'), index_col=0)
-        sign_df_2 = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.csv'), index_col=0)
-        print(f'Significant connectivity matrices loaded for {dir}')
+            if freq1 == 'theta':
+                freq1 = [4, 8]
+            elif freq1 == 'alpha':
+                freq1 = [8, 12]
+            elif freq1 == 'low':
+                freq1 = [12, 16]
+            elif freq1 == 'high':
+                freq1 = [16, 30]
 
-        mat_fig_1 = plot_conn_matrix(sign_df_1, grp1, 'plv', freq1, cond1)
-        plt.close()
-        mat_fig_2 = plot_conn_matrix(sign_df_2, grp2, 'plv', freq2, cond2)
-        plt.close()
-        print(f'Connectivity plots created for {dir}')
-        mat_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.png'))
-        mat_fig_2.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.png'))
-        print(f'Connectivity plots saved for {dir}')
+            if freq2 == 'theta':
+                freq2 = [4, 8]
+            elif freq2 == 'alpha':
+                freq2 = [8, 12]
+            elif freq2 == 'low':
+                freq2 = [12, 16]
+            elif freq2 == 'high':
+                freq2 = [16, 30]
         
-        circle_fig_1 = plot_conn_circle(sign_df_1, grp1, 'plv', freq1, cond1)
-        plt.close()
-        circle_fig_2 = plot_conn_circle(sign_df_2, grp2, 'plv', freq2, cond2)
-        plt.close()
-        print(f'Connectivity circles created for {dir}')
-        circle_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign-circle.png'))
-        circle_fig_2.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign-circle.png'))
-        print(f'Connectivity circles saved for {dir}')
+            sign_df_1 = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.csv'), index_col=0)
+            sign_df_2 = pd.read_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.csv'), index_col=0)
+            print(f'Significant connectivity matrices loaded for {dir}')
+
+            mat_fig_1 = plot_conn_matrix(sign_df_1, grp1, 'plv', freq1, cond1)
+            plt.close()
+            mat_fig_2 = plot_conn_matrix(sign_df_2, grp2, 'plv', freq2, cond2)
+            plt.close()
+            print(f'Connectivity plots created for {dir}')
+            mat_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign.png'))
+            mat_fig_2.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign.png'))
+            print(f'Connectivity plots saved for {dir}')
+            
+            circle_fig_1 = plot_conn_circle(sign_df_1, grp1, 'plv', freq1, cond1)
+            plt.close()
+            circle_fig_2 = plot_conn_circle(sign_df_2, grp2, 'plv', freq2, cond2)
+            plt.close()
+            print(f'Connectivity circles created for {dir}')
+            circle_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign-circle.png'))
+            circle_fig_2.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign-circle.png'))
+            print(f'Connectivity circles saved for {dir}')
+        except:
+            print(f'Error with {dir}')
+            continue
