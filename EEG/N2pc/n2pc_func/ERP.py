@@ -110,6 +110,13 @@ def to_evoked_population(input_dir, output_dir, subject_list, population):
     dis_right_target_l_combined = mne.combine_evoked(dis_right_target_l_list, weights='equal')
     dis_left_target_r_combined = mne.combine_evoked(dis_left_target_r_list, weights='equal')
 
+    dis_mid_target_l_combined.comment = 'dis_mid_target_l'
+    dis_mid_target_r_combined.comment = 'dis_mid_target_r'
+    no_dis_target_l_combined.comment = 'no_dis_target_l'
+    no_dis_target_r_combined.comment = 'no_dis_target_r'
+    dis_right_target_l_combined.comment = 'dis_right_target_l'
+    dis_left_target_r_combined.comment = 'dis_left_target_r'
+
     # save the combined evoked objects
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population)):
         os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population))

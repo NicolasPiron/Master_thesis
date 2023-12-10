@@ -318,7 +318,7 @@ def plot_spectral_topo_population(input_dir, output_dir, subject_list, populatio
     
     bands = {'Theta (4-8 Hz)': (4, 8), 'Alpha (8-12 Hz)': (8, 12), 'low_Beta (12-30 Hz)': (12, 16), 'high_Beta (16-30 Hz)': (16, 30)}
     for bin_, spectrum in spectrum_dict.items():
-        plot = spectrum.plot_topomap(bands=bands, res=512, show=False)
+        plot = spectrum.plot_topomap(bands=bands, vlim=(50, 1000), res=512, show=False)
         plot.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population, f'{population}-spectral-topo-{bin_}.png'))
         
         print(f'====================== spectral topo plotted for {population} - {bin_}')
