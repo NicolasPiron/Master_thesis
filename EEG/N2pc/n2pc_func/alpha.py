@@ -355,8 +355,8 @@ def plot_psd_population(input_dir, output_dir, subject_list, population):
 
     spectrum_dict = load_psd_population(input_dir, output_dir, subject_list, population)
 
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population)):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population))
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population, 'occip')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population, 'occip'))
         print(f'====================== psd plots dir created for {population}')
 
     for bin_, spectrum in spectrum_dict.items():
@@ -364,7 +364,21 @@ def plot_psd_population(input_dir, output_dir, subject_list, population):
         spectrum.plot(average=True, dB=False, ci_alpha=0.2, show=False, axes=ax)
         ax.set_ylabel('Power')
         ax.set_title(f'{population} - {bin_}')
+        ax.set_ylim(0, 50)
         fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population, f'{population}-psd-{bin_}.png'))
+        plt.close()
+        print(f'====================== psd saved for {population} - {bin_}')
+
+    for bin_, spectrum in spectrum_dict.items():
+        fig, ax = plt.subplots()
+        spectrum.plot(picks=['P7', 'PO7', 'P9', 'O1'], average=True, dB=False, ci_alpha=0.1,  show=False, axes=ax, color='red')
+        spectrum.plot(picks=['P8', 'PO8', 'P10', 'O2'],average=True, dB=False, ci_alpha=0.1, show=False, axes=ax, color='blue')
+        ax.set_ylabel('Power')
+        ax.annotate('left=red', xy=(0.8, 0.91), xycoords='axes fraction')
+        ax.annotate('right=blue', xy=(0.8, 0.81), xycoords='axes fraction')
+        ax.set_title(f'{population} - occip - {bin_}')
+        ax.set_ylim(0, 50)
+        fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population, 'occip', f'{population}-psd-occip-{bin_}.png'))
         plt.close()
         print(f'====================== psd saved for {population} - {bin_}')
 
@@ -374,9 +388,9 @@ def plot_psd_population(input_dir, output_dir, subject_list, population):
     spectrum_dict['no_dis'].plot(average=True, dB=False, ci_alpha=0.1, show=False, axes=ax, color='green')
     ax.set_title(f'{population} - dis_mid vs dis_lat vs no_dis')
     ax.set_ylabel('Power')
+    ax.set_ylim(0, 50)
     fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population, f'{population}-psd-3conds.png'))
     plt.close()
-    
 
 ### ================================================================================================
 ### ==================================== N2PC ALPHA POWER PER EPOCH ================================
