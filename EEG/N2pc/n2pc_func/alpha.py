@@ -231,6 +231,10 @@ def get_psd_condition_population(input_dir, output_dir, subject_list, population
     all_combined = mne.time_frequency.SpectrumArray(all_combined, info=psd_dict['all'].info, freqs=freqs)
     print(f'====================== spectral data converted to SpectrumArray for {population}')
 
+    spectrum_dict = {'dis_mid_target_l': dis_mid_target_l_combined, 'dis_mid_target_r': dis_mid_target_r_combined, 'no_dis_target_l': no_dis_target_l_combined,
+                    'no_dis_target_r': no_dis_target_r_combined, 'dis_right_target_l': dis_right_target_l_combined, 'dis_left_target_r': dis_left_target_r_combined,
+                        'dis_mid': dis_mid_combined, 'no_dis': no_dis_combined, 'dis_lat': dis_lat_combined, 'all': all_combined}
+
     return spectrum_dict
 
 def load_psd_population(input_dir, output_dir, subject_list, population):
@@ -301,21 +305,23 @@ def plot_spectral_topo_single_subj(subject_id, input_dir, output_dir):
     for bin_, spectrum in spectrum_dict.items():
         plot = spectrum.plot_topomap(bands=bands, res=512, show=False)
         plot.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'spectral-topo', f'sub-{subject_id}-spectral-topo-{bin_}.png'))
-        print(f'====================== spectral data saved for {subject_id} - {bin_}')
+        print(f'====================== spectral topo plotted for {subject_id} - {bin_}')
 
 
 def plot_spectral_topo_population(input_dir, output_dir, subject_list, population):
 
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population)):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population))
+
     spectrum_dict = load_psd_population(input_dir, output_dir, subject_list, population)
+
     
     bands = {'Theta (4-8 Hz)': (4, 8), 'Alpha (8-12 Hz)': (8, 12), 'low_Beta (12-30 Hz)': (12, 16), 'high_Beta (16-30 Hz)': (16, 30)}
     for bin_, spectrum in spectrum_dict.items():
         plot = spectrum.plot_topomap(bands=bands, res=512, show=False)
-        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population)):
-            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population))
         plot.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'spectral-topo', population, f'{population}-spectral-topo-{bin_}.png'))
         
-        print(f'====================== spectral data saved for {population} - {bin_}')
+        print(f'====================== spectral topo plotted for {population} - {bin_}')
 
 def plot_psd_single_subj(subject_id, input_dir, output_dir):
 
