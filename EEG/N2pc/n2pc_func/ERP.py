@@ -554,7 +554,7 @@ def get_evoked_data_population(input_dir, subject_list):
     return PO7_data_nbin1_mean, PO7_data_nbin2_mean, PO7_data_nbin3_mean, PO7_data_nbin4_mean, PO7_data_nbin5_mean, PO7_data_nbin6_mean, time
 
 def get_diff(contra, ipsi):
-    diff_waveform = ipsi - contra
+    diff_waveform = contra - ipsi
     return diff_waveform
 
 
@@ -1040,7 +1040,7 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
                 contra = PO7
 
             # get the difference between the channels
-            diff = ipsi - contra
+            diff = contra - ipsi
             
             if epoch_id in [1, 2, 5, 6]:
                 cond = 'Dis_mid'
@@ -1161,9 +1161,9 @@ def get_peak_latency_single_subj(subject_id, input_dir, output_dir):
     PO8_no_dis = no_dis[0].copy().pick('PO8').get_data()
 
     # create the diff PO7-PO8
-    diff_dis_contra = PO7_dis_contra - PO8_dis_contra
-    diff_dis_mid = PO7_dis_mid - PO8_dis_mid
-    diff_no_dis = PO7_no_dis - PO8_no_dis
+    diff_dis_contra = PO8_dis_contra - PO7_dis_contra
+    diff_dis_mid = PO8_dis_mid - PO7_dis_mid
+    diff_no_dis = PO8_no_dis - PO7_no_dis
 
     # back to evoked object
     info = mne.create_info(ch_names=['PO7'], sfreq=512, ch_types='eeg')
@@ -1185,7 +1185,7 @@ def get_peak_latency_single_subj(subject_id, input_dir, output_dir):
 
     # loop through the evoked objects to get the peak latencies and amplitudes and store them in the df
     for i, evk in enumerate(peak_data.values()):
-        ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="pos", return_amplitude=True)
+        ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="neg", return_amplitude=True)
         df.iloc[i, 0] = subject_id
         df.iloc[i, 1] = list(peak_data.keys())[i]
         df.iloc[i, 2] = lat
@@ -1212,9 +1212,9 @@ def get_peak_latency_grand_average(input_dir, output_dir, population):
     PO8_no_dis = no_dis[0].copy().pick('PO8').get_data()
 
     # create the diff PO7-PO8
-    diff_dis_contra = PO7_dis_contra - PO8_dis_contra
-    diff_dis_mid = PO7_dis_mid - PO8_dis_mid
-    diff_no_dis = PO7_no_dis - PO8_no_dis
+    diff_dis_contra = PO8_dis_contra - PO7_dis_contra
+    diff_dis_mid = PO8_dis_mid - PO7_dis_mid
+    diff_no_dis = PO8_no_dis - PO7_no_dis
 
     # back to evoked object
     info = mne.create_info(ch_names=['PO7'], sfreq=512, ch_types='eeg')
@@ -1237,7 +1237,7 @@ def get_peak_latency_grand_average(input_dir, output_dir, population):
 
     # loop through the evoked objects to get the peak latencies and amplitudes and store them in the df
     for i, evk in enumerate(peak_data.values()):
-        ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="pos", return_amplitude=True)
+        ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="neg", return_amplitude=True)
         df.iloc[i, 0] = population
         df.iloc[i, 1] = list(peak_data.keys())[i]
         df.iloc[i, 2] = lat
