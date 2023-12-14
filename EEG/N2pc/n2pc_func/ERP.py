@@ -305,7 +305,156 @@ def combine_evoked_population(input_dir, output_dir, subject_list, population):
     dis_mid_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, f'{population}-dis_mid-ave.fif'), overwrite=True)
     no_dis_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, f'{population}-no_dis-ave.fif'), overwrite=True)
     dis_contra_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, f'{population}-dis_contra-ave.fif'), overwrite=True)
+    
+def combine_topo_diff_single_subj(subject_id, input_dir, output_dir):
+    '''
+    computes and saves the contra minus ipsi scalp for a given subject, for each condition.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot. e.g. '01'
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+
+    Returns
+    -------
+    None
+    '''
+
+    evk_dict = get_evoked(subject_id, input_dir)
+    print(evk_dict)
+
+    # find right and left channels
+    ch_names = list(evk_dict.values())[0].info['ch_names']
+    LCh = []
+    RCh = []
+    LPO = []
+    RPO = []
+    for i, ch in enumerate(ch_names):
+        if str(ch[-1]) == 'z':
+            pass
+        elif int(ch[-1]) % 2 == 0:
+            RCh.append(i)
+            if ch in ['PO8', 'PO4', 'O2']:
+                RPO.append(i)
+        elif int(ch[-1]) %2 != 2:
+            if ch in ['PO7', 'PO3', 'O1']:
+                LPO.append(i)
+            LCh.append(i) 
+
+    diff_evk = {}
+    for bin_, evk in evk_dict.items():
+        data = evk.get_data()
+        if 'target_l' in evk.comment:
+            data[RPO] = data[LPO]
+        elif 'target_r' in evk.comment:
+            data[LPO] = data[RPO]
+        swapped = mne.EvokedArray(data, evk.info, tmin=evk.times[0], nave=evk.nave)
+        diff_evk[bin_] = mne.combine_evoked([evk, swapped], weights=[1, -1])
+        diff_evk[bin_].comment = evk.comment + '_diff'
+        diff_evk[bin_].nave = evk.nave
+
+    print(diff_evk)
+
+    # group the evoked objects by condition
+    dis_mid = [diff_evk[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin1', 'evk_bin2']]
+    no_dis = [diff_evk[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin3', 'evk_bin4']]
+    dis_contra = [diff_evk[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin5', 'evk_bin6']]
+
+    # swap the right and left channels for the right target evoked objects
+    pairs = [dis_mid, no_dis, dis_contra]
+    pair_names = ['dis_mid_diff', 'no_dis_diff', 'dis_contra_diff']
+    for i, pair in enumerate(pairs):
+        # the right target evoked object will be laterally swapped so it is like the target is on the left
+        to_swap = pair[1]
+        data = to_swap.get_data()
+        data[RCh] = data[LCh]
+        data[LCh] = data[RCh]
+        swapped = mne.EvokedArray(data, to_swap.info)
+        combined_pair = mne.combine_evoked([pair[0], swapped], weights='equal')
+        combined_pair.comment = pair_names[i]
+        diff_evk[pair_names[i]] = combined_pair
+
+    # save the combined evoked objects
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'diff')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'diff'))
+    for bin_, evk in diff_evk.items():
+        evk.save(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'diff', f'sub-{subject_id}-{evk.comment}-ave.fif'), overwrite=True)
+
+def combine_topo_diff_population(input_dir, output_dir, subject_list, population):
+    '''
+    Parameters
+    ----------
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+    subject_list : list of str
+        List of subjects to be concatenated. ['01', '02', '03', ...] format.
+    population : str
+        Population, can be 'thal_control', 'young_control', 'old_control' or 'pulvinar'.
+
+    Returns
+    -------
+    None
+    '''
+
+    # create lists of evoked objects for each condition
+    dis_mid_target_l_list = []
+    dis_mid_target_r_list = []
+    no_dis_target_l_list = []
+    no_dis_target_r_list = []
+    dis_right_target_l_list = []
+    dis_left_target_r_list = []
+    dis_mid_list = []
+    no_dis_list = []
+    dis_contra_list = []
+
+    list_dict = {'dis_mid_target_l_diff' : dis_mid_target_l_list,
+                    'dis_mid_target_r_diff' : dis_mid_target_r_list,
+                    'no_dis_target_l_diff' : no_dis_target_l_list,
+                    'no_dis_target_r_diff' : no_dis_target_r_list,
+                    'dis_right_target_l_diff' : dis_right_target_l_list,
+                    'dis_left_target_r_diff' : dis_left_target_r_list,
+                    'dis_mid_diff' : dis_mid_list,
+                    'no_dis_diff' : no_dis_list,
+                    'dis_contra_diff' : dis_contra_list}
+
+    for subject_id in subject_list:
+
+        # check is the combined evoked files already exist
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'diff', f'sub-{subject_id}-dis_mid_diff-ave.fif')):
+            
+            combine_topo_diff_single_subj(subject_id, input_dir, output_dir)
+            print(f'====================== evoked files combined for {subject_id}')
+        else:
+            print(f'====================== evoked files were already combined for {subject_id}')
         
+        # loop over the subjects and append the evoked objects to the lists
+        evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', f'evoked-N2pc', 'diff', '*.fif'))
+        evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
+        evoked_dict = {}
+        for evoked in evoked_list:
+            evoked_dict[evoked.comment] = evoked
+
+        for key, list_ in list_dict.items():
+            list_.append(evoked_dict[key])
+
+    # combine the evoked objects
+    combined_dic = {}
+    for key, list_ in list_dict.items():
+        combined_dic[key] = mne.combine_evoked(list_, weights='equal')
+        combined_dic[key].comment = key
+
+    # save the combined evoked objects
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'diff', population)):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'diff', population))
+    for key, evk in combined_dic.items():
+        evk.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'diff', population, f'{population}-{key}-ave.fif'), overwrite=True)
+
 
 def load_combined_evoked(evoked_list):
     '''
@@ -322,7 +471,7 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
     Parameters
     ----------
     subject_id : str
-        The subject ID to plot. Can be 'GA' to plot the grand average.
+        The subject ID to plot. 
     input_dir : str
         The path to the directory containing the input data.
     output_dir : str
@@ -338,20 +487,16 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
     print(f'====================== plotting for {subject_id}')
 
     # load data and store it in a dictionary
-    evoked_combined_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'combined', f'sub-{subject_id}*.fif'))
+    evoked_diff_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'diff', f'sub-{subject_id}*.fif'))
     evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}*.fif'))
     if len(evoked_files) == 0:
         print('====================== no file found - evoked files (not combined)')
-    if len(evoked_combined_files) == 0:
-        print('====================== no file found - evoked files (combined)')
-    all_evoked_files = evoked_combined_files + evoked_files
+    if len(evoked_diff_files) == 0:
+        print('====================== no file found - evoked files (diff)')
+    all_evoked_files = evoked_diff_files + evoked_files
     evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in all_evoked_files]
     evoked_dict = load_combined_evoked(evoked_list)
 
-    evoked_dict['mid_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_mid']], weights=[-1, 1])
-    evoked_dict['contra_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_contra']], weights=[-1, 1])
-    evoked_dict['mid_minus_nodis'].comment = 'mid_minus_nodis'
-    evoked_dict['contra_minus_nodis'].comment = 'contra_minus_nodis'
 
     # plot the topomaps
     for bin_, evoked in evoked_dict.items():
@@ -362,6 +507,7 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
             os.makedirs(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo')
         bin_name = bin_.replace('/', '_')
         topo.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', f'sub-{subject_id}-topo-{bin_name}.png'))
+        print(f'====================== topo plot saved for {subject_id} - {bin_}')
 
 def plot_erp_topo_population(input_dir, output_dir, population):
     '''
@@ -380,14 +526,8 @@ def plot_erp_topo_population(input_dir, output_dir, population):
     '''
 
     # load data and store it in a dictionary
-    evoked_combined_files = glob.glob(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, f'{population}*.fif'))
     evoked_files = glob.glob(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}*.fif'))
-    if len(evoked_files) == 0:
-        print('====================== no file found - evoked files (not combined)')
-    if len(evoked_combined_files) == 0:
-        print('====================== no file found - evoked files (combined)')
-    all_evoked_files = evoked_combined_files + evoked_files
-    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in all_evoked_files]
+    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
     evoked_dict = load_combined_evoked(evoked_list)
     # plot the topomaps
     for bin_, evoked in evoked_dict.items():
@@ -398,15 +538,22 @@ def plot_erp_topo_population(input_dir, output_dir, population):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo'))
         bin_name = bin_.replace('/', '_')
         topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', f'{population}-topo-{bin_name}.png'))
+        print(f'====================== topo plot saved for {population} - {bin_}')
 
-    evoked_dict['mid_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_mid']], weights=[-1, 1])
-    evoked_dict['contra_minus_nodis'] = mne.combine_evoked([evoked_dict['no_dis'], evoked_dict['dis_contra']], weights=[-1, 1])
-    name_lst = ['mid_minus_nodis', 'contra_minus_nodis']
-    for i, diff_evk in enumerate([evoked_dict['mid_minus_nodis'], evoked_dict['contra_minus_nodis']]):
-        diff_evk.info['bads']=[]
-        topo = diff_evk.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=(-0.8, 0.8), show=False)
-        topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', f'{population}-topo-{name_lst[i]}.png'))
-
+    # do the same but at different scale to visualize the ipsi and contra components
+    evoked_diff_files = glob.glob(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'diff', population, f'{population}*.fif'))
+    evoked_diff_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_diff_files]
+    evoked_diff_dict = load_combined_evoked(evoked_diff_list)
+    # plot the topomaps
+    for bin_, evoked in evoked_diff_dict.items():
+        # reset the bad channels
+        evoked.info['bads'] = []
+        topo = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=(-2, 2), show=False)
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo'))
+        bin_name = bin_.replace('/', '_')
+        topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', f'{population}-topo-{bin_name}.png'))
+        print(f'====================== topo plot saved for {population} - {bin_}')
 
 def get_evoked_data_single_subj(subject_id, input_dir):    
     ''' This function extracts the N2pc ERP values for a given subject.
