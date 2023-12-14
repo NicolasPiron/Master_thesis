@@ -373,10 +373,12 @@ def combine_topo_diff_single_subj(subject_id, input_dir, output_dir):
         data = to_swap.get_data()
         data[RCh] = data[LCh]
         data[LCh] = data[RCh]
-        swapped = mne.EvokedArray(data, to_swap.info)
+        swapped = mne.EvokedArray(data, to_swap.info, tmin=to_swap.times[0], nave=to_swap.nave)
         combined_pair = mne.combine_evoked([pair[0], swapped], weights='equal')
         combined_pair.comment = pair_names[i]
         diff_evk[pair_names[i]] = combined_pair
+    
+    print(diff_evk)
 
     # save the combined evoked objects
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'diff')):
@@ -504,13 +506,15 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
         evoked.info['bads'] = []
         topo = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], show=False)
         if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'diff')):
-            os.makedirs(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'diff')
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'diff'))
         bin_name = bin_.replace('/', '_')
+        if len(bin_name) > 50:
+            bin_name = 'all' # to avoid errors when saving the file
         if 'diff' in bin_name:
             topo.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'diff', f'sub-{subject_id}-topo-{bin_name}.png'))
         else:
             topo.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', f'sub-{subject_id}-topo-{bin_name}.png'))
-        print(f'====================== topo plot saved for {subject_id} - {bin_}')
+        print(f'====================== topo plot saved for {subject_id} - {bin_name}')
 
 def plot_erp_topo_population(input_dir, output_dir, population):
     '''
@@ -557,6 +561,99 @@ def plot_erp_topo_population(input_dir, output_dir, population):
         bin_name = bin_.replace('/', '_')
         topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff', f'{population}-topo-{bin_name}.png'))
         print(f'====================== topo plot saved for {population} - {bin_}')
+
+
+def plot_n2pc_both_sides_single_subj(subject_id, input_dir, output_dir):
+    '''
+    function to visualize the n2pc for the 6 condition without doing the mean across both sides of the head.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot.
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+    '''
+
+    evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}*.fif')) 
+    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
+    evoked_dict = load_combined_evoked(evoked_list)
+
+    time = list(evoked_dict.values())[0].times*1000
+
+    for key, evk in evoked_dict.items():
+
+        if len(key) > 50:
+            continue
+        if 'target_l' in evk.comment:
+            contra = evk.copy().get_data(picks=['PO8'])
+            contra = contra.reshape(contra.shape[1],1)
+            ipsi = evk.copy().get_data(picks=['PO7'])
+            ipsi = ipsi.reshape(ipsi.shape[1],1)
+        elif 'target_r' in evk.comment:
+            contra = evk.copy().get_data(picks=['PO7'])
+            contra = contra.reshape(contra.shape[1],1)
+            ipsi = evk.copy().get_data(picks=['PO8'])
+            ipsi = ipsi.reshape(ipsi.shape[1],1)
+        fig, ax = plt.subplots()
+        ax.plot(time, contra, label='contra')
+        ax.plot(time, ipsi, label='ipsi')
+        ax.plot(time, contra-ipsi, label='diff')
+        ax.set_title(key)
+        ax.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+        ax.axhline(y=0, color='black', linewidth=1)
+        ax.set_xlabel('Time (ms)')
+        ax.set_ylabel('Amplitude (uV)')
+        ax.legend()
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-waveform', 'n2pc-6-conds')):
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-waveform', 'n2pc-6-conds'))
+        bin_name = key.replace('/', '_')
+        fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-waveform', 'n2pc-6-conds', f'sub-{subject_id}-n2pc-{bin_name}.png'))
+        print(f'====================== waveform plot saved for {subject_id} - {bin_name}')
+
+def plot_n2pc_both_sides_population(input_dir, output_dir, population):
+    '''
+    cf plot_n2pc_both_sides_single_subj
+    '''
+
+    evoked_files = glob.glob(os.path.join(input_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}*.fif'))
+    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
+    evoked_dict = load_combined_evoked(evoked_list)
+
+    time = list(evoked_dict.values())[0].times*1000
+
+    for key, evk in evoked_dict.items():
+
+        if len(key) > 50:
+            continue
+        if 'target_l' in evk.comment:
+            contra = evk.copy().get_data(picks=['PO8'])
+            contra = contra.reshape(contra.shape[1],1)
+            ipsi = evk.copy().get_data(picks=['PO7'])
+            ipsi = ipsi.reshape(ipsi.shape[1],1)
+        elif 'target_r' in evk.comment:
+            contra = evk.copy().get_data(picks=['PO7'])
+            contra = contra.reshape(contra.shape[1],1)
+            ipsi = evk.copy().get_data(picks=['PO8'])
+            ipsi = ipsi.reshape(ipsi.shape[1],1)
+        fig, ax = plt.subplots()
+        ax.plot(time, contra, label='contra')
+        ax.plot(time, ipsi, label='ipsi')
+        ax.plot(time, contra-ipsi, label='diff')
+        ax.set_title(key)
+        ax.axvline(x=0, color='gray', linestyle='--', linewidth=1)
+        ax.axhline(y=0, color='black', linewidth=1)
+        ax.set_xlabel('Time (ms)')
+        ax.set_ylabel('Amplitude (uV)')
+        ax.legend()
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform', 'n2pc-6-conds')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform', 'n2pc-6-conds'))
+        bin_name = key.replace('/', '_')
+        fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform', 'n2pc-6-conds', f'{population}-n2pc-{bin_name}.png'))
+        print(f'====================== waveform plot saved for {population} - {bin_name}')
+
 
 def get_evoked_data_single_subj(subject_id, input_dir):    
     ''' This function extracts the N2pc ERP values for a given subject.

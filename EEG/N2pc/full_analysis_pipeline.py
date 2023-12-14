@@ -38,6 +38,11 @@ for subject_id in full_subject_list:
     except:
         print(f'Error with subject {subject_id} during combine_topo_diff_single_subj')
         pass
+    try:
+        erp.plot_n2pc_both_sides_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+    except:
+        print(f'Error with subject {subject_id} during plot_n2pc_both_sides_single_subj')
+        pass
 #    try:
 #        erp.plot_n2pc_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
 #   except:
@@ -89,6 +94,11 @@ for population, subject_list in population_dict.items():
         erp.combine_topo_diff_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
     except:
         print(f'Error with population {population} during combine_topo_diff_pop')
+        pass
+    try:
+        erp.plot_n2pc_both_sides_population(input_dir=input_dir, output_dir=output_dir, population=population)
+    except:
+        print(f'Error with population {population} during plot_n2pc_both_sides_pop')
         pass
 #    try:
 #        alpha.plot_spectral_topo_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
