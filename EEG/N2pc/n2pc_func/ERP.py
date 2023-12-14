@@ -503,10 +503,13 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
         # reset the bad channels
         evoked.info['bads'] = []
         topo = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], show=False)
-        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo')):
-            os.makedirs(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo')
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'diff')):
+            os.makedirs(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'diff')
         bin_name = bin_.replace('/', '_')
-        topo.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', f'sub-{subject_id}-topo-{bin_name}.png'))
+        if 'diff' in bin_name:
+            topo.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'diff', f'sub-{subject_id}-topo-{bin_name}.png'))
+        else:
+            topo.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', f'sub-{subject_id}-topo-{bin_name}.png'))
         print(f'====================== topo plot saved for {subject_id} - {bin_}')
 
 def plot_erp_topo_population(input_dir, output_dir, population):
@@ -549,10 +552,10 @@ def plot_erp_topo_population(input_dir, output_dir, population):
         # reset the bad channels
         evoked.info['bads'] = []
         topo = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=(-2, 2), show=False)
-        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo')):
-            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo'))
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff'))
         bin_name = bin_.replace('/', '_')
-        topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', f'{population}-topo-{bin_name}.png'))
+        topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff', f'{population}-topo-{bin_name}.png'))
         print(f'====================== topo plot saved for {population} - {bin_}')
 
 def get_evoked_data_single_subj(subject_id, input_dir):    
