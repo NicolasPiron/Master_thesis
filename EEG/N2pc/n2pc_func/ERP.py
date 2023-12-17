@@ -347,7 +347,7 @@ def combine_topo_diff_single_subj(subject_id, input_dir, output_dir):
 
     diff_evk = {}
     for bin_, evk in evk_dict.items():
-        data = evk.get_data()
+        data = evk.copy().get_data()
         if 'target_l' in evk.comment:
             data[RPO] = data[LPO]
         elif 'target_r' in evk.comment:
@@ -370,9 +370,11 @@ def combine_topo_diff_single_subj(subject_id, input_dir, output_dir):
     for i, pair in enumerate(pairs):
         # the right target evoked object will be laterally swapped so it is like the target is on the left
         to_swap = pair[1]
-        data = to_swap.get_data()
-        data[RCh] = data[LCh]
-        data[LCh] = data[RCh]
+        data = to_swap.copy().get_data()
+        left = data[LCh]
+        right = data[RCh]
+        data[RCh] = left
+        data[LCh] = right
         swapped = mne.EvokedArray(data, to_swap.info, tmin=to_swap.times[0], nave=to_swap.nave)
         combined_pair = mne.combine_evoked([pair[0], swapped], weights='equal')
         combined_pair.comment = pair_names[i]
