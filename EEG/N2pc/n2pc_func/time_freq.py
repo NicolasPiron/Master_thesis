@@ -55,7 +55,7 @@ def get_tfr_scalp_single_subj(subject_id, input_dir, output_dir):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-data'))
 
     for condition, tfr in tfr_dict.items():
-        tfr.save(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-data', f'sub-{subject_id}-tfr-{condition}.hdf5'), overwrite=True)
+        tfr.save(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-data', f'sub-{subject_id}-{condition}-tfr.hdf5'), overwrite=True)
         print(f'================= {condition} data tfr saved for {subject_id}')
 
     return None
@@ -94,7 +94,7 @@ def get_tfr_scalp_population(input_dir, output_dir, subject_list, population):
         # Load the time-frequency representation
         tfr_dict = {}
         for condition in ['all', 'dis_mid_target_l', 'dis_mid_target_r', 'dis_right_target_l', 'dis_left_target_r', 'no_dis_target_l', 'no_dis_target_r']:
-            tfr = mne.time_frequency.read_tfrs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-data', f'sub-{subject_id}-tfr-{condition}.hdf5'))[0]
+            tfr = mne.time_frequency.read_tfrs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-data', f'sub-{subject_id}-{condition}-tfr.hdf5'))[0]
             tfr_dict[condition] = tfr
 
         # Append the data to the lists
@@ -119,7 +119,7 @@ def get_tfr_scalp_population(input_dir, output_dir, subject_list, population):
         os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data'))
 
     for condition, tfr in mean_tfr_dict.items():
-        tfr.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', f'{population}-tfr-{condition}.hdf5'), overwrite=True)
+        tfr.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', f'{population}-{condition}-tfr.hdf5'), overwrite=True)
         print(f'================= {condition} data tfr saved for {population}')
 
     return None
@@ -142,14 +142,14 @@ def plot_tfr_single_subj(subject_id, input_dir, output_dir):
     None.
     '''
 
-    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-data', f'sub-{subject_id}-tfr-all.hdf5')):
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-data', f'sub-{subject_id}-all-tfr.hdf5')):
         print(f'================= tfr data not found for {subject_id}, computing it now...')
         get_tfr_scalp_single_subj(subject_id, input_dir, output_dir)
 
     # Load the tfr objects
     tfr_dict = {}
     for condition in ['all', 'dis_mid_target_l', 'dis_mid_target_r', 'dis_right_target_l', 'dis_left_target_r', 'no_dis_target_l', 'no_dis_target_r']:
-        tfr = mne.time_frequency.read_tfrs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-data', f'sub-{subject_id}-tfr-{condition}.hdf5'))[0]
+        tfr = mne.time_frequency.read_tfrs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-data', f'sub-{subject_id}-{condition}-tfr.hdf5'))[0]
         tfr_dict[condition] = tfr
 
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'joint')):
@@ -177,7 +177,7 @@ def plot_tfr_population(input_dir, output_dir, subject_list, population):
     # Load the tfr objects
     tfr_dict = {}
     for condition in ['all', 'dis_mid_target_l', 'dis_mid_target_r', 'dis_right_target_l', 'dis_left_target_r', 'no_dis_target_l', 'no_dis_target_r']:
-        tfr = mne.time_frequency.read_tfrs(os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', f'{population}-tfr-{condition}.hdf5'))[0]
+        tfr = mne.time_frequency.read_tfrs(os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', f'{population}-{condition}-tfr.hdf5'))[0]
         tfr_dict[condition] = tfr
 
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'joint')):
