@@ -115,11 +115,11 @@ def get_tfr_scalp_population(input_dir, output_dir, subject_list, population):
     mean_tfr_dict = {condition: mne.time_frequency.tfr.AverageTFR(info=info, data=tfr, times=times, freqs=freqs, nave=500) for condition, tfr in mean_tfr_dict.items()}
 
     # Save the time-frequency representation
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data')):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data'))
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', population)):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', population))
 
     for condition, tfr in mean_tfr_dict.items():
-        tfr.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', f'{population}-{condition}-tfr.hdf5'), overwrite=True)
+        tfr.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', population, f'{population}-{condition}-tfr.hdf5'), overwrite=True)
         print(f'================= {condition} data tfr saved for {population}')
 
     return None
@@ -170,27 +170,29 @@ def plot_tfr_single_subj(subject_id, input_dir, output_dir):
 
 def plot_tfr_population(input_dir, output_dir, subject_list, population):
 
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', f'{population}-tfr-all.hdf5')):
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', population, f'{population}-all-tfr.hdf5')):
         print(f'================= tfr data not found for {population}, computing it now...')
         get_tfr_scalp_population(input_dir, output_dir, subject_list, population)
 
     # Load the tfr objects
     tfr_dict = {}
     for condition in ['all', 'dis_mid_target_l', 'dis_mid_target_r', 'dis_right_target_l', 'dis_left_target_r', 'no_dis_target_l', 'no_dis_target_r']:
-        tfr = mne.time_frequency.read_tfrs(os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', f'{population}-{condition}-tfr.hdf5'))[0]
+        tfr = mne.time_frequency.read_tfrs(os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-data', population, f'{population}-{condition}-tfr.hdf5'))[0]
         tfr_dict[condition] = tfr
 
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'joint')):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'joint'))
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'topo')):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'topo'))
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'joint', population)):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'joint', population))
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'topo', population)):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'topo', population))
     
     # Plot the time-frequency representation
     for condition, tfr in tfr_dict.items():
-        fig1 = tfr.plot_joint(timefreqs=((0.1, 10),(0.2,10),(0.3,10)), tmin=0, tmax=0.6, title=f'{population} - {condition}', colorbar=True, show=False)
+        fig1 = tfr.plot_joint(timefreqs=((0.1, 10),(0.2,10),(0.3,10)), tmin=0, tmax=0.6, fmin=8, fmax=30, vmin=-0.0000000005, vmax=0.0000000005,
+                               topomap_args={'vlim': (-0.000000001,0.000000001)},
+                               title=f'{population} - {condition}', colorbar=True, show=False)
         fig2 = tfr.plot_topo(title=f'{population}', tmin=0, show=False)
-        fig1.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'joint', f'{population}-{condition}-joint-tfr-plt.png'))
-        fig2.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'topo', f'{population}-{condition}-topo-plot.png'))
+        fig1.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'joint', population, f'{population}-{condition}-joint-tfr-plt.png'))
+        fig2.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'topo', population, f'{population}-{condition}-topo-plot.png'))
         plt.close('all')
         print(f'================= {condition} plots done for {population}')
 
