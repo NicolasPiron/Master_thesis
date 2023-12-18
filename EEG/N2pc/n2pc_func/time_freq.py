@@ -156,13 +156,21 @@ def plot_tfr_single_subj(subject_id, input_dir, output_dir):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'joint'))
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'topo')):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'topo'))
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'occip')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'occip'))
 
     # Plot the time-frequency representation
     for condition, tfr in tfr_dict.items():
         fig1 = tfr.plot_joint(timefreqs=((0.1, 10),(0.2,10),(0.3,10)), tmin=0, tmax=0.6, title=f'sub-{subject_id} - {condition}', colorbar=True, show=False)
         fig2 = tfr.plot_topo(title=f'sub-{subject_id}', tmin=0, show=False)
+        fig3 = tfr.plot(picks=['PO3', 'P7', 'PO7', 'P9', 'O1'], combine='mean', title=f'{subject_id} - {condition} - occip left', tmin=0, fmin=8, fmax=30, vmin=0, vmax=0.0000000009, show=False)[0]
+        fig4 = tfr.plot(picks=['PO4', 'P8', 'PO8', 'P10', 'O2'], combine='mean', title=f'{subject_id} - {condition} - occip right', tmin=0, fmin=8, fmax=30, vmin=0, vmax=0.0000000009, show=False)[0]
+        fig5 = tfr.plot_joint(timefreqs=((0.1, 18),(0.3,18),(0.5,18)), tmin=0, tmax=0.6, title=f'sub-{subject_id} - {condition}', colorbar=True, show=False)
         fig1.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'joint', f'sub-{subject_id}-{condition}-joint-tfr-plt.png'))
         fig2.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'topo', f'sub-{subject_id}-{condition}-topo-plot.png'))
+        fig3.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'occip', f'sub-{subject_id}-{condition}-occip-left.png'))
+        fig4.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'occip', f'sub-{subject_id}-{condition}-occip-right.png'))
+        fig5.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'time_freq', 'tfr-plots', 'joint', f'sub-{subject_id}-{condition}-joint-tfr-plt-beta.png'))
         plt.close('all')
         print(f'================= {condition} plots done for {subject_id}')
     
