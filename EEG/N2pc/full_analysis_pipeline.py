@@ -23,7 +23,7 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 
 # Loop over subjects and compute n2pc -> plot n2pc waveforms, topomaps and get values
 
-for subject_id in full_subject_list:
+#for subject_id in full_subject_list:
 #    try:
 #        erp.to_evoked(subject_id=subject_id, input_dir=input_dir)
 #    except:
@@ -79,16 +79,16 @@ for subject_id in full_subject_list:
 #    except:
 #        print(f'Error with subject {subject_id} during get_peak_latency_single_subj')
 #        pass
-    try:
-        tf.get_tfr_scalp_population(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
-    except:
-        print(f'Error with subject {subject_id} during get_tfr_scalp_population')
-        pass
-    try:
-        tf.plot_tfr_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
-    except:
-        print(f'Error with subject {subject_id} during plot_tfr_single_subj')
-        pass
+#    try:
+#        tf.get_tfr_scalp_population(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+#    except:
+#        print(f'Error with subject {subject_id} during get_tfr_scalp_population')
+#        pass
+#    try:
+#        tf.plot_tfr_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+#    except:
+#        print(f'Error with subject {subject_id} during plot_tfr_single_subj')
+#        pass
 
 for population, subject_list in population_dict.items():
 #    try:
@@ -146,11 +146,11 @@ for population, subject_list in population_dict.items():
 #    except:
 #        print(f'Error with population {population} during get_peak_latency_grand_average')
 #        pass
-    try:
-        tf.get_tfr_scalp_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
-    except:
-        print(f'Error with population {population} during get_tfr_scalp_population')
-        pass
+#    try:
+#        tf.get_tfr_scalp_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
+#    except:
+#        print(f'Error with population {population} during get_tfr_scalp_population')
+#        pass
     try:
         tf.plot_tfr_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
     except:
