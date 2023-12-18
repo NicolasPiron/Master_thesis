@@ -189,12 +189,12 @@ def plot_tfr_population(input_dir, output_dir, subject_list, population):
     
     # Plot the time-frequency representation
     for condition, tfr in tfr_dict.items():
-        fig1 = tfr.plot_joint(timefreqs=((0.1, 10),(0.2,10),(0.3,10)), tmin=0, tmax=0.6, fmin=8, fmax=30, vmin=-0.0000000005, vmax=0.0000000005,
-                               topomap_args={'vlim': (-0.0000000015,0.0000000015)},
+        fig1 = tfr.plot_joint(timefreqs=((0.1, 10),(0.2,10),(0.3,10)), tmin=0, tmax=0.6, fmin=8, fmax=30, vmin=0, vmax=0.0000000005,
+                               topomap_args={'vlim': (0,0.0000000015)},
                                title=f'{population} - {condition}', colorbar=True, show=False)
-        fig2 = tfr.plot_topo(title=f'{population} - {condition}', tmin=0, tmax=0.6, fmin=8, fmax=30, vmin=-0.0000000005, vmax=0.0000000005, show=False)
-        fig3 = tfr.plot(picks=['P7', 'PO7', 'P9', 'O1'], combine='mean', title=f'{population} - {condition} - occip left', fmin=8, fmax=30, vmin=-0.0000000009, vmax=0.0000000009, show=False)[0]
-        fig4 = tfr.plot(picks=['P8', 'PO8', 'P10', 'O2'], combine='mean', title=f'{population} - {condition} - occip right', fmin=8, fmax=30, vmin=-0.0000000009, vmax=0.0000000009, show=False)[0]
+        fig2 = tfr.plot_topo(title=f'{population} - {condition}', tmin=0, tmax=0.6, fmin=8, fmax=30, vmin=0, vmax=0.0000000005, show=False)
+        fig3 = tfr.plot(picks=['P7', 'PO7', 'P9', 'O1'], combine='mean', title=f'{population} - {condition} - occip left', tmin=0, fmin=8, fmax=30, vmin=0, vmax=0.0000000009, show=False)[0]
+        fig4 = tfr.plot(picks=['P8', 'PO8', 'P10', 'O2'], combine='mean', title=f'{population} - {condition} - occip right', tmin=0, fmin=8, fmax=30, vmin=0, vmax=0.0000000009, show=False)[0]
         fig1.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'joint', population, f'{population}-{condition}-joint-tfr-plt.png'))
         fig2.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'topo', population, f'{population}-{condition}-topo-plot.png'))
         fig3.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'time_freq', 'tfr-plots', 'occip', population, f'{population}-{condition}-occip-left.png'))
