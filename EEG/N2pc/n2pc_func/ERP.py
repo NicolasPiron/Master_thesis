@@ -603,8 +603,12 @@ def plot_erp_topo_population(input_dir, output_dir, population):
     for bin_, evoked in evoked_diff_dict.items():
         # reset the bad channels
         evoked.info['bads'] = []
-        topo1 = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=(-2, 2), show=False)
-        topo2 = evoked.plot_topomap(times=[0.175, 0.225, 0.275, 0.325, 0.375], average=0.05,vlim=(-2, 2), res=256, show=False)
+        if 'target' in bin_:
+            vlim = (-2, 2)
+        else:
+            vlim = (-1, 1)
+        topo1 = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=vlim, show=False)
+        topo2 = evoked.plot_topomap(times=[0.175, 0.225, 0.275, 0.325, 0.375], average=0.05,vlim=vlim, res=256, show=False)
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff', 'mean')):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff', 'mean'))
         bin_name = bin_.replace('/', '_')
