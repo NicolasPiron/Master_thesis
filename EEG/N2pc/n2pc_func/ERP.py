@@ -40,7 +40,9 @@ def to_evoked(subject_id, input_dir):
             'bin3' : ['no_dis/target_l'],
             'bin4' : ['no_dis/target_r'],
             'bin5' : ['dis_right/target_l'],
-            'bin6' : ['dis_left/target_r']}
+            'bin6' : ['dis_left/target_r'],
+            'bin7' : ['dis_mid/target_l', 'dis_bot/target_l', 'no_dis/target_l', 'dis_right/target_l'],
+            'bin8' : ['dis_mid/target_r', 'dis_bot/target_r', 'no_dis/target_r', 'dis_left/target_r']}
 
     # create evoked for each bin
     evoked_list = [epochs[bin].average() for bin in bins.values()]
@@ -51,8 +53,12 @@ def to_evoked(subject_id, input_dir):
     # rename the distractor mid conditions to simplify
     evoked_1 = evoked_list[0]
     evoked_2 = evoked_list[1]
+    evoked_7 = evoked_list[6]
+    evoked_8 = evoked_list[7]
     evoked_1.comment = 'dis_mid/target_l'
     evoked_2.comment = 'dis_mid/target_r'
+    evoked_7.comment = 'target_l'
+    evoked_8.comment = 'target_r'
     
     # replace the '/' that causes problems when saving
     for evoked in evoked_list:
@@ -77,6 +83,8 @@ def to_evoked_population(input_dir, output_dir, subject_list, population):
     no_dis_target_r_list = []
     dis_right_target_l_list = []
     dis_left_target_r_list = []
+    target_l_list = []
+    target_r_list = []
 
     for subject in subject_list:
         file = os.path.join(input_dir, f'sub-{subject}/N2pc/cleaned_epochs/sub-{subject}-cleaned_epochs-N2pc.fif')
@@ -93,6 +101,8 @@ def to_evoked_population(input_dir, output_dir, subject_list, population):
         no_dis_target_r = epochs['no_dis/target_r'].average()
         dis_right_target_l = epochs['dis_right/target_l'].average()
         dis_left_target_r = epochs['dis_left/target_r'].average()
+        target_l = epochs['dis_mid/target_l', 'dis_bot/target_l', 'no_dis/target_l', 'dis_right/target_l'].average()
+        target_r = epochs['dis_mid/target_r', 'dis_bot/target_r', 'no_dis/target_r', 'dis_left/target_r'].average()
 
         # append the evoked objects to the lists
         dis_mid_target_l_list.append(dis_mid_target_l)
@@ -101,6 +111,8 @@ def to_evoked_population(input_dir, output_dir, subject_list, population):
         no_dis_target_r_list.append(no_dis_target_r)
         dis_right_target_l_list.append(dis_right_target_l)
         dis_left_target_r_list.append(dis_left_target_r)
+        target_l_list.append(target_l)
+        target_r_list.append(target_r)
 
     # combine the evoked objects
     dis_mid_target_l_combined = mne.combine_evoked(dis_mid_target_l_list, weights='equal')
@@ -109,6 +121,8 @@ def to_evoked_population(input_dir, output_dir, subject_list, population):
     no_dis_target_r_combined = mne.combine_evoked(no_dis_target_r_list, weights='equal')
     dis_right_target_l_combined = mne.combine_evoked(dis_right_target_l_list, weights='equal')
     dis_left_target_r_combined = mne.combine_evoked(dis_left_target_r_list, weights='equal')
+    target_l_combined = mne.combine_evoked(target_l_list, weights='equal')
+    target_r_combined = mne.combine_evoked(target_r_list, weights='equal')
 
     dis_mid_target_l_combined.comment = 'dis_mid_target_l'
     dis_mid_target_r_combined.comment = 'dis_mid_target_r'
@@ -116,6 +130,8 @@ def to_evoked_population(input_dir, output_dir, subject_list, population):
     no_dis_target_r_combined.comment = 'no_dis_target_r'
     dis_right_target_l_combined.comment = 'dis_right_target_l'
     dis_left_target_r_combined.comment = 'dis_left_target_r'
+    target_l_combined.comment = 'target_l'
+    target_r_combined.comment = 'target_r'
 
     # save the combined evoked objects
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population)):
@@ -127,6 +143,8 @@ def to_evoked_population(input_dir, output_dir, subject_list, population):
     no_dis_target_r_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-no_dis_target_r-ave.fif'), overwrite=True)
     dis_right_target_l_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-dis_right_target_l-ave.fif'), overwrite=True)
     dis_left_target_r_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-dis_left_target_r-ave.fif'), overwrite=True)
+    target_l_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-target_l-ave.fif'), overwrite=True)
+    target_r_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', population, f'{population}-target_r-ave.fif'), overwrite=True)
 
     return None
 
@@ -188,7 +206,9 @@ def get_evoked(subject_id, input_dir):
             'bin3' : 'no_dis_target_l',
             'bin4' : 'no_dis_target_r',
             'bin5' : 'dis_right_target_l',
-            'bin6' : 'dis_left_target_r'}
+            'bin6' : 'dis_left_target_r',
+            'bin7' : 'target_l',
+            'bin8' : 'target_r'}
 
     # Assign the evoked object that corresponds to the bin
     bin_evoked = {}
@@ -281,7 +301,8 @@ def combine_evoked_population(input_dir, output_dir, subject_list, population):
             print(f'====================== evoked files were already combined for {subject_id}')
         
         # loop over the subjects and append the evoked objects to the lists
-        evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', f'evoked-N2pc', 'combined', f'sub-{subject_id}-*ave.fif'))
+        evoked_files = glob.glob(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', f'evoked-N2pc', 'combined', f'sub-{subject_id}*ave.fif'))
+        print(evoked_files)
         evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
         evoked_dict = {}
         for evoked in evoked_list:
@@ -416,6 +437,8 @@ def combine_topo_diff_population(input_dir, output_dir, subject_list, population
     dis_mid_list = []
     no_dis_list = []
     dis_contra_list = []
+    target_l_list = []
+    target_r_list = []
 
     list_dict = {'dis_mid_target_l_diff' : dis_mid_target_l_list,
                     'dis_mid_target_r_diff' : dis_mid_target_r_list,
@@ -425,7 +448,9 @@ def combine_topo_diff_population(input_dir, output_dir, subject_list, population
                     'dis_left_target_r_diff' : dis_left_target_r_list,
                     'dis_mid_diff' : dis_mid_list,
                     'no_dis_diff' : no_dis_list,
-                    'dis_contra_diff' : dis_contra_list}
+                    'dis_contra_diff' : dis_contra_list,
+                    'target_l_diff' : target_l_list,
+                    'target_r_diff' : target_r_list}
 
     for subject_id in subject_list:
 
@@ -443,6 +468,7 @@ def combine_topo_diff_population(input_dir, output_dir, subject_list, population
         evoked_dict = {}
         for evoked in evoked_list:
             evoked_dict[evoked.comment] = evoked
+            print(evoked.comment)
 
         for key, list_ in list_dict.items():
             list_.append(evoked_dict[key])
@@ -501,7 +527,6 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
     evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in all_evoked_files]
     evoked_dict = load_combined_evoked(evoked_list)
 
-
     # plot the topomaps
     for bin_, evoked in evoked_dict.items():
         # reset the bad channels
@@ -517,6 +542,27 @@ def plot_erp_topo_single_subj(subject_id, input_dir, output_dir):
         else:
             topo.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', f'sub-{subject_id}-topo-{bin_name}.png'))
         print(f'====================== topo plot saved for {subject_id} - {bin_name}')
+        plt.close()
+
+    # plot the topomaps but means of time windows
+    for bin_, evoked in evoked_dict.items():
+        # reset the bad channels
+        evoked.info['bads'] = []
+        topo = evoked.plot_topomap(times=[0.175, 0.225, 0.275, 0.325, 0.375], average=0.05, show=False)
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'diff', 'mean')):
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'diff', 'mean'))
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'mean')):
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'mean'))
+        bin_name = bin_.replace('/', '_')
+        if len(bin_name) > 50:
+            bin_name = 'all'
+        if 'diff' in bin_name:
+            topo.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'diff', 'mean', f'sub-{subject_id}-topo-{bin_name}.png'))
+        else:
+            topo.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-plots', 'n2pc-topo', 'mean', f'sub-{subject_id}-topo-{bin_name}.png'))
+        print(f'====================== mean topo plot saved for {subject_id} - {bin_name}')
+
+    
 
 def plot_erp_topo_population(input_dir, output_dir, population):
     '''
@@ -557,11 +603,13 @@ def plot_erp_topo_population(input_dir, output_dir, population):
     for bin_, evoked in evoked_diff_dict.items():
         # reset the bad channels
         evoked.info['bads'] = []
-        topo = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=(-2, 2), show=False)
-        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff')):
-            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff'))
+        topo1 = evoked.plot_topomap(times=[0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26], vlim=(-2, 2), show=False)
+        topo2 = evoked.plot_topomap(times=[0.175, 0.225, 0.275, 0.325, 0.375], average=0.05,vlim=(-2, 2), res=256, show=False)
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff', 'mean')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff', 'mean'))
         bin_name = bin_.replace('/', '_')
-        topo.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff', f'{population}-topo-{bin_name}.png'))
+        topo1.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff', f'{population}-topo-{bin_name}.png'))
+        topo2.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-topo', 'diff', 'mean', f'{population}-topo-{bin_name}.png'))
         print(f'====================== topo plot saved for {population} - {bin_}')
 
 

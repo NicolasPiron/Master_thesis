@@ -24,16 +24,16 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 # Loop over subjects and compute n2pc -> plot n2pc waveforms, topomaps and get values
 
 for subject_id in full_subject_list:
-#    try:
-#        erp.to_evoked(subject_id=subject_id, input_dir=input_dir)
-#    except:
-#        print(f'Error with subject {subject_id} during to_evoked')
-#        continue
-#    try:
-#        erp.combine_evoked_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
-#    except:
-#        print(f'Error with subject {subject_id} during combine_evoked_single_subj')
-#        continue
+    try:
+        erp.to_evoked(subject_id=subject_id, input_dir=input_dir)
+    except:
+        print(f'Error with subject {subject_id} during to_evoked')
+        continue
+    try:
+        erp.combine_evoked_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+    except:
+        print(f'Error with subject {subject_id} during combine_evoked_single_subj')
+        continue
     try:
         erp.combine_topo_diff_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
     except:
@@ -91,16 +91,16 @@ for subject_id in full_subject_list:
 #        pass
 
 for population, subject_list in population_dict.items():
-#    try:
-#        erp.combine_evoked_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
-#    except:
-#        print(f'Error with population {population} during combine_evoked_pop')
-#        continue
-#    try:
-#        erp.to_evoked_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
-#    except:
-#        print(f'Error with population {population} during to_evoked_pop')
-#        pass
+    try:
+        erp.combine_evoked_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
+    except:
+        print(f'Error with population {population} during combine_evoked_pop')
+        continue
+    try:
+        erp.to_evoked_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
+    except:
+        print(f'Error with population {population} during to_evoked_pop')
+        pass
     try:
         erp.combine_topo_diff_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
     except:
