@@ -98,6 +98,7 @@ def plot_conn_circle(conn_matrix, population, metric, freqs, condition):
     fig, ax = plt.subplots(figsize=(8, 8), facecolor='black',
                     subplot_kw=dict(polar=True))
     plot_connectivity_circle(conn_matrix, node_names=chan_names, node_angles=node_angles, node_colors=correct_order,
+                             facecolor='white', textcolor='black', node_edgecolor='white',
                             vmin=0.6, vmax=1, n_lines=300,
                             title= f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz' ,
                             ax=ax, show=False)
