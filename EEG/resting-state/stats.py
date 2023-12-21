@@ -78,9 +78,9 @@ def run_nbs():
     return None
 
 if __name__ == '__main__':
-    run_nbs()
-    global_pval_df(input_dir, output_dir)
-    plot_bin_mat(input_dir)
-    create_significant_conn_mat(input_dir, output_dir)
+    #run_nbs()
+    #global_pval_df(input_dir, output_dir)
+    #plot_bin_mat(input_dir)
+    #create_significant_conn_mat(input_dir, output_dir)
     plot_significant_conn_mat(input_dir, output_dir)
 

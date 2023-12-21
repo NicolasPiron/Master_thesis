@@ -568,8 +568,8 @@ def plot_significant_conn_mat(input_dir, output_dir):
             circle_fig_2 = plot_conn_circle(sign_df_2, grp2, 'plv', freq2, cond2)
             plt.close()
             print(f'Connectivity circles created for {dir}')
-            circle_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign-circle.png'))
-            circle_fig_2.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign-circle.png'))
+            circle_fig_1.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_1}-sign-circle.png'), dpi=300)
+            circle_fig_2.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', dir, f'{name_2}-sign-circle.png'), dpi=300)
             print(f'Connectivity circles saved for {dir}')
         except:
             print(f'Error with {dir}')
