@@ -23,7 +23,7 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 
 # Loop over subjects and compute n2pc -> plot n2pc waveforms, topomaps and get values
 
-#for subject_id in full_subject_list:
+for subject_id in full_subject_list:
 #    try:
 #        erp.to_evoked(subject_id=subject_id, input_dir=input_dir)
 #    except:
@@ -74,11 +74,11 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 #    except:
 #        print(f'Error with subject {subject_id} during get_n2pc_values_single_subj')
 #        pass
-#    try:
-#        erp.get_peak_latency_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
-#    except:
-#        print(f'Error with subject {subject_id} during get_peak_latency_single_subj')
-#        pass
+    try:
+        erp.get_peak_latency_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+    except:
+        print(f'Error with subject {subject_id} during get_peak_latency_single_subj')
+        pass
 #    try:
 #        tf.get_tfr_scalp_population(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
 #    except:
@@ -90,7 +90,7 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 #        print(f'Error with subject {subject_id} during plot_tfr_single_subj')
 #        pass
 
-for population, subject_list in population_dict.items():
+#for population, subject_list in population_dict.items():
 #    try:
 #        erp.combine_evoked_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
 #    except:
@@ -121,11 +121,11 @@ for population, subject_list in population_dict.items():
 #    except:
 #        print(f'Error with population {population} during plot_psd_pop')
 #        pass
-    try:
-       erp.plot_erp_topo_population(input_dir=input_dir, output_dir=output_dir, population=population)
-    except:
-        print(f'Error with population {population} during plot_erp_topo_pop')
-        pass
+#    try:
+#       erp.plot_erp_topo_population(input_dir=input_dir, output_dir=output_dir, population=population)
+#    except:
+#        print(f'Error with population {population} during plot_erp_topo_pop')
+#        pass
 #    try:
  #       erp.plot_n2pc_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
  #   except:
@@ -157,7 +157,11 @@ for population, subject_list in population_dict.items():
 #        print(f'Error with population {population} during plot_tfr_population')
 #        pass
 
-#try:
+try:
+    erp.all_subjects_peak_latencies(input_dir=input_dir, output_dir=output_dir)
+except:
+    print(f'Error with all_subjects_peak_latencies')
+    pass
 #    erp.all_peak_latencies_report(input_dir=input_dir, output_dir=output_dir)
 #except:
 #    print(f'Error with all_peak_latencies_report')

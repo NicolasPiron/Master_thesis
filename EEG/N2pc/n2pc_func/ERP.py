@@ -972,7 +972,7 @@ def plot_n2pc_all_cond_population(input_dir, output_dir, subject_list, populatio
     return None
 
 def plot_n2pc_single_subj(subject_id, input_dir, output_dir):
-    ''' This function plots the N2pc ERP for a given subject, or a population if you specify subject_id = 'GA'.
+    ''' This function plots the N2pc ERP for a given subject.
 
     Parameters
     ----------
@@ -1016,7 +1016,7 @@ def plot_n2pc_single_subj(subject_id, input_dir, output_dir):
         plt.axhline(y=0, color='black', linewidth=1)
         plt.xlabel('Time (ms)')
         plt.ylabel('Amplitude (uV)')
-        plt.title(f'Signal from Electrodes PO7-PO8 - Difference of ipsi vs contra')
+        plt.title(f'Signal from Electrodes PO7-PO8 - Difference of contra vs ipsi')
         plt.legend()
         plt.grid()
         plt.savefig(os.path.join(output_dir, f'sub-{subject_id}','N2pc','n2pc-plots', 'n2pc-waveform', f'sub-{subject_id}-diff.png'))
@@ -1079,7 +1079,7 @@ def plot_n2pc_population(input_dir, output_dir, subject_list, population):
         plt.axhline(y=0, color='black', linewidth=1)
         plt.xlabel('Time (ms)')
         plt.ylabel('Amplitude (uV)')
-        plt.title(f'Signal from Electrodes PO7-PO8 - Difference of ipsi vs contra')
+        plt.title(f'Signal from Electrodes PO7-PO8 - Difference of contra vs ipsi')
         plt.legend()
         plt.grid()
         plt.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-plots', population, 'n2pc-waveform' , f'diff-{title}.png'))
@@ -1449,54 +1449,80 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
 
 def get_peak_latency_single_subj(subject_id, input_dir, output_dir):
 
-    # Get the evoked data
-    dis_contra = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'combined', f'sub-{subject_id}-dis_contra-ave.fif'))
-    dis_mid = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'combined', f'sub-{subject_id}-dis_mid-ave.fif'))
-    no_dis = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'combined', f'sub-{subject_id}-no_dis-ave.fif'))
+    cond_list = ['dis_contra', 'dis_mid', 'no_dis', 'dis_left_target_r', 'dis_right_target_l',
+                  'no_dis_target_l', 'no_dis_target_r', 'dis_mid_target_l', 'dis_mid_target_r']
+    evoked_dict = {}
+    for cond in cond_list:
+        if 'target' in cond:
+            evoked_dict[cond] = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}-{cond}-ave.fif'))
+        else:
+            evoked_dict[cond] = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', 'combined', f'sub-{subject_id}-{cond}-ave.fif'))
 
-    PO7_dis_contra = dis_contra[0].copy().pick('PO7').get_data()
-    PO8_dis_contra = dis_contra[0].copy().pick('PO8').get_data()
-    PO7_dis_mid = dis_mid[0].copy().pick('PO7').get_data()
-    PO8_dis_mid = dis_mid[0].copy().pick('PO8').get_data()
-    PO7_no_dis = no_dis[0].copy().pick('PO7').get_data()
-    PO8_no_dis = no_dis[0].copy().pick('PO8').get_data()
-
-    # create the diff PO7-PO8
-    diff_dis_contra = PO8_dis_contra - PO7_dis_contra
-    diff_dis_mid = PO8_dis_mid - PO7_dis_mid
-    diff_no_dis = PO8_no_dis - PO7_no_dis
-
-    # back to evoked object
+    data_dict = {}
     info = mne.create_info(ch_names=['PO7'], sfreq=512, ch_types='eeg')
-    # empty dict to store the data, easier to loop through
-    peak_data = {}
+    for cond in evoked_dict.keys():
+        if 'target_l' in cond:
+            contra = 'PO8'
+            ipsi = 'PO7'
+        elif 'target_r' in cond:
+            contra = 'PO7'
+            ipsi = 'PO8'
+        else:
+            contra = 'PO8'
+            ipsi = 'PO7'
 
-    peak_data['dis_contra'] = mne.EvokedArray(diff_dis_contra, info, tmin=0)
-    peak_data['dis_mid'] = mne.EvokedArray(diff_dis_mid, info, tmin=0)
-    peak_data['no_dis'] = mne.EvokedArray(diff_no_dis, info, tmin=0)
+        evoked = evoked_dict[cond][0].copy()
+        diff = evoked.copy().pick(contra).get_data() - evoked.copy().pick(ipsi).get_data()
+        data_dict[cond] = mne.EvokedArray(diff, info, tmin=0)
 
     # Create a df to store the peak latencies
-    df = pd.DataFrame(columns=['ID', 'condition', 'peak_latency', 'peak_amplitude'])
+    df = pd.DataFrame(columns=['ID', 'condition', 'peak_latency', 'peak_amplitude', 'mean_amp_around_peak'])
 
-    df['ID'] = np.zeros(len(peak_data))
+    df['ID'] = np.zeros(len(data_dict))
 
     # define the time window
     tmin=0.18
     tmax=0.4
 
     # loop through the evoked objects to get the peak latencies and amplitudes and store them in the df
-    for i, evk in enumerate(peak_data.values()):
+    for i, evk in enumerate(data_dict.values()):
         ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="neg", return_amplitude=True)
+        upper_bound = lat + 0.025
+        lower_bound = lat - 0.025
+        mean_amp = evk.copy().pick('PO7').crop(tmin=lower_bound, tmax=upper_bound).get_data().mean()
         df.iloc[i, 0] = subject_id
-        df.iloc[i, 1] = list(peak_data.keys())[i]
+        df.iloc[i, 1] = list(data_dict.keys())[i]
         df.iloc[i, 2] = lat
         df.iloc[i, 3] = amp
+        df.iloc[i, 4] = mean_amp
 
     # save the df
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency')):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency'))
     df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency', f'sub-{subject_id}-peak-latency.csv'))
 
+def all_subjects_peak_latencies(input_dir, output_dir):
+    ''' Concatenate the peak latencies of all subjects (9 conditions per subject) in a single df
+    '''
+    df_list = []
+    dirs = os.listdir(input_dir)
+    dirs.remove('all_subj')
+    for directory in dirs:
+        try:
+            df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'peak-latency', f'{directory}-peak-latency.csv'), index_col=0)
+            df_list.append(df)
+            print(f'========= peak latency df for subject {directory} added to the list')
+        except:
+            print(f'========= no peak latency df for subject {directory}')
+            continue
+
+    df = pd.concat(df_list, axis=0)
+    print('========= all subjects peak latencies df concatenated')
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency'))
+    df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency', 'all_subjects_peak_latencies2.csv'))
+
+    return None
 
 def get_peak_latency_grand_average(input_dir, output_dir, population):
 
