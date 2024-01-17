@@ -74,23 +74,23 @@ for subject_id in full_subject_list:
 #    except:
 #        print(f'Error with subject {subject_id} during get_n2pc_values_single_subj')
 #        pass
-    try:
-        erp.get_peak_latency_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
-    except:
-        print(f'Error with subject {subject_id} during get_peak_latency_single_subj')
-        pass
+#    try:
+#        erp.get_peak_latency_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+#    except:
+#        print(f'Error with subject {subject_id} during get_peak_latency_single_subj')
+#        pass
 #    try:
 #        tf.get_tfr_scalp_population(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
 #    except:
 #        print(f'Error with subject {subject_id} during get_tfr_scalp_population')
 #        pass
-#    try:
-#        tf.plot_tfr_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
-#    except:
-#        print(f'Error with subject {subject_id} during plot_tfr_single_subj')
-#        pass
+    try:
+        tf.plot_tfr_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+    except:
+        print(f'Error with subject {subject_id} during plot_tfr_single_subj')
+        pass
 
-#for population, subject_list in population_dict.items():
+for population, subject_list in population_dict.items():
 #    try:
 #        erp.combine_evoked_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
 #    except:
@@ -151,17 +151,17 @@ for subject_id in full_subject_list:
 #    except:
 #        print(f'Error with population {population} during get_tfr_scalp_population')
 #        pass
-#    try:
-#        tf.plot_tfr_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
-#    except:
-#        print(f'Error with population {population} during plot_tfr_population')
-#        pass
+    try:
+        tf.plot_tfr_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
+    except:
+        print(f'Error with population {population} during plot_tfr_population')
+        pass
 
-try:
-    erp.all_subjects_peak_latencies(input_dir=input_dir, output_dir=output_dir)
-except:
-    print(f'Error with all_subjects_peak_latencies')
-    pass
+#try:
+#    erp.all_subjects_peak_latencies(input_dir=input_dir, output_dir=output_dir)
+#except:
+#    print(f'Error with all_subjects_peak_latencies')
+#    pass
 #    erp.all_peak_latencies_report(input_dir=input_dir, output_dir=output_dir)
 #except:
 #    print(f'Error with all_peak_latencies_report')
