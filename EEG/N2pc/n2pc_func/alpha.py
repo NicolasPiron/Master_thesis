@@ -6,6 +6,7 @@ import glob
 import mne
 import os
 import re
+from fooof import FOOOF, FOOOFGroup
 
 ### ================================================================================================
 ### ========================================== PSD  ================================================
@@ -391,6 +392,90 @@ def plot_psd_population(input_dir, output_dir, subject_list, population):
     ax.set_ylim(0, 50)
     fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'psd-plots', population, f'{population}-psd-3conds.png'))
     plt.close()
+
+def get_fooof_results_single_subj(subject_id, input_dir, output_dir, picks=[]):
+    ''' Get the results of the FOOOF model for each condition for a single subject. saved in a df. 
+    
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot. 2 digits format (e.g. 01).
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+    picks : list
+        List of channels to include in the analysis. If empty, all channels are included.
+    
+    Returns
+    -------
+    None
+    '''
+    
+    freqs = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd',
+                                 'psd-data', 'freqs', f'sub-{subject_id}-psd-freqs.npy'))
+    psd_dict = load_psd_single_subj(subject_id, input_dir)
+
+    def get_psd_data(psd_dict, cond, picks=[]):
+        if len(picks) == 0:
+            return psd_dict[cond].get_data().mean(axis=0)
+        else:
+            return psd_dict[cond].get_data(picks=picks).mean(axis=0)
+
+    conds = ['dis_mid', 'no_dis', 'dis_lat'] # can easily be updated when we'll need to be more specific
+    data_dict = {cond:get_psd_data(psd_dict, cond, picks=picks) for cond in conds}
+
+    df = pd.DataFrame(columns=['ID','condition', 'peak_idx', 'CF', 'PW', 'BW',
+                               'intercept', 'exponent', 'R2', 'error'])
+    
+    freq_range = [1, 30]
+    for cond, psd in data_dict.items():
+        fm = FOOOF()
+        fm.report(freqs, psd, freq_range)
+        res = fm.get_results()
+        for i in range(len(res.peak_params)):
+            row = {'ID':str(subject_id),
+                  'condition':cond,
+                  'peak_idx':i+1,
+                  'CF':res.peak_params[i,0],
+                  'PW':res.peak_params[i,1],
+                  'BW':res.peak_params[i,2],
+                  'intercept':res.aperiodic_params[0],
+                  'exponent':res.aperiodic_params[1],
+                  'R2':res.r_squared,
+                  'error':res.error}
+            
+            df = df.append(row, ignore_index=True)
+
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof'))
+        print(f'====================== fooof dir created for {subject_id}')
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof', f'sub-{subject_id}-fooof.csv'))
+
+def get_fooof_results_all_subj(input_dir, output_dir):
+
+    directories = os.listdir(input_dir)
+    directories.remove('all_subj')
+
+    df_list = []
+    for directory in sorted(directories):
+        subject_id = directory[-2:]
+        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof', f'sub-{subject_id}-fooof.csv')):
+            try:
+                get_fooof_results_single_subj(subject_id, input_dir, output_dir)
+            except:
+                print(f'====================== no fooof results for {subject_id}')
+                continue
+        df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof', f'sub-{subject_id}-fooof.csv'), index_col=0)
+        df_list.append(df)
+    
+    fooof_df = pd.concat(df_list)
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'fooof')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'fooof'))
+        print(f'====================== fooof dir created for all_subj')
+    fooof_df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'fooof', 'all_subj-fooof.csv'))
+    print(f'====================== fooof results saved for all_subj')
+
 
 ### ================================================================================================
 ### ==================================== N2PC ALPHA POWER PER EPOCH ================================
