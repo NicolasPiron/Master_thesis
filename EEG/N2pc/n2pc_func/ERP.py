@@ -1471,7 +1471,7 @@ def get_peak_latency_single_subj(subject_id, input_dir, output_dir):
             contra = 'PO8'
             ipsi = 'PO7'
 
-        evoked = evoked_dict[cond][0].copy()
+        evoked = evoked_dict[cond][0].copy().crop(tmin=0)
         diff = evoked.copy().pick(contra).get_data() - evoked.copy().pick(ipsi).get_data()
         data_dict[cond] = mne.EvokedArray(diff, info, tmin=0)
 
@@ -1490,7 +1490,7 @@ def get_peak_latency_single_subj(subject_id, input_dir, output_dir):
         upper_bound = lat + 0.025
         lower_bound = lat - 0.025
         mean_amp = evk.copy().pick('PO7').crop(tmin=lower_bound, tmax=upper_bound).get_data().mean()
-        df.iloc[i, 0] = subject_id
+        df.iloc[i, 0] = str(subject_id)
         df.iloc[i, 1] = list(data_dict.keys())[i]
         df.iloc[i, 2] = lat
         df.iloc[i, 3] = amp
@@ -1520,9 +1520,161 @@ def all_subjects_peak_latencies(input_dir, output_dir):
     print('========= all subjects peak latencies df concatenated')
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency')):
         os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency'))
-    df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency', 'all_subjects_peak_latencies2.csv'))
+    df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency', 'all_subjects_peak_latencies.csv'))
 
     return None
+
+def mean_latency_per_subject(input_dir, output_dir):
+    df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'peak-latency', 'all_subjects_peak_latencies.csv'))
+
+    subjects = df['ID'].unique()
+    mean_dict = {}
+
+    for subject in subjects:
+        condition1 = df['ID'] == subject
+        condition2 = df['condition'].isin(['dis_mid', 'dis_contra', 'no_dis'])
+        mean_dict[subject] = df[condition1 & condition2]['peak_latency'].mean()
+
+    mean_df = pd.DataFrame(mean_dict.items(), columns=['ID', 'mean_peak_latency'])
+    print('========= mean latency df created')
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency'))
+    mean_df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'peak-latency', 'mean_peak_latencies.csv'))
+
+def amplitude_around_peak_by_epoch_single_subj(subject_id, input_dir, output_dir):
+
+    file = os.path.join(input_dir, f'sub-{subject_id}/N2pc/cleaned_epochs/sub-{subject_id}-cleaned_epochs-N2pc.fif')
+    epochs = mne.read_epochs(file)
+
+    # crop epochs to relevent time window
+    epochs.crop(tmin=0, tmax=0.8)
+    
+    # get the reeject log (preprocessing step) for the subject
+    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
+    # Define the epochs status (rejected or not)
+    epochs_status = reject_log['bad_epochs']
+
+    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'index_reset', 'saccade', 'condition', 'target_side', 'latency', 'amplitude'])
+
+    peak_latency_df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'peak-latency', 'mean_peak_latencies.csv'))
+    peak_latency = peak_latency_df[peak_latency_df['ID'] == int(subject_id)]['mean_peak_latency'].values[0]
+
+    # create row for each epoch
+    df['epoch_index'] = range(1,len(epochs_status)+1)
+    df['epoch_dropped'] = epochs_status
+    df['ID'] = subject_id
+    df['latency'] = peak_latency
+
+    # add a column that store the reset index of the epochs
+    index_val = 0
+    index_list = []
+    n_valid = []
+    # iterate through the 'epoch_dropped' column to create the reset index column
+    for row_number in range(len(df)):
+        if df.iloc[row_number, 2] == False:
+            index_list.append(index_val)
+            n_valid.append(index_val)
+            index_val += 1
+        else:
+            index_list.append(np.nan)
+
+    # add the index column to the DataFrame
+    df['index_reset'] = index_list
+
+    # Load the csv file contaning the indices of epochs with saccades
+    saccades = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'))
+    # Create a list of the indices of the epochs with saccades
+    saccades_list = list(saccades['index'])
+    # Add a column that specifies if the epoch contains a saccade. FALSE if no saccade, TRUE if saccade. 
+    df['saccade'] = df['index_reset'].isin(saccades_list)
+
+    for row_number in range(len(df)):
+
+                # check if the epoch is dropped
+        if df.iloc[row_number, 2] == True:
+            print(f'========= epoch {row_number+1} was dropped',)
+        else:
+            print(f'========= epoch {row_number+1} was keeped')
+
+            # compute the data to fill the dataframe
+
+            # get the epoch index (after epochs rejection)
+            epoch_idx = int(df['index_reset'].loc[row_number])
+            
+            # get the data from the channels of interest
+            PO7 = epochs[epoch_idx].get_data(picks=['PO7'])
+            PO8 = epochs[epoch_idx].get_data(picks=['PO8'])
+            PO7 = PO7.reshape(410)
+            PO8 = PO8.reshape(410)
+            
+            # find where is ispsilateral and contralateral to the target
+            epoch_id = epochs.events[epoch_idx][2]
+            if epoch_id in [1, 3, 5, 7]:
+                target_side = 'left'
+                ipsi = PO7
+                contra = PO8
+            elif epoch_id in [2, 4, 6, 8]:
+                target_side = 'right'
+                ipsi = PO8
+                contra = PO7
+
+            # get the difference between the channels
+            diff = contra - ipsi
+            
+            if epoch_id in [1, 2, 5, 6]:
+                cond = 'Dis_mid'
+            elif epoch_id in [3, 4]:
+                cond = 'No_dis'
+            elif epoch_id in [7, 8]:
+                cond = 'Dis_contra'
+
+            # get the time window based on the peak latency of the subject
+            sfreq = epochs.info['sfreq']
+            tmin = peak_latency - 0.025
+            tmin = math.ceil(tmin * sfreq)
+            tmax = peak_latency + 0.025
+            tmax = math.ceil(tmax * sfreq)
+
+            # get the amplitude around the peak
+            amp = diff[tmin:tmax].mean()
+
+            # fill the dataframe with everything we just computed
+            df.iloc[row_number, 5] = cond
+            df.iloc[row_number, 6] = target_side
+            df.iloc[row_number, 8] = amp
+
+    print(f'========== df created for subject {subject_id}')
+
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-values')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-values'))
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-values', f'sub-{subject_id}-amplitude-around-peak.csv'))
+
+def amplitude_around_peak_by_epoch_all_subj(input_dir, output_dir):
+    ''' Takes the output file amplitude_around_peak_by_epoch_single_subj and concat them together
+    '''
+    df_list = []
+    dirs = os.listdir(input_dir)
+    dirs.remove('all_subj')
+    for directory in dirs:
+        if os.path.exists(os.path.join(input_dir, directory, 'N2pc', 'n2pc-values', f'{directory}-amplitude-around-peak.csv')):
+            df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'n2pc-values', f'{directory}-amplitude-around-peak.csv'), index_col=0)
+            df_list.append(df)
+            print(f'========= amplitude around peak df for subject {directory} added to the list')
+        else:
+            try:
+                amplitude_around_peak_by_epoch_single_subj(directory, input_dir, output_dir)
+                df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'n2pc-values', f'{directory}-amplitude-around-peak.csv'), index_col=0)
+                df_list.append(df)
+                print(f'========= amplitude around peak df for subject {directory} added to the list')
+            except:
+                print(f'========= no amplitude around peak df for subject {directory}')
+                continue
+    
+    df = pd.concat(df_list, axis=0)
+    print('========= all subjects amplitude around peak df concatenated')
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-vales-around-peak')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-vales-around-peak'))
+    df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-vales-around-peak', 'all_subjects_amplitude_around_peak.csv'))
 
 def get_peak_latency_grand_average(input_dir, output_dir, population):
 
