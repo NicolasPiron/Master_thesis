@@ -177,3 +177,9 @@ try:
 except:
     print(f'Error with amplitude_around_peak_by_epoch_all_subj')
     pass
+
+try:
+    alpha.get_fooof_results_all_subj(input_dir, output_dir)
+except:
+    print(f'Error with get_fooof_results_all_subj')
+    pass
