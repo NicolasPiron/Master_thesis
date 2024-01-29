@@ -166,26 +166,26 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 #except:
 #    print(f'Error with all_peak_latencies_report')
 #    pass
-try:
-    erp.mean_latency_per_subject(input_dir=input_dir, output_dir=output_dir)
-except:
-    print(f'Error with mean_latency_per_subject')
-    pass
-
-try:
-    erp.amplitude_around_peak_by_epoch_all_subj(input_dir, output_dir)
-except:
-    print(f'Error with amplitude_around_peak_by_epoch_all_subj')
-    pass
-
-try:
-    erp.get_amp_and_power_df(input_dir, output_dir)
-except:
-    print(f'Error with get_amp_and_power_df')
-    pass
+#try:
+#    erp.mean_latency_per_subject(input_dir=input_dir, output_dir=output_dir)
+#except:
+#    print(f'Error with mean_latency_per_subject')
+#    pass
 
 #try:
-#    alpha.get_fooof_results_all_subj(input_dir, output_dir)
+#    erp.amplitude_around_peak_by_epoch_all_subj(input_dir, output_dir)
 #except:
-#    print(f'Error with get_fooof_results_all_subj')
+#    print(f'Error with amplitude_around_peak_by_epoch_all_subj')
 #    pass
+
+#try:
+#    erp.get_amp_and_power_df(input_dir, output_dir)
+#except:
+#    print(f'Error with get_amp_and_power_df')
+#    pass
+
+try:
+    alpha.get_fooof_results_all_subj(input_dir, output_dir)
+except:
+    print(f'Error with get_fooof_results_all_subj')
+    pass

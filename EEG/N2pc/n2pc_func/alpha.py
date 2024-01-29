@@ -428,10 +428,19 @@ def get_fooof_results_single_subj(subject_id, input_dir, output_dir, picks=[]):
     df = pd.DataFrame(columns=['ID','condition', 'peak_idx', 'CF', 'PW', 'BW',
                                'intercept', 'exponent', 'R2', 'error'])
     
-    freq_range = [1, 30]
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof'))
+        print(f'====================== fooof dir created for {subject_id}')
+
+    plot_path = os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof', f'sub-{subject_id}')
+
+    freq_range = [2, 30]
     for cond, psd in data_dict.items():
         fm = FOOOF()
         fm.report(freqs, psd, freq_range)
+        file_name = f'{plot_path}-{cond}-fooof.png'
+        fm.plot(save_fig=True, file_name=file_name)
+        plt.close()
         res = fm.get_results()
         for i in range(len(res.peak_params)):
             row = {'ID':str(subject_id),
@@ -447,9 +456,7 @@ def get_fooof_results_single_subj(subject_id, input_dir, output_dir, picks=[]):
             
             df = df.append(row, ignore_index=True)
 
-    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof')):
-        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof'))
-        print(f'====================== fooof dir created for {subject_id}')
+    
     df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof', f'sub-{subject_id}-fooof.csv'))
 
 def get_fooof_results_all_subj(input_dir, output_dir):
@@ -466,10 +473,14 @@ def get_fooof_results_all_subj(input_dir, output_dir):
             except:
                 print(f'====================== no fooof results for {subject_id}')
                 continue
-        df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof', f'sub-{subject_id}-fooof.csv'), index_col=0)
-        df_list.append(df)
+        try:
+            df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof', f'sub-{subject_id}-fooof.csv'), index_col=0)
+            df_list.append(df)
+        except:
+            print(f'====================== no dataframe for {subject_id}')
+            continue
     
-    fooof_df = pd.concat(df_list)
+    fooof_df = pd.concat(df_list, axis=0, ignore_index=True)
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'fooof')):
         os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'psd', 'fooof'))
         print(f'====================== fooof dir created for all_subj')
