@@ -1554,7 +1554,7 @@ def amplitude_around_peak_by_epoch_single_subj(subject_id, input_dir, output_dir
     # Define the epochs status (rejected or not)
     epochs_status = reject_log['bad_epochs']
 
-    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'index_reset', 'saccade', 'condition', 'target_side', 'latency', 'amplitude'])
+    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'index_reset', 'saccade', 'condition', 'target_side', 'latency', 'diff_amp', 'PO7_amp', 'PO8_amp'])
 
     peak_latency_df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'peak-latency', 'mean_peak_latencies.csv'))
     peak_latency = peak_latency_df[peak_latency_df['ID'] == int(subject_id)]['mean_peak_latency'].values[0]
@@ -1630,18 +1630,22 @@ def amplitude_around_peak_by_epoch_single_subj(subject_id, input_dir, output_dir
 
             # get the time window based on the peak latency of the subject
             sfreq = epochs.info['sfreq']
-            tmin = peak_latency - 0.025
+            tmin = peak_latency - 0.020
             tmin = math.ceil(tmin * sfreq)
-            tmax = peak_latency + 0.025
+            tmax = peak_latency + 0.020
             tmax = math.ceil(tmax * sfreq)
 
             # get the amplitude around the peak
             amp = diff[tmin:tmax].mean()
+            amp_PO7 = PO7[tmin:tmax].mean()
+            amp_PO8 = PO8[tmin:tmax].mean()
 
             # fill the dataframe with everything we just computed
             df.iloc[row_number, 5] = cond
             df.iloc[row_number, 6] = target_side
             df.iloc[row_number, 8] = amp
+            df.iloc[row_number, 9] = amp_PO7
+            df.iloc[row_number, 10] = amp_PO8
 
     print(f'========== df created for subject {subject_id}')
 
@@ -1656,19 +1660,15 @@ def amplitude_around_peak_by_epoch_all_subj(input_dir, output_dir):
     dirs = os.listdir(input_dir)
     dirs.remove('all_subj')
     for directory in dirs:
-        if os.path.exists(os.path.join(input_dir, directory, 'N2pc', 'n2pc-values', f'{directory}-amplitude-around-peak.csv')):
-            df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'n2pc-values', f'{directory}-amplitude-around-peak.csv'), index_col=0)
-            df_list.append(df)
-            print(f'========= amplitude around peak df for subject {directory} added to the list')
-        else:
+        if not os.path.exists(os.path.join(input_dir, directory, 'N2pc', 'n2pc-values', f'{directory}-amplitude-around-peak.csv')):
             try:
                 amplitude_around_peak_by_epoch_single_subj(directory, input_dir, output_dir)
-                df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'n2pc-values', f'{directory}-amplitude-around-peak.csv'), index_col=0)
-                df_list.append(df)
-                print(f'========= amplitude around peak df for subject {directory} added to the list')
             except:
                 print(f'========= no amplitude around peak df for subject {directory}')
                 continue
+            df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'n2pc-values', f'{directory}-amplitude-around-peak.csv'), index_col=0)
+            df_list.append(df)
+            print(f'========= amplitude around peak df for subject {directory} added to the list')
     
     df = pd.concat(df_list, axis=0)
     print('========= all subjects amplitude around peak df concatenated')
