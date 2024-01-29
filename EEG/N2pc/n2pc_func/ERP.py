@@ -1659,12 +1659,13 @@ def amplitude_around_peak_by_epoch_all_subj(input_dir, output_dir):
     df_list = []
     dirs = os.listdir(input_dir)
     dirs.remove('all_subj')
+    dirs = sorted(dirs)
     for directory in dirs:
         if not os.path.exists(os.path.join(input_dir, directory, 'N2pc', 'n2pc-values', f'{directory}-amplitude-around-peak.csv')):
             try:
-                amplitude_around_peak_by_epoch_single_subj(directory, input_dir, output_dir)
+                amplitude_around_peak_by_epoch_single_subj(directory[-2:], input_dir, output_dir)
             except:
-                print(f'========= no amplitude around peak df for subject {directory}')
+                print(f'========= no amplitude around peak df for subject {directory[-2:]}')
                 continue
             df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'n2pc-values', f'{directory}-amplitude-around-peak.csv'), index_col=0)
             df_list.append(df)
