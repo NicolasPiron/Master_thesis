@@ -179,7 +179,13 @@ except:
     pass
 
 try:
-    alpha.get_fooof_results_all_subj(input_dir, output_dir)
+    erp.get_amp_and_power_df(input_dir, output_dir)
 except:
-    print(f'Error with get_fooof_results_all_subj')
+    print(f'Error with get_amp_and_power_df')
     pass
+
+#try:
+#    alpha.get_fooof_results_all_subj(input_dir, output_dir)
+#except:
+#    print(f'Error with get_fooof_results_all_subj')
+#    pass
