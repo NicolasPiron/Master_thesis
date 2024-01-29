@@ -443,18 +443,17 @@ def get_fooof_results_single_subj(subject_id, input_dir, output_dir, picks=[]):
         plt.close()
         res = fm.get_results()
         for i in range(len(res.peak_params)):
-            row = {'ID':str(subject_id),
-                  'condition':cond,
-                  'peak_idx':i+1,
-                  'CF':res.peak_params[i,0],
-                  'PW':res.peak_params[i,1],
-                  'BW':res.peak_params[i,2],
-                  'intercept':res.aperiodic_params[0],
-                  'exponent':res.aperiodic_params[1],
-                  'R2':res.r_squared,
-                  'error':res.error}
-            
-            df = df.append(row, ignore_index=True)
+            row = pd.DataFrame({'ID':str(subject_id),
+                  'condition':[cond],
+                  'peak_idx':[i+1],
+                  'CF':[res.peak_params[i,0]],
+                  'PW':[res.peak_params[i,1]],
+                  'BW':[res.peak_params[i,2]],
+                  'intercept':[res.aperiodic_params[0]],
+                  'exponent':[res.aperiodic_params[1]],
+                  'R2':[res.r_squared],
+                  'error':[res.error]})            
+            df = pd.concat([df, row])
 
     
     df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'psd', 'fooof', f'sub-{subject_id}-fooof.csv'))
