@@ -1654,7 +1654,7 @@ def amplitude_around_peak_by_epoch_single_subj(subject_id, input_dir, output_dir
     df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-values', f'sub-{subject_id}-amplitude-around-peak.csv'))
 
 def amplitude_around_peak_by_epoch_all_subj(input_dir, output_dir):
-    ''' Takes the output file amplitude_around_peak_by_epoch_single_subj and concat them together
+    ''' Takes the output files of amplitude_around_peak_by_epoch_single_subj and concat them together
     '''
     df_list = []
     dirs = os.listdir(input_dir)
@@ -1676,9 +1676,37 @@ def amplitude_around_peak_by_epoch_all_subj(input_dir, output_dir):
     
     df = pd.concat(df_list, axis=0)
     print('========= all subjects amplitude around peak df concatenated')
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-vales-around-peak')):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-vales-around-peak'))
-    df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-vales-around-peak', 'all_subjects_amplitude_around_peak.csv'))
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peak')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peak'))
+    df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peak', 'all_subjects_amplitude_around_peak.csv'))
+
+    return None
+
+def get_amp_and_power_df(input_dir, output_dir):
+    ''' Create a df containing the amplitude and the alpha power of the N2pc for each subject. 
+
+    Parameters
+    ----------
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+
+    Returns
+    -------
+    None
+    '''
+    amp_df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peak', 'all_subjects_amplitude_around_peak.csv'))
+    power_df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'alpha-power-allsubj', 'alpha-power-per-epoch-allsubj_v2.csv'))
+
+    # take the values in the 'alpha-PO7' and 'alpha-PO8' columns for each epoch and add them to the amp_df
+    power_df_subset = power_df[['ID', 'epoch_index', 'alpha-PO7', 'alpha-PO8']]
+    merged_df = pd.merge(amp_df, power_df_subset, on=['epoch_index', 'ID'])
+
+    merged_df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peak', 'all_subjects_amp_power.csv'))
+
+    return None
+
 
 def get_peak_latency_grand_average(input_dir, output_dir, population):
 
