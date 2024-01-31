@@ -26,7 +26,15 @@ def source_set_up():
     info = mne.io.read_info(os.path.join(input_dir, 'sub-01', 'N2pc', 'cleaned_epochs','sub-01-cleaned_epochs-N2pc.fif'))
     info['bads'] = []
 
-    subjects_dir = fetch_fsaverage(verbose=True)
+    # get the fsaverage directory. There is a different one for each machine becauses I wasn't able to fetch from on the server.
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if 'nicolaspiron/Documents' in script_dir:
+        subjects_dir = fetch_fsaverage(verbose=True)
+    elif 'shared_PULSATION' in script_dir:
+        subjects_dir = '/home/nicolasp/shared_PULSATION/MNE-fsaverage-data/fsaverage'
+    else:
+        raise Exception('Please specify the path to the fsaverage directory in the source_set_up function.')
+    
     src = mne.setup_source_space(subject='', spacing='oct6', subjects_dir=subjects_dir, add_dist=False)
     model = mne.make_bem_model(subject='', subjects_dir=subjects_dir)
     bem = mne.make_bem_solution(model)
