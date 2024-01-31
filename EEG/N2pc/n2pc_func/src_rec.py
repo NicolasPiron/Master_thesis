@@ -74,10 +74,11 @@ def create_stc_epochs(subject_id):
         source_set_up()
 
     # create stc epochs directory
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs')):
-        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs'))
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', 'labels')):
-        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', 'labels'))
+    for path in [os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs'),
+                 os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', 'cov'),
+                 os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', 'inv')]:
+        if not os.path.exists(path):
+            os.makedirs(path)
 
     # compute noise covariance matrix and inverse operator
     fwd = mne.read_forward_solution(os.path.join(input_dir, 'sub-01', 'fwd', 'sub-01-fwd.fif'))
@@ -85,8 +86,8 @@ def create_stc_epochs(subject_id):
     inverse_operator = mne.minimum_norm.make_inverse_operator(info, fwd, cov)
 
     # save the cov and inverse operator
-    mne.write_cov(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', f'{subject_id}-cov.fif'), cov)
-    mne.minimum_norm.write_inverse_operator(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', f'{subject_id}-inv.fif'), inverse_operator)
+    mne.write_cov(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', 'cov', f'sub-{subject_id}-cov.fif'), cov)
+    mne.minimum_norm.write_inverse_operator(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', 'inv', f'sub-{subject_id}-inv.fif'), inverse_operator)
 
     # apply inverse operator
     lambda2 = 1. / 9.
