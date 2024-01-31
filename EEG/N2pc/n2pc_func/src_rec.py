@@ -86,6 +86,7 @@ def create_stc_epochs(subject_id):
     labels = [label for label in labels if 'unknown' not in label.name]
     # get the label time course for each epoch -> n_epochs x n_labels x n_times
     label_ts_epochs = [mne.extract_label_time_course(stc, labels, fwd['src'], mode='pca_flip') for stc in stcs]
+    del stcs
     label_ts_array = np.array(label_ts_epochs) 
     np.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', f'sub-{subject_id}-stc_epochs.npy'), label_ts_array)
     
@@ -235,4 +236,60 @@ def plot_n2pc_stc(subject_id):
         plt.savefig(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', 'evoked', 'plots', f'{subject_id}-{cond}.png'))
         plt.close()
 
+def plot_n2pc_population_stc(subject_list):
+    '''
+    Create exploratory plots for the N2pc in source space for a population of subjects.
+    '''
 
+    for subject in subject_list:
+        print(f'========== working on {subject} ==========')
+        create_stc_epochs(subject)
+        split_stcs_into_cond(subject)
+        average_stcs(subject)
+        plot_n2pc_stc(subject)
+
+def grand_average_stc(subject_list):
+
+    input_dir, o = get_paths()
+
+    if not os.path.exists(os.path.join(input_dir, 'all_subj', 'stc_GA', 'plots')):
+        os.makedirs(os.path.join(input_dir, 'all_subj', 'stc_GA', 'plots'))
+    if not os.path.exists(os.path.join(input_dir, 'all_subj', 'stc_GA', 'data')):
+        os.makedirs(os.path.join(input_dir, 'all_subj', 'stc_GA', 'data'))
+
+    data_list = list()
+    for subject in subject_list:
+        cond_data = load_evoked_stc(subject)
+        data_list.append(cond_data)
+
+    grand_average = dict()
+    for condition in cond_data.keys():
+        grand_average[condition] = np.mean([data[condition] for data in data_list], axis=0)
+        np.save(os.path.join(input_dir, 'all_subj', 'stc_GA', 'data', f'grand_average_{condition}.npy'), grand_average[condition])
+        print(f'========== grand average {condition} saved ==========')
+
+        # plot the mean time course for the labels
+        inferiorparietal_lh_ts = grand_average[condition][14]
+        inferiorparietal_rh_ts = grand_average[condition][15]
+        lateraloccipital_lh_ts = grand_average[condition][22]
+        lateraloccipital_rh_ts = grand_average[condition][23]
+
+        # get the time points for the mean time course
+        times = np.linspace(-200, 800, 512)
+
+        # plot the mean time course for the labels
+        plt.plot(times, inferiorparietal_lh_ts, label='inferiorparietal_lh')
+        plt.plot(times, inferiorparietal_rh_ts, label='inferiorparietal_rh')
+        plt.plot(times, lateraloccipital_lh_ts, label='lateraloccipital_lh')
+        plt.plot(times, lateraloccipital_rh_ts, label='lateraloccipital_rh')
+        plt.legend()
+        plt.title(f'grand average {condition}')
+        plt.savefig(os.path.join(input_dir, 'all_subj', 'stc_GA', 'plots', f'grand_average_{condition}.png'))
+        plt.close()
+
+    pass
+
+
+subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+
+grand_average_stc(subject_list)
