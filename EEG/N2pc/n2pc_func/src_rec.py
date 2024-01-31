@@ -58,7 +58,13 @@ def create_stc_epochs(subject_id):
     '''
 
     input_dir, o = get_paths()
-    subjects_dir = fetch_fsaverage(verbose=True)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if 'nicolaspiron/Documents' in script_dir:
+        subjects_dir = fetch_fsaverage(verbose=True)
+    elif 'shared_PULSATION' in script_dir:
+        subjects_dir = '/home/nicolasp/shared_PULSATION/MNE-fsaverage-data/fsaverage'
+    else:
+        raise Exception('Please specify the path to the fsaverage directory in the create_stc_epochs function.')
     epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
     info = epochs.info
     info['bads'] = []
@@ -174,6 +180,16 @@ def load_stcs_conditions(subject_id):
     for condition in conditions:
         cond_data[condition] = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', 'conditions', f'sub-{subject_id}-{condition}-stc_epochs.npy'))
     return cond_data
+
+def combine_conditions(subject_id):
+
+    combined_cond_data = dict()
+    cond_data = load_stcs_conditions(subject_id)
+    combined_cond_data['dis_mid'] = np.concatenate((cond_data['dis_mid_target_l'], cond_data['dis_mid_target_r']), axis=0)
+    combined_cond_data['no_dis'] = np.concatenate((cond_data['no_dis_target_l'], cond_data['no_dis_target_r']), axis=0)
+    combined_cond_data['dis_lat'] = np.concatenate((cond_data['dis_right_target_l'], cond_data['dis_left_target_r']), axis=0)
+
+    return combined_cond_data
 
 def average_stcs(subject_id):
     '''
@@ -297,7 +313,15 @@ def grand_average_stc(subject_list):
 
     pass
 
+###################################################################################################
 
-subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
 
-grand_average_stc(subject_list)
+full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23','70', '71', '72',
+                      '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87','52', '54', '55', '56', '58','51', '53', '59', '60']
+
+
+for subject in full_subject_list:
+    create_stc_epochs(subject)
+
+
+#subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
