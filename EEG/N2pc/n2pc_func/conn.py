@@ -5,11 +5,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from set_paths import get_paths
 from mne.viz import circular_layout
-from mne_connectivity import spectral_connectivity_epochs
+from mne_connectivity import spectral_connectivity_time
 from mne_connectivity.viz import plot_connectivity_circle
 from mne import read_labels_from_annot
 from mne.datasets import fetch_fsaverage
-from src_rec import load_stcs_conditions, combine_conditions
+from src_rec import combine_conditions
 
 ###################################################################################################
 # Basic connectivity functions
@@ -19,16 +19,18 @@ def get_connectivity_matrix(data):
 
     fmin = 8.0
     fmax = 13.0
+    freqs = np.arange(fmin, fmax)
     sfreq = 512
-    con = spectral_connectivity_epochs(
+    con = spectral_connectivity_time(
         data,
         method='plv',
+        average=True,
         mode="multitaper",
         sfreq=sfreq,
+        freqs=freqs,
         fmin=fmin,
         fmax=fmax,
         faverage=True,
-        mt_adaptive=True,
         n_jobs=1,
     )
     con_mat=con.get_data().reshape(int(np.sqrt(4624)), int(np.sqrt(4624)))
@@ -162,7 +164,7 @@ def con_pipeline_population(subject_list, population):
     for condition in conditions:
         mat_dict[condition] = list()
         for subject_id in subject_list:
-            mat_dict[condition].append(load_con_mat(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', population, 'con-matrices'), f'{condition}-con-mat'))
+            mat_dict[condition].append(load_con_mat(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'con-matrices'), f'{condition}-con-mat'))
         mat_dict[condition] = np.mean(mat_dict[condition], axis=0)
         save_con_mat(mat_dict[condition], os.path.join(input_dir, 'all_subj', 'N2pc', 'src-connectivity', population, 'con-matrices'), f'{condition}-con-mat')
         mat_fig = plot_con_mat(mat_dict[condition], f'{condition}-con-mat')
@@ -174,10 +176,48 @@ def con_pipeline_population(subject_list, population):
 
     return None
 
+###################################################################################################
+# Functions to add PLV values to the trial by trial dataframe
+###################################################################################################
+
+def get_con_values_trial_by_trial(data):
+
+    fmin = 8.0
+    fmax = 13.0
+    freqs = np.arange(fmin, fmax)
+    sfreq = 512
+    con = spectral_connectivity_time(
+        data,
+        method='plv',
+        mode="multitaper",
+        sfreq=sfreq,
+        freqs=freqs,
+        fmin=fmin,
+        fmax=fmax,
+        faverage=True,
+        n_jobs=1,
+    )
+    con_mat=con.get_data().reshape(int(np.sqrt(4624)), int(np.sqrt(4624)))
+    con_values = con_mat[np.triu_indices(68, k=1)]
+
+    return con_values
+
 population_dict = {'old_control': ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
                     'young_control': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87'],
                     'thal_control': ['52', '54', '55', '56', '58'],
                     'pulvinar': ['51', '53', '59', '60']}
+
+full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23','70', '71', '72',
+                      '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87','52', '54', '55', '56', '58','51', '53', '59', '60']
+
+subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+
+for subject_id in full_subject_list:
+    try:
+        con_pipeline_single_subj(subject_id)
+    except:
+        print(f'Error with subject {subject_id} during con_pipeline_single_subj')
+        continue
 
 for population, subject_list in population_dict.items():
     con_pipeline_population(subject_list, population)
