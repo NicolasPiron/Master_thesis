@@ -300,6 +300,8 @@ for subject_id in full_subject_list:
         con_df_ROI_pipeline(subject_id)
     except:
         pass
+
+add_ROI_conn_to_n2pc_df(full_subject_list)
 #    
 
 #for population, subject_list in population_dict.items():
