@@ -322,7 +322,7 @@ if __name__ == '__main__':
 
 
     for subject in full_subject_list:
-        create_stc_epochs(subject)
+        split_stcs_into_cond(subject)
 
 
 subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
