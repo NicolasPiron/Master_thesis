@@ -180,44 +180,101 @@ def con_pipeline_population(subject_list, population):
 # Functions to add PLV values to the trial by trial dataframe
 ###################################################################################################
 
-def get_con_values_trial_by_trial(data):
+def get_ROI_con_values_epochs(subject_id):
+
+#   'caudalmiddlefrontal_lh': 4,
+#   'caudalmiddlefrontal_rh': 5,
+#   'inferiorparietal_lh': 14,
+#   'inferiorparietal_rh': 15
+
+    input_dir, o = get_paths()
+    data = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', f'sub-{subject_id}-stc_epochs.npy'))
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices'))
 
     fmin = 8.0
     fmax = 13.0
     freqs = np.arange(fmin, fmax)
     sfreq = 512
+    indices = ([4, 4, 4, 5, 5, 14], [5, 14, 15, 14, 15, 15]) # Indices of the ROI's in the con matrix
     con = spectral_connectivity_time(
         data,
-        method='plv',
+        method=['plv', 'pli'],
         mode="multitaper",
         sfreq=sfreq,
+        indices=indices,
         freqs=freqs,
-        fmin=fmin,
-        fmax=fmax,
         faverage=True,
         n_jobs=1,
     )
-    con_mat=con.get_data().reshape(int(np.sqrt(4624)), int(np.sqrt(4624)))
-    con_values = con_mat[np.triu_indices(68, k=1)]
+    plv_data = con[0].get_data()
+    pli_data = con[1].get_data()
+    np.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices', 'plv_data.npy'), plv_data)
+    np.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices', 'pli_data.npy'), pli_data)
 
-    return con_values
+    return None
 
-population_dict = {'old_control': ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
-                    'young_control': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87'],
-                    'thal_control': ['52', '54', '55', '56', '58'],
-                    'pulvinar': ['51', '53', '59', '60']}
+def load_con_values_epochs(subject_id):
+
+    input_dir, o = get_paths()
+    plv_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices', 'plv_data.npy'))
+    pli_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices', 'pli_data.npy'))
+
+    return plv_data, pli_data
+
+def create_ROI_con_values_df(subject_id):
+
+    input_dir, o = get_paths()
+    plv_data, pli_data = load_con_values_epochs(subject_id)
+    n2pc_df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-values', f'sub-{subject_id}-amplitude-around-peak.csv'), index_col=0)
+    print(n2pc_df.head())
+    # check that the number of trials is the same
+    n_epochs = (n2pc_df['epoch_dropped'] == False).sum()
+    print(f'Number of epochs: {n_epochs}')
+    assert n_epochs == plv_data.shape[0]
+
+    # create the dataframe with a column for each ROI pair
+    df = pd.DataFrame(columns=['plv-cmflh-cmfrh', 'plv-cmflh-iplh', 'plv-cmflh-iprh', 'plv-cmfrh-iplh', 'plv-cmfrh-iprh', 'plv-iplh-iprh',
+                               'pli-cmflh-cmfrh', 'pli-cmflh-iplh', 'pli-cmflh-iprh', 'pli-cmfrh-iplh', 'pli-cmfrh-iprh', 'pli-iplh-iprh'],
+                               index=range(len(n2pc_df)))
+    
+    for i in range(n_epochs):
+        if n2pc_df.loc[i, 'epoch_dropped'] == False:
+            df.loc[i] = [plv_data[i, 0][0], plv_data[i, 1][0], plv_data[i, 2][0], plv_data[i, 3][0], plv_data[i, 4][0], plv_data[i, 5][0],
+                        pli_data[i, 0][0], pli_data[i, 1][0], pli_data[i, 2][0], pli_data[i, 3][0], pli_data[i, 4][0], pli_data[i, 5][0]]
+        else:
+            pass
+
+    print(f'========== Created PLV-PLI dataframe for subject {subject_id}')
+    df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', f'sub-{subject_id}-con-values.csv'))
+
+    return None
+
+def con_df_ROI_pipeline(subject_id):
+
+    get_ROI_con_values_epochs(subject_id)
+    create_ROI_con_values_df(subject_id)
+
+    return None
+
+###################################################################################################
+# Run the pipeline
+###################################################################################################
+
+
+#population_dict = {'old_control': ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
+#                    'thal_control': ['52', '54', '55', '56', '58'],
+#                    'young_control': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87'],
+#                    'pulvinar': ['51', '53', '59', '60']}
 
 full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23','70', '71', '72',
                       '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87','52', '54', '55', '56', '58','51', '53', '59', '60']
 
-subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+#subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
 
 for subject_id in full_subject_list:
-    try:
-        con_pipeline_single_subj(subject_id)
-    except:
-        print(f'Error with subject {subject_id} during con_pipeline_single_subj')
-        continue
+    con_df_ROI_pipeline(subject_id)
+#    
 
-for population, subject_list in population_dict.items():
-    con_pipeline_population(subject_list, population)
+#for population, subject_list in population_dict.items():
+ #   con_pipeline_population(subject_list, population)
