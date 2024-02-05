@@ -300,7 +300,7 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 
 
 for subject_id in full_subject_list:
-    con_pipeline_single_subj(subject_id)
+    create_ROI_con_values_df(subject_id)
 
 add_ROI_conn_to_n2pc_df(full_subject_list)
 #    
