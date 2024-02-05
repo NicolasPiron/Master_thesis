@@ -1496,7 +1496,7 @@ def get_peak_latency_single_subj(subject_id, input_dir, output_dir):
             ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="neg", return_amplitude=True)
         # if there is no maximum negative, we look for the minimum positive
         except ValueError:
-            lat, amp = get_min_pos(evk)
+            lat, amp = get_min_pos(evk, tmin, tmax)
 
         upper_bound = lat + 0.025
         lower_bound = lat - 0.025
