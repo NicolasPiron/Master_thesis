@@ -1484,9 +1484,20 @@ def get_peak_latency_single_subj(subject_id, input_dir, output_dir):
     tmin=0.18
     tmax=0.4
 
+    # function that can find the minimum positive if there is no maximum negative in the evoked object
+    def get_min_pos(evk, tmin, tmax):
+        data = evk.copy().crop(tmin=tmin, tmax=tmax).get_data(picks=['PO7'])
+        lat = data.argmin() * (1/evk.info['sfreq']) # convert the index to time
+        return lat, data.min()
+
     # loop through the evoked objects to get the peak latencies and amplitudes and store them in the df
     for i, evk in enumerate(data_dict.values()):
-        ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="neg", return_amplitude=True)
+        try:
+            ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="neg", return_amplitude=True)
+        # if there is no maximum negative, we look for the minimum positive
+        except ValueError:
+            lat, amp = get_min_pos(evk)
+
         upper_bound = lat + 0.025
         lower_bound = lat - 0.025
         mean_amp = evk.copy().pick('PO7').crop(tmin=lower_bound, tmax=upper_bound).get_data().mean()
