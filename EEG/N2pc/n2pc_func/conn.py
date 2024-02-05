@@ -264,7 +264,8 @@ def add_ROI_conn_to_n2pc_df(subject_list):
 
     for subject_id in sorted(subject_list):
         try:
-            df=(pd.read_csv(os.path.join(input_dir, subject_id, 'N2pc', 'src-connectivity', f'sub-{subject_id}-con-values.csv'), index_col=0))
+            df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', f'sub-{subject_id}-con-values.csv'), index_col=0)
+            df_list.append(df)
             print(f'Loaded con-values for subject {subject_id}')
         except:
             print(f'oh no subject {subject_id} failed')
