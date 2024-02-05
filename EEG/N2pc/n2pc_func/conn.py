@@ -271,13 +271,13 @@ def add_ROI_conn_to_n2pc_df(subject_list):
             print(f'oh no subject {subject_id} failed')
 
     df = pd.concat(df_list, ignore_index=True)
-    n2pc_df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peaks',
+    n2pc_df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peak',
                                        'all_subjects_amp_power.csv'), index_col=0)
 
     for column in df.columns:
         n2pc_df[column] = df[column]
     
-    n2pc_df.to_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peaks',
+    n2pc_df.to_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peak',
                                 'all_subjects_amp_power_conn.csv'))
 
     return None
