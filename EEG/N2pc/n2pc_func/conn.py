@@ -299,12 +299,12 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 #subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
 
 
-get_ROI_con_values_epochs('02')
+#get_ROI_con_values_epochs('02')
 
-#for subject_id in full_subject_list:
-#    create_ROI_con_values_df(subject_id)
+for subject_id in full_subject_list:
+    create_ROI_con_values_df(subject_id)
 
-#add_ROI_conn_to_n2pc_df(full_subject_list)
+add_ROI_conn_to_n2pc_df(full_subject_list)
 #    
 
 #for population, subject_list in population_dict.items():
