@@ -264,18 +264,19 @@ def add_ROI_conn_to_n2pc_df(subject_list):
 
     for subject_id in sorted(subject_list):
         try:
-            df_list.append(pd.read_csv(os.path.join(input_dir, subject_id, 'N2pc', 'src-connectivity', f'{subject_id}-con-values.csv'), index_col=0))
+            df=(pd.read_csv(os.path.join(input_dir, subject_id, 'N2pc', 'src-connectivity', f'sub-{subject_id}-con-values.csv'), index_col=0))
+            print(f'Loaded con-values for subject {subject_id}')
         except:
-            pass
+            print(f'oh no subject {subject_id} failed')
 
     df = pd.concat(df_list, ignore_index=True)
-    n2pc_df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-arounf-peaks',
+    n2pc_df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peaks',
                                        'all_subjects_amp_power.csv'), index_col=0)
 
     for column in df.columns:
         n2pc_df[column] = df[column]
     
-    n2pc_df.to_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-arounf-peaks',
+    n2pc_df.to_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peaks',
                                 'all_subjects_amp_power_conn.csv'))
 
     return None
@@ -295,11 +296,7 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 
 #subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
 
-for subject_id in full_subject_list:
-    try:
-        con_df_ROI_pipeline(subject_id)
-    except:
-        pass
+
 
 add_ROI_conn_to_n2pc_df(full_subject_list)
 #    
