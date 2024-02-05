@@ -240,8 +240,9 @@ def create_ROI_con_values_df(subject_id):
     
     for i in range(len(n2pc_df)):
         if n2pc_df.loc[i, 'epoch_dropped'] == False:
-            df.loc[i] = [plv_data[i, 0][0], plv_data[i, 1][0], plv_data[i, 2][0], plv_data[i, 3][0], plv_data[i, 4][0], plv_data[i, 5][0],
-                        pli_data[i, 0][0], pli_data[i, 1][0], pli_data[i, 2][0], pli_data[i, 3][0], pli_data[i, 4][0], pli_data[i, 5][0]]
+            ii = int(n2pc_df.loc[i, 'index_reset'])
+            df.loc[i] = [plv_data[ii, 0][0], plv_data[ii, 1][0], plv_data[ii, 2][0], plv_data[ii, 3][0], plv_data[ii, 4][0], plv_data[ii, 5][0],
+                        pli_data[ii, 0][0], pli_data[ii, 1][0], pli_data[ii, 2][0], pli_data[ii, 3][0], pli_data[ii, 4][0], pli_data[ii, 5][0]]
         else:
             pass
 
@@ -298,11 +299,12 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 #subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
 
 
+get_ROI_con_values_epochs('02')
 
-for subject_id in full_subject_list:
-    create_ROI_con_values_df(subject_id)
+#for subject_id in full_subject_list:
+#    create_ROI_con_values_df(subject_id)
 
-add_ROI_conn_to_n2pc_df(full_subject_list)
+#add_ROI_conn_to_n2pc_df(full_subject_list)
 #    
 
 #for population, subject_list in population_dict.items():
