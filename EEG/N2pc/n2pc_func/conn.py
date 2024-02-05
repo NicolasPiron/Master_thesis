@@ -238,7 +238,7 @@ def create_ROI_con_values_df(subject_id):
                                'pli-cmflh-cmfrh', 'pli-cmflh-iplh', 'pli-cmflh-iprh', 'pli-cmfrh-iplh', 'pli-cmfrh-iprh', 'pli-iplh-iprh'],
                                index=range(len(n2pc_df)))
     
-    for i in range(n_epochs):
+    for i in range(len(n2pc_df)):
         if n2pc_df.loc[i, 'epoch_dropped'] == False:
             df.loc[i] = [plv_data[i, 0][0], plv_data[i, 1][0], plv_data[i, 2][0], plv_data[i, 3][0], plv_data[i, 4][0], plv_data[i, 5][0],
                         pli_data[i, 0][0], pli_data[i, 1][0], pli_data[i, 2][0], pli_data[i, 3][0], pli_data[i, 4][0], pli_data[i, 5][0]]
@@ -298,6 +298,9 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 #subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
 
 
+
+for subject_id in full_subject_list:
+    con_pipeline_single_subj(subject_id)
 
 add_ROI_conn_to_n2pc_df(full_subject_list)
 #    
