@@ -1820,6 +1820,7 @@ def plot_P1_single_subj(subject_id, input_dir, output_dir):
 
     evk = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}-all-ave.fif'))
     evk = evk[0]
+    evk.info['bads'] = []
 
     for ch in ['Oz', 'O1', 'O2']:
 
@@ -1839,6 +1840,7 @@ def plot_P1_grand_average(input_dir, output_dir, subject_list, population):
     for subject in subject_list:
         try:
             evk = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject}', 'N2pc', 'evoked-N2pc', f'sub-{subject}-all-ave.fif'))
+            evk[0].info['bads'] = []
             evoked_list.append(evk[0])
         except:
             print(f'========= no evoked found for subject {subject}')
@@ -1862,6 +1864,7 @@ def get_P1_latency_single_subj(subject_id, input_dir, output_dir):
 
     # Load the evoked data
     evk = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}-all-ave.fif'))
+    evk.info['bads'] = []
     evk = evk[0].copy().pick('Oz')
 
     tmin = 0.
@@ -1885,6 +1888,7 @@ def P1_amp_around_peak_per_epoch_single_subj(subject_id, input_dir, output_dir):
 
     file = os.path.join(input_dir, f'sub-{subject_id}/N2pc/cleaned_epochs/sub-{subject_id}-cleaned_epochs-N2pc.fif')
     epochs = mne.read_epochs(file)
+    epochs.info['bads'] = []
 
     # crop epochs to relevent time window
     epochs.crop(tmin=0, tmax=0.8)
