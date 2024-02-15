@@ -1848,17 +1848,35 @@ def plot_P1_grand_average(input_dir, output_dir, subject_list, population):
     
     grand_average = mne.grand_average(evoked_list)
 
-    for ch in ['Oz', 'O1', 'O2']:
-        evk_ = grand_average.copy().pick(ch)
+    # or compute the mean
+
+
+    for ch in ['Oz', 'O1', 'O2', ['Oz', 'O1', 'O2']]:
+
+        mean = np.mean([evk.get_data(picks=ch) for evk in evoked_list], axis=0)
+        print(mean.shape)
+        std = np.std([evk.get_data(picks=ch) for evk in evoked_list], axis=0)
+        if len(ch) > 1:
+            ch = '3 occip channels'
+            mean = np.mean(mean, axis=0)
+            std = np.mean(std, axis=0)
+        mean = mean.reshape(512)
+        std = std.reshape(512)
+        t = evk[0].times
 
         fig, ax = plt.subplots()
 
-        evk_.plot(show=False, window_title=f'{population} P1', axes=ax, ylim=dict(eeg=[-10, 10]), titles=dict(eeg=ch))
+        #evk_.plot(show=False, window_title=f'{population} P1', axes=ax, ylim=dict(eeg=[-10, 10]), titles=dict(eeg=ch))
+        ax.plot(t, mean, color='black')
+        ax.fill_between(t, mean+std, mean-std, color='black', alpha=0.4)
         ax.grid()
+        ax.set_title(f'{population} - P1 - {ch}')
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Amplitude (V)')
+        ax.set_ylim(-0.00001, 0.00001)
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-plots', population)):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-plots', population))
         fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-plots', population, f'{population}-P1-{ch}-ave.png'))
-
 
 def get_P1_latency_single_subj(subject_id, input_dir, output_dir):
 
