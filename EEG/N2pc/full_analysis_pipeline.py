@@ -29,6 +29,11 @@ for subject_id in full_subject_list:
 #    except:
 #        print(f'Error with subject {subject_id} during to_evoked')
 #        continue
+    try:
+        erp.P1_pipeline_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+    except:
+        print(f'Error with subject {subject_id} during P1_pipeline_single_subj')
+        continue
 #    try:
 #        erp.combine_evoked_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
 #    except:
@@ -74,11 +79,11 @@ for subject_id in full_subject_list:
 #    except:
 #        print(f'Error with subject {subject_id} during get_n2pc_values_single_subj')
 #        pass
-    try:
-        erp.get_peak_latency_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
-    except:
-        print(f'Error with subject {subject_id} during get_peak_latency_single_subj')
-        pass
+#    try:
+#        erp.get_peak_latency_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+#    except:
+#        print(f'Error with subject {subject_id} during get_peak_latency_single_subj')
+#        pass
 #    try:
 #        tf.get_tfr_scalp_population(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
 #    except:
@@ -90,7 +95,12 @@ for subject_id in full_subject_list:
 #        print(f'Error with subject {subject_id} during plot_tfr_single_subj')
 #        pass
 
-#for population, subject_list in population_dict.items():
+for population, subject_list in population_dict.items():
+    try:
+        erp.plot_P1_grand_average(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
+    except:
+        print(f'Error with population {population} during plot_P1_grand_average')
+        continue
 #    try:
 #        erp.combine_evoked_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
 #    except:
@@ -157,33 +167,40 @@ for subject_id in full_subject_list:
 #        print(f'Error with population {population} during plot_tfr_population')
 #        pass
 
-try:
-    erp.all_subjects_peak_latencies(input_dir=input_dir, output_dir=output_dir)
-except:
-    print(f'Error with all_subjects_peak_latencies')
-    pass
-try:
-    erp.all_peak_latencies_report(input_dir=input_dir, output_dir=output_dir)
-except:
-    print(f'Error with all_peak_latencies_report')
-    pass
-try:
-    erp.mean_latency_per_subject(input_dir=input_dir, output_dir=output_dir)
-except:
-    print(f'Error with mean_latency_per_subject')
-    pass
 
 try:
-    erp.amplitude_around_peak_by_epoch_all_subj(input_dir, output_dir)
+    erp.P1_amp_around_peak_per_epoch_all_subj(input_dir, output_dir)
 except:
-    print(f'Error with amplitude_around_peak_by_epoch_all_subj')
+    print(f'Error with P1_amp_around_peak_per_epoch_all_subj')
     pass
 
-try:
-    erp.get_amp_and_power_df(input_dir, output_dir)
-except:
-    print(f'Error with get_amp_and_power_df')
-    pass
+#try:
+#    erp.all_subjects_peak_latencies(input_dir=input_dir, output_dir=output_dir)
+#except:
+#    print(f'Error with all_subjects_peak_latencies')
+#    pass
+#try:
+#    erp.all_peak_latencies_report(input_dir=input_dir, output_dir=output_dir)
+#except:
+#    print(f'Error with all_peak_latencies_report')
+#    pass
+#try:
+#    erp.mean_latency_per_subject(input_dir=input_dir, output_dir=output_dir)
+#except:
+#   print(f'Error with mean_latency_per_subject')
+#    pass
+
+#try:
+#    erp.amplitude_around_peak_by_epoch_all_subj(input_dir, output_dir)
+#except:
+#    print(f'Error with amplitude_around_peak_by_epoch_all_subj')
+#    pass
+
+#try:
+#    erp.get_amp_and_power_df(input_dir, output_dir)
+#except:
+#    print(f'Error with get_amp_and_power_df')
+#    pass
 
 #try:
 #    alpha.get_fooof_results_all_subj(input_dir, output_dir)

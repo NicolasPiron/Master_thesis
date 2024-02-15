@@ -1811,35 +1811,198 @@ def all_peak_latencies_report(input_dir, outputdir):
 
     return None
 
-##### LEGACY CODE #####
 
-def add_sub0(list):
-    ''' Adds a "sub" and a 0 before the number of the subject
-        if the number has only one digit.
+############################################
+# P1 
+############################################
 
-    Parameters
-    ----------
-    list : list
-        The list of subjects to transform
+def plot_P1_single_subj(subject_id, input_dir, output_dir):
+
+    evk = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}-all-ave.fif'))
+    evk = evk[0]
+
+    for ch in ['Oz', 'O1', 'O2']:
+
+        evk_ = evk.copy().pick(ch)
+
+        fig, ax = plt.subplots()
+
+        evk_.plot(show=False, window_title=f'sub-{subject_id} P1', axes=ax, ylim=dict(eeg=[-10, 10]), titles=dict(eeg=ch))
+        ax.grid()
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'p1-plots')):
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'p1-plots'))
+        fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'p1-plots', f'sub-{subject_id}-P1-{ch}-ave.png'))
+
+def plot_P1_grand_average(input_dir, output_dir, subject_list, population):
+
+    evoked_list = list()
+    for subject in subject_list:
+        try:
+            evk = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject}', 'N2pc', 'evoked-N2pc', f'sub-{subject}-all-ave.fif'))
+            evoked_list.append(evk[0])
+        except:
+            print(f'========= no evoked found for subject {subject}')
+            continue
     
-    Returns
-    ----------
-    transformed_list : list
-        The transformed list of subjects
+    grand_average = mne.grand_average(evoked_list)
 
-    '''
+    for ch in ['Oz', 'O1', 'O2']:
+        evk_ = grand_average.copy().pick(ch)
 
-        # Transform the list of subjects to exclude into the format 'sub-xx'
-    sub_list = [f'sub-{subject}' for subject in list]
+        fig, ax = plt.subplots()
 
-    transformed_list = []
-    for item in sub_list:
-        # Split the string into two parts: 'sub-' and the number
-        parts = item.split('-')
-        if len(parts) == 2 and len(parts[1]) == 1:
-            # If the number has only one digit, add a '0' before it
-            transformed_list.append(f'sub-0{parts[1]}')
+        evk_.plot(show=False, window_title=f'{population} P1', axes=ax, ylim=dict(eeg=[-10, 10]), titles=dict(eeg=ch))
+        ax.grid()
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-plots', population)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-plots', population))
+        fig.savefig(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-plots', population, f'{population}-P1-{ch}-ave.png'))
+
+
+def get_P1_latency_single_subj(subject_id, input_dir, output_dir):
+
+    # Load the evoked data
+    evk = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}-all-ave.fif'))
+    evk = evk[0].copy().pick('Oz')
+
+    tmin = 0.
+    tmax = 0.2
+
+    ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="pos", return_amplitude=True)
+
+    # Create a df to store the peak latencies
+    df = pd.DataFrame(columns=['ID', 'peak_latency', 'peak_amplitude'])
+    df['ID'] = np.zeros(1)
+    df.iloc[0, 0] = subject_id
+    df.iloc[0, 1] = lat
+    df.iloc[0, 2] = amp
+
+    # save the df
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency'))
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency', f'sub-{subject_id}-P1-peak-latency.csv'))
+
+def P1_amp_around_peak_per_epoch_single_subj(subject_id, input_dir, output_dir):
+
+    file = os.path.join(input_dir, f'sub-{subject_id}/N2pc/cleaned_epochs/sub-{subject_id}-cleaned_epochs-N2pc.fif')
+    epochs = mne.read_epochs(file)
+
+    # crop epochs to relevent time window
+    epochs.crop(tmin=0, tmax=0.8)
+    
+    # get the reeject log (preprocessing step) for the subject
+    reject_log = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'preprocessing', 'step-06-final-reject_log', f'sub-{subject_id}-final-reject_log-N2pc.npz'))
+    # Define the epochs status (rejected or not)
+    epochs_status = reject_log['bad_epochs']
+
+    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'index_reset', 'saccade', 'condition', 'target_side', 'latency','amp_Oz', 'amp_O1', 'amp_O2'])
+
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency', f'sub-{subject_id}-P1-peak-latency.csv')):
+        get_P1_latency_single_subj(subject_id, input_dir, output_dir)
+    peak_latency_df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency', f'sub-{subject_id}-P1-peak-latency.csv'))
+    peak_latency = peak_latency_df['peak_latency'].values[0]
+
+    df['epoch_index'] = range(1,len(epochs_status)+1)
+    df['epoch_dropped'] = epochs_status
+    df['ID'] = subject_id
+    df['latency'] = peak_latency
+
+    index_val = 0
+    index_list = []
+    n_valid = []
+    # iterate through the 'epoch_dropped' column to create the reset index column
+    for row_number in range(len(df)):
+        if df.iloc[row_number, 2] == False:
+            index_list.append(index_val)
+            n_valid.append(index_val)
+            index_val += 1
         else:
-            transformed_list.append(item)
+            index_list.append(np.nan)
+
+    # add the index column to the DataFrame
+    df['index_reset'] = index_list
+
+    # Load the csv file contaning the indices of epochs with saccades
+    saccades = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'heog-artifact', 'rejected-epochs-list', f'sub-{subject_id}-heog-artifact.csv'))
+    # Create a list of the indices of the epochs with saccades
+    saccades_list = list(saccades['index'])
+    # Add a column that specifies if the epoch contains a saccade. FALSE if no saccade, TRUE if saccade. 
+    df['saccade'] = df['index_reset'].isin(saccades_list)
+
+    for row_number in range(len(df)):
+
+                # check if the epoch is dropped
+        if df.iloc[row_number, 2] == True:
+            print(f'========= epoch {row_number+1} was dropped',)
+        else:
+
+            # get the epoch index (after epochs rejection)
+            epoch_idx = int(df['index_reset'].loc[row_number])
+
+            epoch_id = epochs.events[epoch_idx][2]
+            if epoch_id in [1, 3, 5, 7]:
+                target_side = 'left'
+            elif epoch_id in [2, 4, 6, 8]:
+                target_side = 'right'
+            
+            if epoch_id in [1, 2, 5, 6]:
+                cond = 'Dis_mid'
+            elif epoch_id in [3, 4]:
+                cond = 'No_dis'
+            elif epoch_id in [7, 8]:
+                cond = 'Dis_contra'
+
+            sfreq = epochs.info['sfreq']
+            tmin = peak_latency - 0.020
+            tmin = math.ceil(tmin * sfreq)
+            tmax = peak_latency + 0.020
+            tmax = math.ceil(tmax * sfreq)
+
+            amp_Oz = epochs[epoch_idx].get_data(picks=['Oz']).reshape(410)[tmin:tmax].mean()
+            amp_O1 = epochs[epoch_idx].get_data(picks=['O1']).reshape(410)[tmin:tmax].mean()
+            amp_O2 = epochs[epoch_idx].get_data(picks=['O2']).reshape(410)[tmin:tmax].mean()
+
+            # fill the dataframe with everything we just computed
+            df.iloc[row_number, 5] = cond
+            df.iloc[row_number, 6] = target_side
+            df.iloc[row_number, 8] = amp_Oz
+            df.iloc[row_number, 9] = amp_O1
+            df.iloc[row_number, 10] = amp_O2
+
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'p1-values')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'p1-values'))
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'p1-values', f'sub-{subject_id}-p1-amplitude-around-peak.csv'))
+
+def P1_pipeline_single_subj(subject_id, input_dir, output_dir):
+
+    plot_P1_single_subj(subject_id, input_dir, output_dir)
+    get_P1_latency_single_subj(subject_id, input_dir, output_dir)
+    P1_amp_around_peak_per_epoch_single_subj(subject_id, input_dir, output_dir)
+
+
+def P1_amp_around_peak_per_epoch_all_subj(input_dir, output_dir):
+
+    df_list = []
+    dirs = os.listdir(input_dir)
+    dirs.remove('all_subj')
+    dirs = sorted(dirs)
+    for directory in dirs:
+        if not os.path.exists(os.path.join(input_dir, directory, 'N2pc', 'p1-values', f'{directory}-p1-amplitude-around-peak.csv')):
+            try:
+                P1_amp_around_peak_per_epoch_single_subj(directory[-2:], input_dir, output_dir)
+            except:
+                print(f'========= no P1 amplitude around peak df for subject {directory[-2:]}')
+                continue
+        try:
+            df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'p1-values', f'{directory}-p1-amplitude-around-peak.csv'), index_col=0)
+            df_list.append(df)
+            print(f'========= amplitude around peak df for subject {directory} added to the list')
+        except:
+            print(f'========= no df found for subject {directory}')
     
-    return transformed_list
+    df = pd.concat(df_list, axis=0)
+    print('========= all subjects amplitude around peak df concatenated')
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-values', 'p1-values-around-peak')):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-values', 'p1-values-around-peak'))
+    df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-values', 'p1-values-around-peak', 'all_subjects_P1_amplitude_around_peak.csv'))
+
+ 
