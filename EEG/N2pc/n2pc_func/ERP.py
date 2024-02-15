@@ -1846,20 +1846,15 @@ def plot_P1_grand_average(input_dir, output_dir, subject_list, population):
             print(f'========= no evoked found for subject {subject}')
             continue
     
-    grand_average = mne.grand_average(evoked_list)
-
-    # or compute the mean
-
-
     for ch in ['Oz', 'O1', 'O2', ['Oz', 'O1', 'O2']]:
 
-        mean = np.mean([evk.get_data(picks=ch) for evk in evoked_list], axis=0)
-        print(mean.shape)
-        std = np.std([evk.get_data(picks=ch) for evk in evoked_list], axis=0)
-        if len(ch) > 1:
-            ch = '3 occip channels'
-            mean = np.mean(mean, axis=0)
-            std = np.mean(std, axis=0)
+        data = [evk.get_data(picks=ch) for evk in evoked_list]
+        if len(ch) > 2: # if we want to plot all 3 channels (>1 is not working because 2 characters in ch name)
+            ch = 'mean_occip'
+            data = np.mean(data, axis=1)
+        mean = np.mean(data, axis=0)
+        std = np.std(data, axis=0)
+
         mean = mean.reshape(512)
         std = std.reshape(512)
         t = evk[0].times
