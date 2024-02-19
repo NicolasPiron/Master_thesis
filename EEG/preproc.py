@@ -370,13 +370,14 @@ def automated_epochs_rejection(subject_id, task, epochs, output_path):
         epochs_clean = epochs_clean.apply_baseline(baseline=(-0.2,0), verbose=True)
 
     # Plot the average signal before and after rejecting the epochs and save the plot
-    evoked_bad = epochs[final_reject_log.bad_epochs].average()
-    plt.plot(evoked_bad.times, evoked_bad.data.T * 1e6, 'r', zorder=-1)
-    clean_plot = epochs_clean.average().plot(axes=plt.gca())
-    if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-06-after-ar')) == False:
-        os.makedirs(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-06-after-ar'))
-        print('Directory created')
-    clean_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-06-after-ar', f'sub-{subject_id}-after-ar-{task}.png'))
+    if len(epochs[final_reject_log.bad_epochs]) > 0:
+        evoked_bad = epochs[final_reject_log.bad_epochs].average()
+        plt.plot(evoked_bad.times, evoked_bad.data.T * 1e6, 'r', zorder=-1)
+        clean_plot = epochs_clean.average().plot(axes=plt.gca())
+        if os.path.exists(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-06-after-ar')) == False:
+            os.makedirs(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-06-after-ar'))
+            print('Directory created')
+        clean_plot.savefig(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-06-after-ar', f'sub-{subject_id}-after-ar-{task}.png'))
     
     # The final epochs we will use for further analysis
     if os.path.exists(os.path.join(output_path , f'sub-{subject_id}', task, 'cleaned_epochs')) == False:
