@@ -210,7 +210,6 @@ def compute_src_on_sw(subject_id, condition):
                                            '06-raw-annot-clean', f'sub-{subject_id}-raw-annot-clean-{condition}.fif'))
 
     epochs = sliding_window(raw, duration=10, overlap=8)
-    epochs = epochs[:3]
     info = epochs.info
     del raw
 
@@ -385,7 +384,7 @@ def plot_dynamic_src_conn(plot_conn_dict, subject_id, condition, band):
         if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series')):
             os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series'))
         fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series',
-                                f'sub-{subject_id}-{condition}-{freqs_name}-ft-conn.png'), dpi=300)
+                                f'sub-{subject_id}-{condition}-{freqs_name}-ftdy-conn.png'), dpi=300)
         plt.close()
 
 def pipeline_src(subject_id, condition, band):
