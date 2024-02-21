@@ -603,6 +603,7 @@ def run_ica_on_raw(raw_annoted, raw):
     if user_inputs == []:
         print('No components excluded')
         raw_clean = raw_annoted
+        ICs_properties = []
     else:
         ica.exclude = user_inputs
         raw_clean = ica.apply(raw, exclude=ica.exclude)
