@@ -377,15 +377,15 @@ def plot_dynamic_src_conn(plot_conn_dict, subject_id, condition, band):
             ax.plot(t, serie, label=f'{name}, {mu}: {mean:.3f}, {sigma}: {std:.3f}')
             ax.fill_between(t, mean+std, mean-std, alpha=0.2)
             ax.hlines(mean, xmin=t[0], xmax=t[-1], colors='k', linestyles='--')
-        ax.set_title(f'Global connectivity - sub {subject_id} - {cond_name} - {freqs_name} band')
-        ax.set_ylabel('global connectivity')
+        ax.set_title(f'fronto-parietal conn - sub {subject_id} - {cond_name} - {freqs_name} band')
+        ax.set_ylabel('ft connectivity')
         ax.set_xlabel('time (s)')
         ax.legend()
     
         if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series')):
             os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series'))
         fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series',
-                                f'sub-{subject_id}-{condition}-{freqs_name}-global-conn.png'), dpi=300)
+                                f'sub-{subject_id}-{condition}-{freqs_name}-ft-conn.png'), dpi=300)
         plt.close()
 
 def pipeline_src(subject_id, condition, band):
