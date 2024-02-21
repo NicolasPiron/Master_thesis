@@ -132,7 +132,6 @@ def get_dynamic_global_plot_params(conn_dict):
 
 def plot_dynamic_global_conn(plot_conn_dict, subject_id, condition, band):
     
-
     input_dir, _ = get_paths()
     freqs_name, _ = band
 
@@ -141,8 +140,6 @@ def plot_dynamic_global_conn(plot_conn_dict, subject_id, condition, band):
     stop = start + (length-1) * 2 + 1
     t = np.arange(start, stop, 2)
 
-
-    #real_time = np.linspace(0, 180, 86)
     if condition == 'RESTINGSTATEOPEN':
         cond_name = 'RS open'
     elif condition == 'RESTINGSTATECLOSE':
@@ -159,7 +156,6 @@ def plot_dynamic_global_conn(plot_conn_dict, subject_id, condition, band):
     ax.set_ylabel('global connectivity')
     ax.set_xlabel('time (s)')
     ax.legend()
-    plt.show()
 
     if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'plot', freqs_name)):
         os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'plot', freqs_name))
