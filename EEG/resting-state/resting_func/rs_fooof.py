@@ -4,7 +4,20 @@ import fooof
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from set_paths import get_paths
+#from set_paths import get_paths # having trouble importing this function so I define the paths here. 
+
+def get_paths():
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if 'nicolaspiron/Documents' in script_dir:
+        input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+        output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
+    elif 'shared_PULSATION' in script_dir:
+        input_dir = '/home/nicolasp/shared_PULSATION/derivative'
+        output_dir = '/home/nicolasp/shared_PULSATION/derivative'
+
+    return input_dir, output_dir
+
 
 def get_psd(epochs):
 
@@ -89,21 +102,10 @@ def save_fooof_plot(subject_id, condition, ROI, fm):
     fm.plot(plot_peaks='shade', save_fig=True, file_name=file_name)
     plt.close()
 
-def pipeline(subject_id, condition, ROI):
+def single_subj_pipeline(subject_id, condition, ROI):
 
     freqs, spectra, freq_range = get_fooof_params(subject_id, condition)
     spectrum = extract_ROI_spectrum(spectra, ROI)
     fm = fit_ooof(freqs, spectrum, freq_range)
     save_params(subject_id, condition, ROI, fm)
     save_fooof_plot(subject_id, condition, ROI, fm)
-
-
-if __name__ == '__main__':
-
-    ROIs = ['frontal_l', 'frontal_r', 'parietal_l', 'parietal_r', 'occipital_l', 'occipital_r']
-    conds = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
-    subject_id = '01'
-    for cond in conds:
-        for ROI in ROIs:
-            pipeline(subject_id, cond, ROI)
-
