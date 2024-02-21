@@ -18,9 +18,22 @@ def get_paths():
 
     return input_dir, output_dir
 
-
 def get_psd(epochs):
+    '''compute the power spectral density of the epochs and return the spectra and the frequencies.
 
+    Parameters
+    ----------
+    epochs : mne.Epochs
+        The epochs object.
+    
+    Returns
+    -------
+    spectra : np.array
+        The power spectral density of the epochs.
+    freqs : np.array
+        The frequencies. (x-axis of the PSD plot in Hz, very important for the FOOOF fit!)
+    
+    '''
     epochs.info['bads'] = []
     psd = epochs.compute_psd(fmin=0, fmax=30, method='multitaper')
     freqs = psd.freqs
@@ -28,6 +41,19 @@ def get_psd(epochs):
     return spectra, freqs
 
 def save_psd(subject_id, condition):
+    '''save the power spectral density of the epochs as a .npy file.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject id.
+    condition : str
+        The condition (e.g. 'RESTINGSTATEOPEN' or 'RESTINGSTATECLOSE').
+    
+    Returns
+    -------
+    None
+    '''
 
     input_dir, _ = get_paths()
     epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'preprocessing',
@@ -42,6 +68,25 @@ def save_psd(subject_id, condition):
     np.save(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'psd-data', 'freqs', f'sub-{subject_id}-{condition}-freqs.npy'), freqs)
 
 def get_fooof_params(subject_id, condition):
+    '''Get the power spectral density and the frequencies of the epochs.
+    If the .npy files do not exist, compute the PSD and save them.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject id.
+    condition : str
+        The condition (e.g. 'RESTINGSTATEOPEN' or 'RESTINGSTATECLOSE').
+    
+    Returns
+    ------- 
+    freqs : np.array
+        The frequencies.
+    spectra : np.array
+        The power spectral density of the epochs.
+    freq_range : list
+        The frequency range for the FOOOF fit.
+    '''
 
     input_dir, _ = get_paths()
 
@@ -54,6 +99,20 @@ def get_fooof_params(subject_id, condition):
     return freqs, spectra, freq_range
 
 def extract_ROI_spectrum(spectra, ROI):
+    '''Extract the power spectral density of a specific region of interest.
+
+    Parameters
+    ----------
+    spectra : np.array
+        The power spectral density of the epochs.
+    ROI : str
+        The region of interest (e.g. 'frontal_l', 'frontal_r', 'parietal_l', 'parietal_r', 'occipital_l', 'occipital_r', 'all').
+
+    Returns
+    -------
+    spectrum : np.array
+        The power spectral density of the region of interest.
+    '''
 
     ROI_dict = {'frontal_l':[3, 4, 5, 8, 9, 10],
                 'frontal_r':[38, 39, 40, 43, 44, 45],
@@ -70,14 +129,46 @@ def extract_ROI_spectrum(spectra, ROI):
 
     return spectrum
     
-
 def fit_ooof(freqs, spectrum, freq_range=[1, 30]):
+    '''Fit the power spectral density with the FOOOF model.
 
-    fm = fooof.FOOOF(peak_threshold=2, max_n_peaks=5, aperiodic_mode='knee')
+    Parameters
+    ----------
+    freqs : np.array
+        The frequencies.
+    spectrum : np.array
+        The power spectral density of the epochs.
+    freq_range : list
+        The frequency range for the FOOOF fit.
+
+    Returns
+    -------
+    fm : fooof.FOOOF
+        The FOOOF model.
+    '''
+
+    fm = fooof.FOOOF(peak_threshold=2, max_n_peaks=3, aperiodic_mode='knee')
     fm.fit(freqs, spectrum, freq_range)
     return fm
 
 def save_params(subject_id, condition, ROI, fm):
+    '''Save the FOOOF parameters and the fit metrics as .csv files.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject id.
+    condition : str
+        The condition (e.g. 'RESTINGSTATEOPEN' or 'RESTINGSTATECLOSE').
+    ROI : str
+        The region of interest (e.g. 'frontal_l', 'frontal_r', 'parietal_l', 'parietal_r', 'occipital_l', 'occipital_r', 'all').
+    fm : fooof.FOOOF
+        The FOOOF model.
+
+    Returns
+    -------
+    None
+    '''
 
     input_dir, _ = get_paths()
 
@@ -97,6 +188,23 @@ def save_params(subject_id, condition, ROI, fm):
     fit_df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'fooof', 'metrics', 'fit', f'sub-{subject_id}-{condition}-{ROI}-fit.csv'))
 
 def save_fooof_plot(subject_id, condition, ROI, fm):
+    '''Save the FOOOF plot as a .png file.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject id.
+    condition : str
+        The condition (e.g. 'RESTINGSTATEOPEN' or 'RESTINGSTATECLOSE').
+    ROI : str
+        The region of interest (e.g. 'frontal_l', 'frontal_r', 'parietal_l', 'parietal_r', 'occipital_l', 'occipital_r', 'all').
+    fm : fooof.FOOOF
+        The FOOOF model.
+
+    Returns
+    -------
+    None
+    '''
 
     input_dir, _ = get_paths()
     if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'fooof', 'plots')):
@@ -106,6 +214,21 @@ def save_fooof_plot(subject_id, condition, ROI, fm):
     plt.close()
 
 def single_subj_pipeline(subject_id, condition, ROI):
+    '''Run the entire pipeline for a single subject.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject id.
+    condition : str
+        The condition (e.g. 'RESTINGSTATEOPEN' or 'RESTINGSTATECLOSE').
+    ROI : str
+        The region of interest (e.g. 'frontal_l', 'frontal_r', 'parietal_l', 'parietal_r', 'occipital_l', 'occipital_r', 'all').
+
+    Returns
+    -------
+    None
+    '''
 
     freqs, spectra, freq_range = get_fooof_params(subject_id, condition)
     spectrum = extract_ROI_spectrum(spectra, ROI)
