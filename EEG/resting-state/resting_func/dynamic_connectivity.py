@@ -130,6 +130,27 @@ def get_dynamic_global_plot_params(conn_dict):
 
     return plot_conn_dict
 
+def save_dgc_metrics(plot_conn_dict,  subject_id, condition, band):
+    '''Save the standard deviation and the mean of the global connectivity.
+    '''
+
+    input_dir, _ = get_paths()
+
+    plv_std = plot_conn_dict['plv'][1]
+    plv_mean = plot_conn_dict['plv'][2]
+    pli_std = plot_conn_dict['pli'][1]
+    pli_mean = plot_conn_dict['pli'][2]
+
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'metrics')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'metrics'))
+
+    # save the metrics in a .csv file
+    with open(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'metrics',
+                            f'sub-{subject_id}-{condition}-{band[0]}-global-conn-metrics.csv'), 'w') as f:
+          f.write('metric,plv,pli\n')
+          f.write('std,%.3f,%.3f\n' % (plv_std, pli_std))
+          f.write('mean,%.3f,%.3f\n' % (plv_mean, pli_mean))
+
 def plot_dynamic_global_conn(plot_conn_dict, subject_id, condition, band):
     
     input_dir, _ = get_paths()
@@ -157,18 +178,18 @@ def plot_dynamic_global_conn(plot_conn_dict, subject_id, condition, band):
     ax.set_xlabel('time (s)')
     ax.legend()
 
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'plot', freqs_name)):
-        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'plot', freqs_name))
-    fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'plot', freqs_name,
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'plots', 'time-series')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'plots', 'time-series'))
+    fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'plots', 'time-series',
                             f'sub-{subject_id}-{condition}-{freqs_name}-global-conn.png'), dpi=300)
-
+    plt.close()
 
 def pipeline(subject_id, condition, band):
 
     conn_dict = load_conn_dict(subject_id, condition, band)
     plot_conn_dict = get_dynamic_global_plot_params(conn_dict)
+    save_dgc_metrics(plot_conn_dict, subject_id, condition, band)
     plot_dynamic_global_conn(plot_conn_dict, subject_id, condition, band)
-
 
 if __name__ == '__main__':
 
