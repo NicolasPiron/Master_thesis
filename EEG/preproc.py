@@ -692,5 +692,3 @@ def ten_sec_epochs(subject_id, condition):
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', '07-epochs-10s')):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', '07-epochs-10s'))
     epochs.save(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', '07-epochs-10s', f'sub-{subject_id}-{condition}-10s-epo.fif'), overwrite=True)
-
-ten_sec_epochs('01', 'RESTINGSTATEOPEN')
