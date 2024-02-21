@@ -3,19 +3,14 @@ import os
 def get_paths():
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    print(script_dir)
     
     if 'nicolaspiron/Documents' in script_dir:
 
-        print('Running on Nicolas\'s Laptop')
-        print('Paths set automatically')
         input_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
         output_dir = '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc'
     
     elif 'shared_PULSATION' in script_dir:
 
-        print('Running on Lab-Calc server')
-        print('Paths set automatically')
         input_dir = '/home/nicolasp/shared_PULSATION/derivative'
         output_dir = '/home/nicolasp/shared_PULSATION/derivative'
 
