@@ -62,8 +62,11 @@ def extract_ROI_spectrum(spectra, ROI):
                 'occipital_l':[24, 25, 26],
                 'occipital_r':[61, 62, 63],
     }
-    ROI_idx = ROI_dict[ROI]
-    spectrum = spectra[ROI_idx].mean(axis=0)
+    if not ROI == 'all':
+        ROI_idx = ROI_dict[ROI]
+        spectrum = spectra[ROI_idx].mean(axis=0)
+    else:
+        spectrum = spectra.mean(axis=0)
 
     return spectrum
     

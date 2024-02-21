@@ -14,7 +14,7 @@ def get_paths():
     return input_dir, output_dir
 
 i, o = get_paths()
-ROIs = ['frontal_l', 'frontal_r', 'parietal_l', 'parietal_r', 'occipital_l', 'occipital_r']
+ROIs = ['all', 'frontal_l', 'frontal_r', 'parietal_l', 'parietal_r', 'occipital_l', 'occipital_r']
 conds = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
 
 for directory in sorted(os.listdir(i)):
