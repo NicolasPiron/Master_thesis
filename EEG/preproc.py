@@ -6,6 +6,7 @@ import glob
 from mne.preprocessing import ICA
 import pandas as pd
 import autoreject
+from N2pc.n2pc_func.set_paths import get_paths
 
 def load_data(subject_id, task, input_path, plot_data=True):
     ''' Loads the data from the BIDS folder and concatenates the runs if there is more than 1 run.
@@ -462,3 +463,234 @@ def quality_check_plots(subject_id, task, epochs, epochs_clean, output_path):
     evoked_topo.savefig(os.path.join(output_path, f'sub-{subject_id}', task, 'preprocessing', 'plots', 'step-06-evoked_topo', f'sub-{subject_id}-evoked_topo-{task}.png'))
 
 
+############################################################################################################
+# Additional functions for the secondary resting state pipeline
+    
+
+def get_reject_log(raw, duration=1.):
+    '''Epochs the raw data and runs the autoreject algorithm.
+    Get the reject log from the autoreject algorithm.
+    
+    Parameters
+    ----------
+    raw : mne.io.Raw
+        Raw data
+    duration : float
+        Duration of the epochs in seconds
+
+    Returns
+    -------
+    events : np.array
+        Events
+    reject_log : autoreject.RejectLog
+        Reject log from the autoreject algorithm
+    '''
+
+    duration = 1.
+    events = mne.make_fixed_length_events(raw,duration=duration)
+    epochs = mne.Epochs(raw, events=events, tmin=0, tmax=duration, baseline=None, preload=True)
+    ar = autoreject.AutoReject(n_interpolate=[1, 2, 3, 4], random_state=11,
+                            n_jobs=2, verbose=True)
+    _, reject_log = ar.fit_transform(epochs, return_log=True)
+
+    return events, reject_log
+
+def get_annotations(reject_log, sfreq, duration, events):
+    '''Get annotations from the reject log.
+    The annotations are used to mark the epochs of the log as bad segments in the raw data.
+
+    Parameters
+    ----------
+    reject_log : autoreject.RejectLog
+        Reject log from the autoreject algorithm
+    sfreq : float
+        Sampling frequency
+    duration : float
+        Duration of the epochs in seconds
+    events : np.array
+        Events
+
+    Returns
+    -------
+    annot : mne.Annotations
+        Annotations
+    '''
+     
+    log = reject_log.bad_epochs
+    bad_epochs = np.where(log==True)
+    bad_onsets = []
+    for bad in bad_epochs[0]:
+        onset = events[bad,0]
+        onset = onset/sfreq
+        bad_onsets.append(onset)
+        
+    annot = mne.Annotations(
+        onset=bad_onsets,
+        duration=[duration]*len(bad_onsets), 
+        description=['bad']*len(bad_onsets),
+    )
+
+    return annot
+
+def annotate_raw(raw, duration=1.):
+    '''Annotate the raw data using the autoreject algorithm.
+    The annotations are used to mark the epochs of the log as bad segments in the raw data.
+
+    Parameters
+    ----------
+    raw : mne.io.Raw
+        Raw data
+    duration : float
+        Duration of the epochs in seconds
+
+    Returns
+    -------
+    raw_annoted : mne.io.Raw
+        Annotated raw data
+    reject_log : autoreject.RejectLog
+        Reject log from the autoreject algorithm, important to get the plot later
+    '''
+
+    sfreq = raw.info['sfreq']
+    events, reject_log = get_reject_log(raw, duration)
+    annot = get_annotations(reject_log, sfreq, duration, events)
+    raw_annoted = raw.copy().set_annotations(annot)
+    
+    return raw_annoted, reject_log
+
+def get_user_inputs():
+    '''Get user inputs to exclude components from the ICA.
+    Used in the run_ica_on_raw function.
+    '''
+    user_inputs = []
+    while True:
+        user_input = input("Chose a component to exclude (or 'ok' to finish): ")
+        if user_input.lower() == 'ok':
+            break
+        try:
+            value = int(user_input)
+            user_inputs.append(value)
+        except ValueError:
+            print("Invalid input. Please enter a valid number or 'ok'.")
+    return user_inputs
+
+def run_ica_on_raw(raw_annoted, raw):
+    '''Run ICA on annotated raw data and apply the ICA to the raw data.
+
+    Parameters
+    ----------
+    raw_annoted : mne.io.Raw
+        Annotated raw data  
+    raw : mne.io.Raw
+        Raw data
+
+    Returns
+    -------
+    raw_clean : mne.io.Raw
+        Clean raw data  
+    ICs_properties : matplotlib.figure.Figure
+        Plot of the ICs properties  
+    '''
+
+    ica = ICA(n_components=24, random_state=98)
+    ica.fit(raw_annoted, decim=10)
+    ica.plot_components(picks=np.arange(0,10,1))
+    user_inputs = get_user_inputs()
+    if user_inputs:
+            print('Components excluded :', user_inputs)
+    else:
+            print("No user inputs.")
+    if user_inputs == []:
+        print('No components excluded')
+        raw_clean = raw_annoted
+    else:
+        ica.exclude = user_inputs
+        raw_clean = ica.apply(raw, exclude=ica.exclude)
+        ICs_properties = ica.plot_properties(raw, picks=user_inputs, show=False)
+        
+    return raw_clean, ICs_properties
+
+def ar_ica_ar(raw):
+    '''Run the autoreject algorithm on the raw data, then run ICA and finally run autoreject again.
+    This function is used to clean the raw data.
+
+    Parameters
+    ----------
+    raw : mne.io.Raw
+        Raw data
+
+    Returns
+    -------
+    raw_clean_annoted : mne.io.Raw
+        Clean raw data with annotations
+    raw_annoted : mne.io.Raw
+        Raw data with annotations before ICA
+    IC_properties : matplotlib.figure.Figure
+        Plot of the ICs properties
+    reject_log1 : autoreject.RejectLog
+        Reject log from the autoreject algorithm before ICA
+    reject_log2 : autoreject.RejectLog
+        Reject log from the autoreject algorithm after ICA
+    '''
+    raw_annoted, reject_log1 = annotate_raw(raw, duration=1.)
+    raw_clean, IC_properties = run_ica_on_raw(raw_annoted, raw)
+    raw_clean_annoted , reject_log2 = annotate_raw(raw_clean, duration=1.)
+
+    return raw_clean_annoted, raw_annoted, IC_properties, reject_log1, reject_log2
+
+def clean_raw(subject_id, condition):
+    '''Clean the raw data using the autoreject algorithm and ICA.
+    Before running this function, you need to have an interpolated and filtered raw file.
+    Saves the raw clean, the ICs properties and the reject logs.
+
+    Parameters
+    ----------
+    subject_id : str or int
+        Subject ID : 2 digits (e.g. '01' or '21')
+    condition : str
+        Condition (e.g. 'RESTINGSTATEOPEN' or 'RESTINGSTATECLOSE')
+    
+    Returns
+    -------
+    None
+    '''
+    input_dir, output_dir = get_paths()
+    raw = mne.io.read_raw(os.path.join(input_dir, f'sub-{subject_id}', condition, 'preprocessing',
+                                        'step-02-raw-interpolated', f'sub-{subject_id}-raw-interpolated-{condition}.fif'))
+    raw.resample(512)
+    raw.set_eeg_reference(ref_channels='average')
+
+    raw_clean_annoted, raw_annoted, IC_properties, reject_log1, reject_log2 = ar_ica_ar(raw)
+
+    reject_plot1 = reject_log1.plot(show=False)
+    reject_plot2 = reject_log2.plot(show=False)
+
+    for path in ['03-reject-log-before-ica', '04-raw-annot','05-final-reject-log', '06-raw-annot-clean',
+                'plots/03-reject-log-before-ica', 'plots/04-ICs', 'plots/05-final-reject-log']:
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', path)):
+            os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', path))
+    
+    reject_log1.save(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', '03-reject-log-before-ica', f'sub-{subject_id}-reject-log-before-ica-{condition}.npz'), overwrite=True)
+    reject_log2.save(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', '05-final-reject-log', f'sub-{subject_id}-final-reject-log-{condition}.npz'), overwrite=True)
+    reject_plot1.savefig(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', 'plots/03-reject-log-before-ica', f'sub-{subject_id}-reject-log-before-ica-{condition}.png'))
+    reject_plot2.savefig(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', 'plots/05-final-reject-log', f'sub-{subject_id}-final-reject-log-{condition}.png'))
+    raw_clean_annoted.save(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', '06-raw-annot-clean', f'sub-{subject_id}-raw-annot-clean-{condition}.fif'), overwrite=True)
+    raw_annoted.save(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', '04-raw-annot', f'sub-{subject_id}-raw-annot-{condition}.fif'), overwrite=True)
+    if IC_properties:
+        for i, fig in enumerate(IC_properties):
+            fig.savefig(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', 'plots/04-ICs', f'sub-{subject_id}-IC{i}-{condition}.png'))
+
+
+def ten_sec_epochs(subject_id, condition):
+
+    input_dir, output_dir = get_paths()
+    raw = mne.io.read_raw(os.path.join(input_dir,  f'sub-{subject_id}', condition, 'preprocessing', 'additional', '06-raw-annot-clean', f'sub-{subject_id}-raw-annot-clean-{condition}.fif'))
+    duration = 10.
+    events = mne.make_fixed_length_events(raw,duration=duration)
+    epochs = mne.Epochs(raw, events=events, tmin=0, tmax=10., baseline=None, preload=True, reject_by_annotation=True)
+
+    if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', '07-epochs-10s')):
+        os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', '07-epochs-10s'))
+    epochs.save(os.path.join(output_dir, f'sub-{subject_id}', condition, 'preprocessing', 'additional', '07-epochs-10s', f'sub-{subject_id}-{condition}-10s-epo.fif'), overwrite=True)
+
+ten_sec_epochs('01', 'RESTINGSTATEOPEN')
