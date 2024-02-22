@@ -130,7 +130,9 @@ def get_dynamic_global_plot_params(conn_dict):
 
         std = np.std(average.data)
         mean = np.mean(average.data)
-        plot_conn_dict[name]=[average.data, std, mean, name]
+        min = np.min(average.data)
+        max = np.max(average.data)
+        plot_conn_dict[name]=[average.data, std, mean, min, max, name]
 
     return plot_conn_dict
 
@@ -144,6 +146,10 @@ def save_dgc_metrics(plot_conn_dict,  subject_id, condition, band):
     plv_mean = plot_conn_dict['plv'][2]
     pli_std = plot_conn_dict['pli'][1]
     pli_mean = plot_conn_dict['pli'][2]
+    plv_min = plot_conn_dict['plv'][3]
+    plv_max = plot_conn_dict['plv'][4]
+    pli_min = plot_conn_dict['pli'][3]
+    pli_max = plot_conn_dict['pli'][4]
 
     if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'metrics')):
         os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'metrics'))
@@ -154,6 +160,8 @@ def save_dgc_metrics(plot_conn_dict,  subject_id, condition, band):
           f.write('metric,plv,pli\n')
           f.write('std,%.3f,%.3f\n' % (plv_std, pli_std))
           f.write('mean,%.3f,%.3f\n' % (plv_mean, pli_mean))
+          f.write('min,%.3f,%.3f\n' % (plv_min, pli_min))
+          f.write('max,%.3f,%.3f\n' % (plv_max, pli_max))
 
 def plot_dynamic_global_conn(plot_conn_dict, subject_id, condition, band):
     
@@ -172,7 +180,7 @@ def plot_dynamic_global_conn(plot_conn_dict, subject_id, condition, band):
     mu = r"$\mu$"
     sigma = r"$\sigma$"
     fig, ax = plt.subplots(figsize=(6, 4))
-    for serie, std, mean, name in plot_conn_dict.values():
+    for serie, std, mean, _, _, name in plot_conn_dict.values():
         ax.plot(t, serie, label=f'{name}, {mu}: {mean:.3f}, {sigma}: {std:.3f}')
         ax.fill_between(t, mean+std, mean-std, alpha=0.2)
         ax.hlines(mean, xmin=t[0], xmax=t[-1], colors='k', linestyles='--')
@@ -330,7 +338,9 @@ def get_dynamic_src_plot_params(conn_dict):
 
         std = np.std(average)
         mean = np.mean(average)
-        plot_conn_dict[name]=[average, std, mean, name]
+        min = np.min(average)
+        max = np.max(average)
+        plot_conn_dict[name]=[average, std, mean, min, max, name]
 
     return plot_conn_dict
 
@@ -344,6 +354,10 @@ def save_src_dc_metrics(plot_conn_dict,  subject_id, condition, band):
     plv_mean = plot_conn_dict['plv'][2]
     pli_std = plot_conn_dict['pli'][1]
     pli_mean = plot_conn_dict['pli'][2]
+    plv_min = plot_conn_dict['plv'][3]
+    plv_max = plot_conn_dict['plv'][4]
+    pli_min = plot_conn_dict['pli'][3]
+    pli_max = plot_conn_dict['pli'][4]
 
     if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'metrics')):
         os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'metrics'))
@@ -354,6 +368,9 @@ def save_src_dc_metrics(plot_conn_dict,  subject_id, condition, band):
           f.write('metric,plv,pli\n')
           f.write('std,%.3f,%.3f\n' % (plv_std, pli_std))
           f.write('mean,%.3f,%.3f\n' % (plv_mean, pli_mean))
+          f.write('min,%.3f,%.3f\n' % (plv_min, pli_min))
+          f.write('max,%.3f,%.3f\n' % (plv_max, pli_max))
+          
 
 def plot_dynamic_src_conn(plot_conn_dict, subject_id, condition, band):
         
@@ -372,7 +389,7 @@ def plot_dynamic_src_conn(plot_conn_dict, subject_id, condition, band):
         mu = r"$\mu$"
         sigma = r"$\sigma$"
         fig, ax = plt.subplots(figsize=(6, 4))
-        for serie, std, mean, name in plot_conn_dict.values():
+        for serie, std, mean, _, _, name in plot_conn_dict.values():
             ax.plot(t, serie, label=f'{name}, {mu}: {mean:.3f}, {sigma}: {std:.3f}')
             ax.fill_between(t, mean+std, mean-std, alpha=0.2)
             ax.hlines(mean, xmin=t[0], xmax=t[-1], colors='k', linestyles='--')
