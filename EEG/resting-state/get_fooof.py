@@ -14,18 +14,34 @@ def get_paths():
     return input_dir, output_dir
 
 i, o = get_paths()
-ROIs = ['all', 'frontal_l', 'frontal_r', 'parietal_l', 'parietal_r', 'occipital_l', 'occipital_r']
+ROIs_sensor = ['all', 'frontal_l', 'frontal_r', 'parietal_l', 'parietal_r', 'occipital_l', 'occipital_r']
+ROIs_source = ['caudalmiddlefrontal-lh', 'caudalmiddlefrontal-rh', 'inferiorparietal-lh', 'inferiorparietal-rh',
+               'lateraloccipital-lh', 'lateraloccipital-rh']
 conds = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
+
+run_src = True
 
 for directory in sorted(os.listdir(i)):
     if 'sub-' in directory:
         subject_id = directory.split('-')[1]
-        try:
-            for cond in conds:
-                for ROI in ROIs:
+        for cond in conds:
+            for ROI in ROIs_sensor:
+                try:
                     rsf.single_subj_pipeline(subject_id, cond, ROI)
                     print(f'Finished with subject {subject_id} and condition {cond} and ROI {ROI}')
-        except:
-            print(f'Error with subject {subject_id} -- most likely no data')
-            continue
+                except:
+                    print(f'Error with subject {subject_id} -- most likely no data')
+                    continue
 
+if run_src:
+    for directory in sorted(os.listdir(i)):
+        if 'sub-' in directory:
+            subject_id = directory.split('-')[1]
+            for cond in conds:
+                for ROI in ROIs_source:
+                    try:
+                        rsf.single_subj_pipeline_src(subject_id, cond, ROI)
+                        print(f'Finished with subject {subject_id} and condition {cond} and ROI {ROI}')
+                    except:
+                        print(f'Error with subject {subject_id} -- most likely no data')
+                        continue

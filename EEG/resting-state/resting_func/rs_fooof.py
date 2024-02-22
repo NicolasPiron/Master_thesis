@@ -4,6 +4,7 @@ import fooof
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from .src_rec_rs import compute_source_psd_rs
 #from set_paths import get_paths # having trouble importing this function so I define the paths here. 
 
 def get_paths():
@@ -61,11 +62,11 @@ def save_psd(subject_id, condition):
     psd, freqs = get_psd(epochs)
 
     for path in ['spectrum', 'freqs']:
-        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'psd-data', path)):
-            os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'psd-data', path))
+        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', path)):
+            os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', path))
 
-    np.save(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'psd-data', 'spectrum', f'sub-{subject_id}-{condition}-psd.npy'), psd)
-    np.save(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'psd-data', 'freqs', f'sub-{subject_id}-{condition}-freqs.npy'), freqs)
+    np.save(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', 'spectrum', f'sub-{subject_id}-{condition}-psd.npy'), psd)
+    np.save(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', 'freqs', f'sub-{subject_id}-{condition}-freqs.npy'), freqs)
 
 def get_fooof_params(subject_id, condition):
     '''Get the power spectral density and the frequencies of the epochs.
@@ -90,11 +91,11 @@ def get_fooof_params(subject_id, condition):
 
     input_dir, _ = get_paths()
 
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'psd-data', 'spectrum', f'sub-{subject_id}-{condition}-psd.npy')):
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', 'spectrum', f'sub-{subject_id}-{condition}-psd.npy')):
         save_psd(subject_id, condition)
-    spectra = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'psd-data', 'spectrum', f'sub-{subject_id}-{condition}-psd.npy'))
-    freqs = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'psd-data', 'freqs', f'sub-{subject_id}-{condition}-freqs.npy'))
-    freq_range = [1, 30]
+    spectra = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', 'spectrum', f'sub-{subject_id}-{condition}-psd.npy'))
+    freqs = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', 'freqs', f'sub-{subject_id}-{condition}-freqs.npy'))
+    freq_range = [2, 30]
 
     return freqs, spectra, freq_range
 
@@ -129,7 +130,7 @@ def extract_ROI_spectrum(spectra, ROI):
 
     return spectrum
     
-def fit_ooof(freqs, spectrum, freq_range=[1, 30]):
+def fit_ooof(freqs, spectrum, freq_range=[2, 30]):
     '''Fit the power spectral density with the FOOOF model.
 
     Parameters
@@ -181,11 +182,11 @@ def save_params(subject_id, condition, ROI, fm):
     fit_df = pd.DataFrame(fit_metrics, columns=['r_squared', 'error'])
 
     for path in ['peaks', 'ap', 'fit']:
-        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'fooof', 'metrics', path)):
-            os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'fooof', 'metrics', path))
-    peak_df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'fooof', 'metrics', 'peaks', f'sub-{subject_id}-{condition}-{ROI}-peaks.csv'))
-    ap_df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'fooof', 'metrics', 'ap', f'sub-{subject_id}-{condition}-{ROI}-ap.csv'))
-    fit_df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'fooof', 'metrics', 'fit', f'sub-{subject_id}-{condition}-{ROI}-fit.csv'))
+        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'fooof', 'metrics', path)):
+            os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'fooof', 'metrics', path))
+    peak_df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'fooof', 'metrics', 'peaks', f'sub-{subject_id}-{condition}-{ROI}-peaks.csv'))
+    ap_df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'fooof', 'metrics', 'ap', f'sub-{subject_id}-{condition}-{ROI}-ap.csv'))
+    fit_df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'fooof', 'metrics', 'fit', f'sub-{subject_id}-{condition}-{ROI}-fit.csv'))
 
 def save_fooof_plot(subject_id, condition, ROI, fm):
     '''Save the FOOOF plot as a .png file.
@@ -207,9 +208,9 @@ def save_fooof_plot(subject_id, condition, ROI, fm):
     '''
 
     input_dir, _ = get_paths()
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'fooof', 'plots')):
-        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'fooof', 'plots'))
-    file_name = os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'fooof', 'plots', f'sub-{subject_id}-{condition}-{ROI}-fooof.png')
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'fooof', 'plots')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'fooof', 'plots'))
+    file_name = os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'fooof', 'plots', f'sub-{subject_id}-{condition}-{ROI}-fooof.png')
     fm.plot(plot_peaks='shade', save_fig=True, file_name=file_name)
     plt.close()
 
@@ -235,3 +236,57 @@ def single_subj_pipeline(subject_id, condition, ROI):
     fm = fit_ooof(freqs, spectrum, freq_range)
     save_params(subject_id, condition, ROI, fm)
     save_fooof_plot(subject_id, condition, ROI, fm)
+
+
+####################################################################################################
+# FOOOF in a label
+    
+def get_fooof_params_src(subject_id, condition, ROI):
+
+    input_dir, _ = get_paths()
+
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'psd-data', 'spectrum',
+                                       f'sub-{subject_id}-{condition}-{ROI}-psd.npy')):
+        compute_source_psd_rs(subject_id, condition)
+    spectra = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'psd-data', 'spectrum',  f'sub-{subject_id}-{condition}-{ROI}-psd.npy'))
+    freqs = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'psd-data', 'freqs', f'sub-{subject_id}-{condition}-{ROI}-freqs.npy'))
+    spectrum = spectra.mean(axis=0)
+    freq_range = [2, 30]
+
+    return freqs, spectrum, freq_range
+
+def save_params_src(subject_id, condition, ROI, fm):
+
+    input_dir, _ = get_paths()
+
+    peaks = fm.get_params('peak_params')
+    peak_df = pd.DataFrame(peaks, columns=['CF', 'PW', 'BW'])
+
+    res = fm.get_results()
+    ap_df = pd.DataFrame(res.aperiodic_params.reshape(1,3), columns=['offset', 'knee', 'exponent'])
+    fit_metrics = np.array([res.r_squared, res.error]).reshape(1,2)
+    fit_df = pd.DataFrame(fit_metrics, columns=['r_squared', 'error'])
+
+    for path in ['peaks', 'ap', 'fit']:
+        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'fooof', 'metrics', path)):
+            os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'fooof', 'metrics', path))
+    peak_df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'fooof', 'metrics', 'peaks', f'sub-{subject_id}-{condition}-{ROI}-peaks.csv'))
+    ap_df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'fooof', 'metrics', 'ap', f'sub-{subject_id}-{condition}-{ROI}-ap.csv'))
+    fit_df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'fooof', 'metrics', 'fit', f'sub-{subject_id}-{condition}-{ROI}-fit.csv'))
+
+def save_fooof_plot_src(subject_id, condition, ROI, fm):
+
+    input_dir, _ = get_paths()
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'fooof', 'plots')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'fooof', 'plots'))
+    file_name = os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'fooof', 'plots', f'sub-{subject_id}-{condition}-{ROI}-fooof.png')
+    fm.plot(plot_peaks='shade', save_fig=True, file_name=file_name)
+    plt.close()
+
+def single_subj_pipeline_src(subject_id, condition, ROI):
+
+    freqs, spectrum, freq_range = get_fooof_params_src(subject_id, condition, ROI)
+    fm = fit_ooof(freqs, spectrum, freq_range)
+    save_params_src(subject_id, condition, ROI, fm)
+    save_fooof_plot_src(subject_id, condition, ROI, fm)
+
