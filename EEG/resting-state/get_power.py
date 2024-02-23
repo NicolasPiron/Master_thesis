@@ -13,6 +13,7 @@ def get_paths():
 
     return input_dir, output_dir
 
+get_src_power = True
 
 i, o = get_paths()
 for directory in sorted(os.listdir(i)):
@@ -25,3 +26,17 @@ for directory in sorted(os.listdir(i)):
         except:
             print(f'Error with subject {subject_id} -- most likely no data')
             continue
+
+if get_src_power == True:
+
+    i, o = get_paths()
+    for directory in sorted(os.listdir(i)):
+        if 'sub-' in directory:
+            subject_id = directory.split('-')[1]
+            try:
+                for cond in ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']:
+                    rsfr.save_all_powers_src(subject_id, cond)
+                    print(f'Finished with subject {subject_id} and condition {cond}')
+            except:
+                print(f'Error with subject {subject_id} -- most likely no data')
+                continue
