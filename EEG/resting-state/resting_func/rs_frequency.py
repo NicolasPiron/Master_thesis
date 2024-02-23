@@ -73,9 +73,9 @@ def get_data(subject_id, condition):
 
     input_dir, _ = get_paths()
 
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', 'spectrum',
-                                       f'sub-{subject_id}-{condition}-psd.npy')):
-        save_psd(subject_id, condition)
+    #if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', 'spectrum',
+    #                                   f'sub-{subject_id}-{condition}-psd.npy')):
+    save_psd(subject_id, condition)
     spectra = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', 'spectrum',
                                       f'sub-{subject_id}-{condition}-psd.npy'))
     freqs = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'sensor-level', 'psd-data', 'freqs',
@@ -252,9 +252,9 @@ def get_psd_src(subject_id, condition, ROI):
 
     input_dir, _ = get_paths()
 
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'psd-data', 'spectrum',
-                                       f'sub-{subject_id}-{condition}-{ROI}-psd.npy')):
-        compute_source_psd_rs(subject_id, condition)
+    #if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'psd-data', 'spectrum',
+    #                                   f'sub-{subject_id}-{condition}-{ROI}-psd.npy')):
+    compute_source_psd_rs(subject_id, condition)
     spectra = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'psd-data', 'spectrum',  f'sub-{subject_id}-{condition}-{ROI}-psd.npy'))
     freqs = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'psd', 'source-level', 'psd-data', 'freqs', f'sub-{subject_id}-{condition}-{ROI}-freqs.npy'))
     spectrum = spectra.mean(axis=0)

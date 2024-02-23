@@ -94,9 +94,9 @@ def load_conn_dict(subject_id, condition, band:list):
     input_dir, _ = get_paths()
     freqs_name, _ = band
 
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'conn-data', 'plv',
-                                      f'sub-{subject_id}-{condition}-{freqs_name}-plv-conn.npy')):
-        compute_conn(subject_id, condition, band)
+    #if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'conn-data', 'plv',
+    #                                  f'sub-{subject_id}-{condition}-{freqs_name}-plv-conn.npy')):
+    compute_conn(subject_id, condition, band)
     
     conn_dict = {'plv':np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'sensor-level', 'conn-data', 'plv',
                                 f'sub-{subject_id}-{condition}-{freqs_name}-plv-conn.npy')),
@@ -259,9 +259,9 @@ def compute_src_on_sw(subject_id, condition):
 def load_stc_epochs(subject_id, condition):
     
     input_dir, _ = get_paths()
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
-                                    'src-data', 'stc-epochs', f'sub-{subject_id}-{condition}-stc_epochs.npy')):
-        compute_src_on_sw(subject_id, condition)
+    #if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+    #                                'src-data', 'stc-epochs', f'sub-{subject_id}-{condition}-stc_epochs.npy')):
+    compute_src_on_sw(subject_id, condition)
 
     stc_epochs = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
                                 'src-data', 'stc-epochs', f'sub-{subject_id}-{condition}-stc_epochs.npy'))
