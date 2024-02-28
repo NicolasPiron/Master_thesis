@@ -259,9 +259,9 @@ def compute_src_on_sw(subject_id, condition):
 def load_stc_epochs(subject_id, condition):
     
     input_dir, _ = get_paths()
-    #if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
-    #                                'src-data', 'stc-epochs', f'sub-{subject_id}-{condition}-stc_epochs.npy')):
-    compute_src_on_sw(subject_id, condition)
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+                                    'src-data', 'stc-epochs', f'sub-{subject_id}-{condition}-stc_epochs.npy')):
+        compute_src_on_sw(subject_id, condition)
 
     stc_epochs = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
                                 'src-data', 'stc-epochs', f'sub-{subject_id}-{condition}-stc_epochs.npy'))
@@ -304,10 +304,10 @@ def load_con_values_epochs(subject_id, condition, band:list):
 
     input_dir, o = get_paths()
     freq_name, _ = band
-    #if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
-     #                               'conn-data', 'plv', f'sub-{subject_id}-{condition}-{freq_name}-plv-conn.npy')):
-    data = load_stc_epochs(subject_id, condition)
-    compute_ft_sw_conn(data, subject_id, condition, band)
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+                                    'conn-data', 'plv', f'sub-{subject_id}-{condition}-{freq_name}-plv-conn.npy')):
+        data = load_stc_epochs(subject_id, condition)
+        compute_ft_sw_conn(data, subject_id, condition, band)
     plv_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
                                 'conn-data', 'plv', f'sub-{subject_id}-{condition}-{freq_name}-plv-conn.npy'))
     pli_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
