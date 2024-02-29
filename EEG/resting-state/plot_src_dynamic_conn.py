@@ -25,7 +25,7 @@ for directory in sorted(os.listdir(i)):
         try:
             for cond in conditions:
                 for band in bands:
-                    dc.pipeline_src(subject_id, cond, band)
+                    dc.pipeline_src(subject_id, cond, band, spe_indices=False)
                     print(f'Finished with subject {subject_id} and condition {cond} and band {band}')
         except:
             print(f'Error with subject {subject_id} -- most likely no data')

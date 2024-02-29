@@ -268,50 +268,83 @@ def load_stc_epochs(subject_id, condition):
     
     return stc_epochs
 
-def compute_ft_sw_conn(data, subject_id, condition, band:list):
+def compute_ft_sw_conn(data, subject_id, condition, band:list, spe_indices=True):
 
     input_dir, _ = get_paths()
 
     freq_name, freqs = band
     sfreq = 512
-    indices = ([4, 4, 4, 5, 5, 14], [5, 14, 15, 14, 15, 15])
 
-    con = spectral_connectivity_time(
-        data,
-        method=['plv', 'pli'],
-        mode="multitaper",
-        sfreq=sfreq,
-        indices=indices,
-        freqs=freqs,
-        faverage=True,
-        n_jobs=1,
-    )
-    plv=con[0].get_data()
-    pli=con[1].get_data()
+    if spe_indices:
+        indices = ([4, 4, 4, 5, 5, 14], [5, 14, 15, 14, 15, 15])
+        con = spectral_connectivity_time(
+            data,
+            method=['plv', 'pli'],
+            mode="multitaper",
+            sfreq=sfreq,
+            indices=indices,
+            freqs=freqs,
+            faverage=True,
+            n_jobs=1,
+        )
+        plv=con[0].get_data()
+        pli=con[1].get_data()
 
-    conn_dict = {'plv':plv,
-            'pli':pli}
+        conn_dict = {'plv':plv,
+                'pli':pli}
+    
+    else:
+        con = spectral_connectivity_time(
+            data,
+            method=['plv', 'pli'],
+            mode="multitaper",
+            sfreq=sfreq,
+            freqs=freqs,
+            faverage=True,
+            n_jobs=1,
+        )
+        plv=con[0].get_data()
+        pli=con[1].get_data()
+
+        conn_dict = {'plv':plv,
+                'pli':pli}
     
     for name in conn_dict.keys():
         if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 
                                            'dynamic', 'source-level', 'conn-data', name)):
             os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity',
                                         'dynamic', 'source-level', 'conn-data', name))
-        np.save(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+        if spe_indices:
+            np.save(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
                                 'conn-data', name, f'sub-{subject_id}-{condition}-{freq_name}-{name}-conn.npy'), conn_dict[name])
+        else:
+            np.save(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+                                'conn-data', name, f'sub-{subject_id}-{condition}-global-{freq_name}-{name}-conn.npy'), conn_dict[name])
 
-def load_con_values_epochs(subject_id, condition, band:list):
+
+def load_con_values_epochs(subject_id, condition, band:list, spe_indices=True):
 
     input_dir, o = get_paths()
     freq_name, _ = band
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
-                                    'conn-data', 'plv', f'sub-{subject_id}-{condition}-{freq_name}-plv-conn.npy')):
-        data = load_stc_epochs(subject_id, condition)
-        compute_ft_sw_conn(data, subject_id, condition, band)
-    plv_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
-                                'conn-data', 'plv', f'sub-{subject_id}-{condition}-{freq_name}-plv-conn.npy'))
-    pli_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
-                                'conn-data', 'pli', f'sub-{subject_id}-{condition}-{freq_name}-pli-conn.npy'))
+
+    if spe_indices:
+        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+                                        'conn-data', 'plv', f'sub-{subject_id}-{condition}-{freq_name}-plv-conn.npy')):
+            data = load_stc_epochs(subject_id, condition)
+            compute_ft_sw_conn(data, subject_id, condition, band)
+        plv_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+                                    'conn-data', 'plv', f'sub-{subject_id}-{condition}-{freq_name}-plv-conn.npy'))
+        pli_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+                                    'conn-data', 'pli', f'sub-{subject_id}-{condition}-{freq_name}-pli-conn.npy'))
+    else:
+        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+                                        'conn-data', 'plv', f'sub-{subject_id}-{condition}-global-{freq_name}-plv-conn.npy')):
+            data = load_stc_epochs(subject_id, condition)
+            compute_ft_sw_conn(data, subject_id, condition, band, spe_indices=False)
+        plv_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+                                    'conn-data', 'plv', f'sub-{subject_id}-{condition}-global-{freq_name}-plv-conn.npy'))
+        pli_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level',
+                                    'conn-data', 'pli', f'sub-{subject_id}-{condition}-global-{freq_name}-pli-conn.npy'))
     
     conn_dict = {'plv':plv_data, 'pli':pli_data}
 
@@ -344,7 +377,7 @@ def get_dynamic_src_plot_params(conn_dict):
 
     return plot_conn_dict
 
-def save_src_dc_metrics(plot_conn_dict,  subject_id, condition, band):
+def save_src_dc_metrics(plot_conn_dict,  subject_id, condition, band, spe_indices=True):
     '''Save the standard deviation and the mean of the global connectivity.
     '''
 
@@ -363,54 +396,93 @@ def save_src_dc_metrics(plot_conn_dict,  subject_id, condition, band):
         os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'metrics'))
 
     # save the metrics in a .csv file
-    with open(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'metrics',
-                            f'sub-{subject_id}-{condition}-{band[0]}-global-conn-metrics.csv'), 'w') as f:
-          f.write('metric,plv,pli\n')
-          f.write('std,%.3f,%.3f\n' % (plv_std, pli_std))
-          f.write('mean,%.3f,%.3f\n' % (plv_mean, pli_mean))
-          f.write('min,%.3f,%.3f\n' % (plv_min, pli_min))
-          f.write('max,%.3f,%.3f\n' % (plv_max, pli_max))
+    if spe_indices:
+        with open(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'metrics',
+                                f'sub-{subject_id}-{condition}-{band[0]}-global-conn-metrics.csv'), 'w') as f:
+            f.write('metric,plv,pli\n')
+            f.write('std,%.3f,%.3f\n' % (plv_std, pli_std))
+            f.write('mean,%.3f,%.3f\n' % (plv_mean, pli_mean))
+            f.write('min,%.3f,%.3f\n' % (plv_min, pli_min))
+            f.write('max,%.3f,%.3f\n' % (plv_max, pli_max))
+    else:
+        with open(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'metrics',
+                                f'sub-{subject_id}-{condition}-global-{band[0]}-global-conn-metrics.csv'), 'w') as f:
+            f.write('metric,plv,pli\n')
+            f.write('std,%.3f,%.3f\n' % (plv_std, pli_std))
+            f.write('mean,%.3f,%.3f\n' % (plv_mean, pli_mean))
+            f.write('min,%.3f,%.3f\n' % (plv_min, pli_min))
+            f.write('max,%.3f,%.3f\n' % (plv_max, pli_max))
           
-
-def plot_dynamic_src_conn(plot_conn_dict, subject_id, condition, band):
+def plot_dynamic_src_conn(plot_conn_dict, subject_id, condition, band, spe_indices=True):
         
         input_dir, _ = get_paths()
         freqs_name, _ = band
-    
-        length = plot_conn_dict['plv'][0].shape[0]
-        start = 5
-        stop = start + (length-1) * 2 + 1
-        t = np.arange(start, stop, 2)
-    
-        if condition == 'RESTINGSTATEOPEN':
-            cond_name = 'RS open'
-        elif condition == 'RESTINGSTATECLOSE':
-            cond_name = 'RS close'
-        mu = r"$\mu$"
-        sigma = r"$\sigma$"
-        fig, ax = plt.subplots(figsize=(6, 4))
-        for serie, std, mean, _, _, name in plot_conn_dict.values():
-            ax.plot(t, serie, label=f'{name}, {mu}: {mean:.3f}, {sigma}: {std:.3f}')
-            ax.fill_between(t, mean+std, mean-std, alpha=0.2)
-            ax.hlines(mean, xmin=t[0], xmax=t[-1], colors='k', linestyles='--')
-        ax.set_title(f'fronto-parietal conn - sub {subject_id} - {cond_name} - {freqs_name} band')
-        ax.set_ylabel('ft connectivity')
-        ax.set_xlabel('time (s)')
-        ax.legend()
-    
-        if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series')):
-            os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series'))
-        fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series',
-                                f'sub-{subject_id}-{condition}-{freqs_name}-ftdy-conn.png'), dpi=300)
-        plt.close()
 
-def pipeline_src(subject_id, condition, band):
+        if spe_indices:
 
-    conn_dict = load_con_values_epochs(subject_id, condition, band)
+            length = plot_conn_dict['plv'][0].shape[0]
+            start = 5
+            stop = start + (length-1) * 2 + 1
+            t = np.arange(start, stop, 2)
+        
+            if condition == 'RESTINGSTATEOPEN':
+                cond_name = 'RS open'
+            elif condition == 'RESTINGSTATECLOSE':
+                cond_name = 'RS close'
+            mu = r"$\mu$"
+            sigma = r"$\sigma$"
+            fig, ax = plt.subplots(figsize=(6, 4))
+            for serie, std, mean, _, _, name in plot_conn_dict.values():
+                ax.plot(t, serie, label=f'{name}, {mu}: {mean:.3f}, {sigma}: {std:.3f}')
+                ax.fill_between(t, mean+std, mean-std, alpha=0.2)
+                ax.hlines(mean, xmin=t[0], xmax=t[-1], colors='k', linestyles='--')
+            ax.set_title(f'fronto-parietal conn - sub {subject_id} - {cond_name} - {freqs_name} band')
+            ax.set_ylabel('ft connectivity')
+            ax.set_xlabel('time (s)')
+            ax.legend()
+        
+            if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series')):
+                os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series'))
+            fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series',
+                                    f'sub-{subject_id}-{condition}-{freqs_name}-ftdy-conn.png'), dpi=300)
+            plt.close()
+
+        else:
+
+            length = plot_conn_dict['plv'][0].shape[0]
+            start = 5
+            stop = start + (length-1) * 2 + 1
+            t = np.arange(start, stop, 2)
+        
+            if condition == 'RESTINGSTATEOPEN':
+                cond_name = 'RS open'
+            elif condition == 'RESTINGSTATECLOSE':
+                cond_name = 'RS close'
+            mu = r"$\mu$"
+            sigma = r"$\sigma$"
+            fig, ax = plt.subplots(figsize=(6, 4))
+            for serie, std, mean, _, _, name in plot_conn_dict.values():
+                ax.plot(t, serie, label=f'{name}, {mu}: {mean:.3f}, {sigma}: {std:.3f}')
+                ax.fill_between(t, mean+std, mean-std, alpha=0.2)
+                ax.hlines(mean, xmin=t[0], xmax=t[-1], colors='k', linestyles='--')
+            ax.set_title(f'global source conn - sub {subject_id} - {cond_name} - {freqs_name} band')
+            ax.set_ylabel('ft connectivity')
+            ax.set_xlabel('time (s)')
+            ax.legend()
+        
+            if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series')):
+                os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series'))
+            fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'plots', 'time-series',
+                                    f'sub-{subject_id}-{condition}-{freqs_name}-global-conn.png'), dpi=300)
+            plt.close()
+
+def pipeline_src(subject_id, condition, band, spe_indices=True):
+
+    conn_dict = load_con_values_epochs(subject_id, condition, band, spe_indices=spe_indices)
     plot_conn_dict = get_dynamic_src_plot_params(conn_dict)
-    save_src_dc_metrics(plot_conn_dict, subject_id, condition, band)
-    plot_dynamic_src_conn(plot_conn_dict, subject_id, condition, band)
+    save_src_dc_metrics(plot_conn_dict, subject_id, condition, band, spe_indices=spe_indices)
+    plot_dynamic_src_conn(plot_conn_dict, subject_id, condition, band, spe_indices=spe_indices)
 
 
 if __name__ == '__main__':
-    pipeline_src('01', 'RESTINGSTATEOPEN', ['alpha', (8, 12)])
+    pipeline_src('01', 'RESTINGSTATEOPEN', ['alpha', (8, 12)], spe_indices=False)
