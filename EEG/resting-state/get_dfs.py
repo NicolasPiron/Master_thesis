@@ -57,6 +57,56 @@ def get_conn_dataset(input_dir):
     
     return df
 
+def get_sj_global_src_conn(subject_id, input_dir):
+    conn_dfs = []
+    conditions = {'RESTINGSTATEOPEN': 'open', 'RESTINGSTATECLOSE': 'closed'}
+    freq_bands = ['theta', 'alpha', 'low_beta', 'high_beta']
+    
+    group_mapping = {id: 'pulvinar' for id in [51, 53, 59, 60]}
+    group_mapping.update({id: 'thalamus' for id in [52, 54, 55, 56, 58]})
+    subject_id_int = int(subject_id)
+    group = group_mapping.get(subject_id_int, 'old' if subject_id_int < 50 else 'young' if subject_id_int > 69 else None)
+
+    for cond, cond_name in conditions.items():
+            for freq_band in freq_bands:
+                file_path = os.path.join(input_dir, f'sub-{subject_id}', cond, 'connectivity', 'dynamic',
+                                         f'source-level', 'metrics', f'sub-{subject_id}-{cond}-global-{freq_band}-global-conn-metrics.csv')
+                try:
+                    df = pd.read_csv(file_path)
+                    df.insert(0, "ID", subject_id)
+                    df.insert(1, "group", group)
+                    df['freq'] = freq_band
+                    df['eyes'] = cond_name
+                    conn_dfs.append(df)
+                except FileNotFoundError as e:
+                    print(f'File not found: {file_path}')
+    
+    if conn_dfs:
+        df = pd.concat(conn_dfs)
+        df_melted = pd.melt(df, id_vars=['ID', 'group', 'metric', 'freq', 'eyes'],
+                            value_vars=['plv', 'pli'], var_name='conn_type', value_name='value')
+        df_pivoted = df_melted.pivot_table(index=['ID', 'group', 'freq', 'conn_type', 'eyes'],
+                                           columns='metric', values='value').reset_index()
+        df_pivoted['range'] = df_pivoted['max'] - df_pivoted['min']
+        df_pivoted.rename_axis('index', axis='columns', inplace=True)
+        return df_pivoted
+    else:
+        return pd.DataFrame()  
+
+def get_global_src_conn_dataset(input_dir):
+    df_list=[]
+    for directory in sorted(os.listdir(input_dir)):
+        if 'sub-' in directory:
+            subject_id = directory.split('-')[-1]
+            df_list.append(get_sj_global_src_conn(subject_id, input_dir))
+    
+    df = pd.concat(df_list)
+    
+    if not os.path.exists(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df')):
+        os.makedirs(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df'))
+    df.to_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df', 'all_subj_global_src_conn.csv'), index=False)
+    
+    return df
 
 def get_sj_power(subject_id, input_dir):
 
@@ -110,4 +160,5 @@ if __name__ == '__main__':
 
     i, o = get_paths()
     get_conn_dataset(i)
+    get_global_src_conn_dataset(i)
     get_power_dataset(i)
