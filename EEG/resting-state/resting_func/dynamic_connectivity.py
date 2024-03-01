@@ -484,5 +484,85 @@ def pipeline_src(subject_id, condition, band, spe_indices=True):
     plot_dynamic_src_conn(plot_conn_dict, subject_id, condition, band, spe_indices=spe_indices)
 
 
+############################################################################################################
+# Get the FP connectivity by hemisphere
+    
+def get_hemi_conn(subject_id, cond, band:list):
+    
+    input_dir, _ = get_paths()
+    band_name, _ = band
+    plv_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', cond, 'connectivity', 'dynamic', 'source-level', 'conn-data', 'plv',
+                                     f'sub-{subject_id}-{cond}-{band_name}-plv-conn.npy'))
+    pli_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', cond, 'connectivity', 'dynamic', 'source-level', 'conn-data', 'pli',
+                                        f'sub-{subject_id}-{cond}-{band_name}-pli-conn.npy'))
+    left_edge = 1
+    right_edge = 4
+    left_plv_data = plv_data[:,left_edge,:]
+    right_plv_data = plv_data[:,right_edge,:]
+    left_pli_data = pli_data[:,left_edge,:]
+    right_pli_data = pli_data[:,right_edge,:]
+
+    conn_dict = {'left_plv':left_plv_data,
+                 'right_plv':right_plv_data,
+                 'left_pli':left_pli_data,
+                 'right_pli':right_pli_data}
+
+    return conn_dict
+
+def get_dynamic_src_plot_params(conn_dict):
+
+    plot_conn_dict = {}
+
+    for name, con in conn_dict.items():
+
+        std = np.std(con)
+        mean = np.mean(con)
+        min = np.min(con)
+        max = np.max(con)
+        plot_conn_dict[name]=[con, std, mean, min, max, name]
+
+    return plot_conn_dict
+
+def save_hemi_dc_metrics(plot_conn_dict,  subject_id, condition, band):
+
+    input_dir, _ = get_paths()
+
+    left_plv_std = plot_conn_dict['left_plv'][1]
+    left_plv_mean = plot_conn_dict['left_plv'][2]
+    right_plv_std = plot_conn_dict['right_plv'][1]
+    right_plv_mean = plot_conn_dict['right_plv'][2]
+    left_pli_std = plot_conn_dict['left_pli'][1]
+    left_pli_mean = plot_conn_dict['left_pli'][2]
+    right_pli_std = plot_conn_dict['right_pli'][1]
+    right_pli_mean = plot_conn_dict['right_pli'][2]
+    left_plv_min = plot_conn_dict['left_plv'][3]
+    left_plv_max = plot_conn_dict['left_plv'][4]
+    right_plv_min = plot_conn_dict['right_plv'][3]
+    right_plv_max = plot_conn_dict['right_plv'][4]
+    left_pli_min = plot_conn_dict['left_pli'][3]
+    left_pli_max = plot_conn_dict['left_pli'][4]
+    right_pli_min = plot_conn_dict['right_pli'][3]
+    right_pli_max = plot_conn_dict['right_pli'][4]
+
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'metrics')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'metrics'))
+
+    # save the metrics in a .csv file
+    with open(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'metrics',
+                            f'sub-{subject_id}-{condition}-{band[0]}-hemi-conn-metrics.csv'), 'w') as f:
+        f.write('metric,left_plv,right_plv,left_pli,right_pli\n')
+        f.write('std,%.3f,%.3f,%.3f,%.3f\n' % (left_plv_std, right_plv_std, left_pli_std, right_pli_std))
+        f.write('mean,%.3f,%.3f,%.3f,%.3f\n' % (left_plv_mean, right_plv_mean, left_pli_mean, right_pli_mean))
+        f.write('min,%.3f,%.3f,%.3f,%.3f\n' % (left_plv_min, right_plv_min, left_pli_min, right_pli_min))
+        f.write('max,%.3f,%.3f,%.3f,%.3f\n' % (left_plv_max, right_plv_max, left_pli_max, right_pli_max))
+
+def hemi_pipeline(subject_id, condition, band):
+
+    conn_dict = get_hemi_conn(subject_id, condition, band)
+    plot_conn_dict = get_dynamic_src_plot_params(conn_dict)
+    save_hemi_dc_metrics(plot_conn_dict, subject_id, condition, band)
+
 if __name__ == '__main__':
-    pipeline_src('01', 'RESTINGSTATEOPEN', ['alpha', (8, 12)], spe_indices=False)
+
+    #pipeline_src('01', 'RESTINGSTATEOPEN', ['alpha', (8, 12)], spe_indices=False)
+    hemi_pipeline('01', 'RESTINGSTATEOPEN', ['alpha', (8, 12)])

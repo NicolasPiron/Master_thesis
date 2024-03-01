@@ -108,6 +108,66 @@ def get_global_src_conn_dataset(input_dir):
     
     return df
 
+def get_sj_hemi_src_conn(subject_id, input_dir):
+    conn_dfs = []
+    conditions = {'RESTINGSTATEOPEN': 'open', 'RESTINGSTATECLOSE': 'closed'}
+    freq_bands = ['theta', 'alpha', 'low_beta', 'high_beta']
+    
+    group_mapping = {id: 'pulvinar' for id in [51, 53, 59, 60]}
+    group_mapping.update({id: 'thalamus' for id in [52, 54, 55, 56, 58]})
+    subject_id_int = int(subject_id)
+    group = group_mapping.get(subject_id_int, 'old' if subject_id_int < 50 else 'young' if subject_id_int > 69 else None)
+
+    for cond, cond_name in conditions.items():
+        for freq_band in freq_bands:
+            file_path = os.path.join(input_dir, f'sub-{subject_id}', cond, 'connectivity', 'dynamic',
+                                         f'source-level', 'metrics', f'sub-{subject_id}-{cond}-{freq_band}-hemi-conn-metrics.csv')
+            try:
+                df = pd.read_csv(file_path)
+                df.insert(0, "ID", subject_id)
+                df.insert(1, "group", group)
+                df['freq'] = freq_band
+                df['eyes'] = cond_name
+                df_plv = df.iloc[:,:5]
+                df_plv = df_plv.rename(columns={'left_plv': 'left',
+                                       'right_plv': 'right'})
+                df_plv=pd.melt(df_plv, id_vars=['ID', 'group', 'metric'], 
+                              value_vars=['left', 'right'], var_name='side', value_name='plv')
+                df_pli = df.iloc[:,5:]
+                df_pli = df_pli.rename(columns={'left_pli': 'left',
+                                       'right_pli': 'right'})
+                df_pli=pd.melt(df_pli, id_vars=['freq', 'eyes'], 
+                              value_vars=['left', 'right'], var_name='side', value_name='pli')
+                reorg_df = pd.concat([df_plv, df_pli], axis=1)
+                reorg_df = reorg_df.loc[:,~reorg_df.columns.duplicated()].copy()
+                reorg_df = pd.melt(reorg_df, id_vars=['ID', 'group', 'metric', 'side', 'freq', 'eyes'], 
+                              value_vars=['plv', 'pli'], var_name='conn_type', value_name='value')
+                df_pivoted = reorg_df.pivot_table(index=['ID', 'group', 'side', 'freq', 'eyes', 'conn_type'],
+                                           columns='metric', values='value').reset_index()
+                conn_dfs.append(df_pivoted)
+            except FileNotFoundError as e:
+                print(f'File not found: {file_path}')
+
+    if conn_dfs:
+        return pd.concat(conn_dfs)
+    else:
+        return pd.DataFrame()
+
+def get_hemi_src_conn_dataset(input_dir):
+    df_list=[]
+    for directory in sorted(os.listdir(input_dir)):
+        if 'sub-' in directory:
+            subject_id = directory.split('-')[-1]
+            df_list.append(get_sj_hemi_src_conn(subject_id, input_dir))
+    
+    df = pd.concat(df_list)
+    
+    if not os.path.exists(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df')):
+        os.makedirs(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df'))
+    df.to_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df', 'all_subj_hemi_src_conn.csv'), index=False)
+    
+    return df
+
 def get_sj_power(subject_id, input_dir):
 
     power_dfs = []
@@ -161,4 +221,5 @@ if __name__ == '__main__':
     i, o = get_paths()
     get_conn_dataset(i)
     get_global_src_conn_dataset(i)
+    get_hemi_src_conn_dataset(i)
     get_power_dataset(i)
