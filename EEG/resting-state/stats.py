@@ -77,10 +77,70 @@ def run_nbs():
                         continue
     return None
 
+
+def run_anovas():
+    '''
+    Runs ANOVA on all groups, with different metrics, frequencies and conditions
+    '''
+
+    group_dict = {'old_control': [1, 2, 3, 4, 6, 7, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23],
+                    'young_control': [70, 71, 72, 73, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87],
+                    'thal_control': [52, 54, 55, 56, 58],
+                    'pulvinar': [51, 53, 59, 60]
+    }
+
+    freqs_dict = {'theta': np.arange(4, 9),
+                    'alpha': np.arange(8, 13),
+                    'low_beta': np.arange(12, 17),
+                    'high_beta': np.arange(16, 31),
+    }
+    thresh = 0.5
+    cond = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
+    metrics = ['plv', 'pli']
+
+    for metric in metrics:
+        for condition in cond:
+            for freq_name, freqs in freqs_dict.items():
+
+                try:
+                    print(f'Running NBS for {freqs}Hz and {condition} condition, with metric {metric}')
+                    old = {'subject_list': group_dict['old_control'],
+                                'freqs': freqs,
+                                'metric': metric,
+                                'condition': condition
+                    }
+                    young = {'subject_list': group_dict['young_control'],
+                                'freqs': freqs,
+                                'metric': metric,
+                                'condition': condition
+                    }
+                    thal = {'subject_list': group_dict['thal_control'],
+                                'freqs': freqs,
+                                'metric': metric,
+                                'condition': condition
+                    }
+                    pulv = {'subject_list': group_dict['pulvinar'],
+                                'freqs': freqs,
+                                'metric': metric,
+                                'condition': condition
+                    }
+
+                    name = f'{freq_name}-{condition}-{metric}-ANOVA'
+
+                    mat_list, y_vec = get_nbs_inputs(input_dir, old, young, thal, pulv)
+                    pvals, adj, null = nbs_bct_corr_z(mat_list, thresh=thresh, y_vec=y_vec)
+                    nbs_report(pvals, adj, null, thresh, output_dir, name)
+                except:
+                    print(f'Error with {freqs} Hz, {condition} condition, threshold {thresh}')
+                    continue
+
+
+
 if __name__ == '__main__':
     #run_nbs()
     #global_pval_df(input_dir, output_dir)
     #plot_bin_mat(input_dir)
     #create_significant_conn_mat(input_dir, output_dir)
-    plot_significant_conn_mat(input_dir, output_dir)
+    #plot_significant_conn_mat(input_dir, output_dir)
 
+    run_anovas()
