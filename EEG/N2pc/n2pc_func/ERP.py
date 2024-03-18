@@ -2143,9 +2143,10 @@ def compute_diff(subject_id, cond, input_dir, swapped=False):
     
 def get_group(subject_id):
     
-    grp_mapping = {'old':[1, 2, 3, 4, 6, 7, 12,  13, 16, 17, 18, 19, 20, 21, 22, 23],
+    grp_mapping = {'old':list(range(1, 24)),
                   'pulvinar':[51, 53, 59, 60],
-                  'thalamus':[52, 54, 55, 56, 58]}
+                  'thalamus':[52, 54, 55, 56, 58],
+                  'young':list(range(70, 88))}
     
     for group, ids in grp_mapping.items():
         if int(subject_id) in ids:
