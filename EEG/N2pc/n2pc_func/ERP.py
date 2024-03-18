@@ -2117,4 +2117,77 @@ def P1_amp_around_peak_per_epoch_all_subj(input_dir, output_dir):
         os.makedirs(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-values', 'p1-values-around-peak'))
     df.to_csv(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-values', 'p1-values-around-peak', 'all_subjects_P1_amplitude_around_peak.csv'))
 
- 
+
+############################################
+# Functions to get a long format df for seaborn
+
+def compute_diff(subject_id, cond, input_dir, swapped=False):
+    
+    if swapped:
+        evk_dir = 'swapped'
+    else:
+        evk_dir = 'combined'
+    
+    path = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc',
+                        'evoked-N2pc', evk_dir, f'sub-{subject_id}-{cond}-ave.fif' )
+    evoked = mne.read_evokeds(path, verbose=False)
+    evoked = evoked[0]
+    po7 = evoked.get_data(picks='PO7')
+    po7 = po7.reshape(po7.shape[1])
+    po8 = evoked.get_data(picks='PO8')
+    po8 = po8.reshape(po8.shape[1])
+    diff = po7 - po8
+    t = evoked.times
+    
+    return diff, t
+    
+def get_group(subject_id):
+    
+    grp_mapping = {'old':[1, 2, 3, 4, 6, 7, 12,  13, 16, 17, 18, 19, 20, 21, 22, 23],
+                  'pulvinar':[51, 53, 59, 60],
+                  'thalamus':[52, 54, 55, 56, 58]}
+    
+    for group, ids in grp_mapping.items():
+        if int(subject_id) in ids:
+            return group
+    
+def create_long_n2pc_df_subj(subject_id, cond, input_dir, swapped=False):
+    
+    diff, t = compute_diff(subject_id, cond, input_dir, swapped=swapped)
+    s_id = [subject_id]*len(t)
+    grp = [get_group(subject_id)]*len(t)
+    cond = [cond]*len(t)
+    data = {'time':t,
+            'signal':diff,
+            'ID':s_id,
+            'group':grp,
+            'condition':cond
+           }
+    df = pd.DataFrame(data)
+    
+    return df
+    
+def create_long_n2pc_df(subjects, input_dir):
+    
+    df_list = list()
+    conds = ['dis_mid', 'no_dis', 'dis_contra']
+    right_lesion_patients = [51, 53, 54, 58, 59]
+        
+    for subject_id in subjects:
+        try:
+            if int(subject_id) in right_lesion_patients:
+                for cond in conds:
+                    df = create_long_n2pc_df_subj(subject_id, cond, input_dir, swapped=True)
+                    df_list.append(df)
+            else:
+                for cond in conds:
+                    df = create_long_n2pc_df_subj(subject_id, cond, input_dir, swapped=False)
+                    df_list.append(df)
+        except:
+            print(f'No data for subject {subject_id}')
+            continue
+           
+    full_df = pd.concat(df_list, axis=0)
+    if not os.path.exists(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'long_format_n2pc')):
+        os.makedirs(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'long_format_n2pc'))
+    full_df.to_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'long_format_n2pc', 'long_format_n2pc.csv'))
