@@ -226,6 +226,60 @@ def get_evoked(subject_id, input_dir):
 
     return bin_evoked
 
+def get_swapped_evoked_patient(subject_id, input_dir):
+    ''' This function swaps the right and left conditions for the patients that have a lesion on the right side.
+        It is used to have the same lateralization for all the patients.
+        The only diff with get_evoked is that it inverts the names of the conditions and the comments of the evoked objects.
+    '''
+
+    subject_id = str(subject_id)
+    evoked_path = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', f'evoked-N2pc')
+    evoked_files = glob.glob(os.path.join(evoked_path, f'sub-{subject_id}-*.fif'))
+    # Load the evoked files
+    evoked_list = [mne.read_evokeds(evoked_file)[0] for evoked_file in evoked_files]
+    bin_dict = {'bin1' : 'dis_mid_target_l',
+            'bin2' : 'dis_mid_target_r',
+            'bin3' : 'no_dis_target_l',
+            'bin4' : 'no_dis_target_r',
+            'bin5' : 'dis_right_target_l',
+            'bin6' : 'dis_left_target_r',
+            'bin7' : 'target_l',
+            'bin8' : 'target_r'}
+
+    # mapping of the conditions to swap
+    swapped_dict = {'dis_mid_target_l' : 'dis_mid_target_r',
+            'dis_mid_target_r' : 'dis_mid_target_l',
+            'no_dis_target_l' : 'no_dis_target_r',
+            'no_dis_target_r' : 'no_dis_target_l',
+            'dis_right_target_l' : 'dis_left_target_r',
+            'dis_left_target_r' : 'dis_right_target_l',
+            'target_l' : 'target_r',
+            'target_r' : 'target_l'}
+
+    # Assign the evoked object that corresponds to the bin
+    swapped_bin_evoked = {}
+
+    # start by inverting the side of the comment
+    for original_comment, new_comment in swapped_dict.items():
+        for evoked in evoked_list:
+            if evoked.comment == original_comment:
+                evoked.comment = new_comment
+                break 
+                
+    # then do as in get_evoked()            
+    for bin_name, comment in bin_dict.items():
+        for evoked in evoked_list:
+            if evoked.comment == comment:
+                swapped_bin_evoked[bin_name] = evoked
+                break 
+
+    # Rename the keys of the dict
+    prefix = 'evk_'
+    # Create a new dictionary with modified keys
+    swapped_bin_evoked = {prefix + key: value for key, value in swapped_bin_evoked.items()}
+
+    return swapped_bin_evoked
+
 def combine_evoked_single_subj(subject_id, input_dir, output_dir):  
         # load the evoked files
         bin_evoked = get_evoked(subject_id, input_dir)
@@ -266,6 +320,47 @@ def combine_evoked_single_subj(subject_id, input_dir, output_dir):
             if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', f'evoked-N2pc', 'combined')):
                 os.makedirs(os.path.join(output_dir ,f'sub-{subject_id}', 'N2pc', f'evoked-N2pc', 'combined'))
             combined_pair.save(os.path.join(output_dir, f'sub-{subject_id}','N2pc', f'evoked-N2pc', 'combined', f'sub-{subject_id}-{pair_names[i]}-ave.fif'), overwrite=True)
+
+def combine_swapped_evoked_patient(subject_id, input_dir, output_dir):
+
+    bin_evoked = get_swapped_evoked_patient(subject_id, input_dir)
+
+    print(bin_evoked)
+
+    # create to list of evoked objects for each condition
+    dis_mid = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin1', 'evk_bin2']]
+    no_dis = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin3', 'evk_bin4']]
+    dis_contra = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin5', 'evk_bin6']]
+
+    # find right and left channels
+    ch_names = list(bin_evoked.values())[0].info['ch_names']
+    LCh = []
+    RCh = []
+    for i, ch in enumerate(ch_names):
+        if str(ch[-1]) == 'z':
+            print(f'central channel {ch} -> not included in lateral channels list')
+        elif int(ch[-1]) % 2 == 0:
+            RCh.append(i)
+        elif int(ch[-1]) %2 != 2:
+            LCh.append(i) 
+
+    # combine the evoked objects
+    pairs = [dis_mid, no_dis, dis_contra]
+    pair_names = ['dis_mid', 'no_dis', 'dis_contra']
+    for i, pair in enumerate(pairs):
+        # the right target evoked object will be laterally swapped so it is like the target is on the left
+        to_swap = pair[1]
+        data = to_swap.get_data()
+        swapped_data = data.copy()
+        swapped_data[RCh] = data[LCh]
+        swapped_data[LCh] = data[RCh]
+        swapped = mne.EvokedArray(swapped_data, to_swap.info)
+        combined_pair = mne.combine_evoked([pair[0], swapped], weights='equal')
+        combined_pair.comment = pair_names[i]
+        # save the combined evoked object
+        if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', f'evoked-N2pc', 'swapped')):
+            os.makedirs(os.path.join(output_dir ,f'sub-{subject_id}', 'N2pc', f'evoked-N2pc', 'swapped'))
+        combined_pair.save(os.path.join(output_dir, f'sub-{subject_id}','N2pc', f'evoked-N2pc', 'swapped', f'sub-{subject_id}-{pair_names[i]}-ave.fif'), overwrite=True)
 
 def combine_evoked_population(input_dir, output_dir, subject_list, population):
     '''
