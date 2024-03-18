@@ -2145,7 +2145,7 @@ def get_group(subject_id):
     
     grp_mapping = {'old':list(range(1, 24)),
                   'pulvinar':[51, 53, 59, 60],
-                  'thalamus':[52, 54, 55, 56, 58],
+                  'thalamus':[52, 54, 55, 56, 57, 58],
                   'young':list(range(70, 88))}
     
     for group, ids in grp_mapping.items():
