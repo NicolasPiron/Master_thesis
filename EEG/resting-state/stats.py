@@ -84,7 +84,6 @@ def run_anovas():
     '''
 
     group_dict = {'old_control': [1, 2, 3, 4, 6, 7, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23],
-                    'young_control': [70, 71, 72, 73, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87],
                     'thal_control': [52, 54, 55, 56, 58],
                     'pulvinar': [51, 53, 59, 60]
     }
@@ -109,11 +108,6 @@ def run_anovas():
                                 'metric': metric,
                                 'condition': condition
                     }
-                    young = {'subject_list': group_dict['young_control'],
-                                'freqs': freqs,
-                                'metric': metric,
-                                'condition': condition
-                    }
                     thal = {'subject_list': group_dict['thal_control'],
                                 'freqs': freqs,
                                 'metric': metric,
@@ -127,7 +121,7 @@ def run_anovas():
 
                     name = f'{freq_name}-{condition}-{metric}-ANOVA'
 
-                    mat_list, y_vec = get_nbs_inputs(input_dir, old, young, thal, pulv)
+                    mat_list, y_vec = get_nbs_inputs(input_dir, old, thal, pulv)
                     pvals, adj, null = nbs_bct_corr_z(mat_list, thresh=thresh, y_vec=y_vec)
                     nbs_report(pvals, adj, null, thresh, output_dir, name)
                 except:
