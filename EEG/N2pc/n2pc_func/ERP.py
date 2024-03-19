@@ -2136,7 +2136,7 @@ def compute_diff(subject_id, cond, input_dir, swapped=False):
     po7 = po7.reshape(po7.shape[1])
     po8 = evoked.get_data(picks='PO8')
     po8 = po8.reshape(po8.shape[1])
-    diff = po7 - po8
+    diff = po8 - po7
     t = evoked.times
     
     return diff, t
