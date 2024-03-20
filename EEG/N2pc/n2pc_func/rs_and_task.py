@@ -56,7 +56,7 @@ def create_rows_from_dict(data_dict, condition):
 def add_rs_data(df, rs_open_data, rs_closed_data):
 
     rs_open_rows = create_rows_from_dict(rs_open_data, 'RS_open')
-    rs_close_rows = create_rows_from_dict(rs_closed_data, 'RS_close')
+    rs_close_rows = create_rows_from_dict(rs_closed_data, 'RS_closed')
     new_rows_df = pd.DataFrame(rs_open_rows + rs_close_rows)
     extended_df = pd.concat([df, new_rows_df], ignore_index=True)
     
