@@ -81,9 +81,10 @@ def run_pairwise_nbs():
                     'pulvinar': [51, 53, 59, 60]}
     
     pairs = list(combinations(group_dict.keys(), 2))
-    freqs_dict = {'alpha': np.arange(8, 13),
+    freqs_dict = {'theta': np.arange(4, 9),
+                  'low_beta': np.arange(12, 17),
     }
-    condition_list = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
+    condition_list = ['RESTINGSTATECLOSE']
     metrics=['pli']
     metric=metrics[0]
 
