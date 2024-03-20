@@ -2,9 +2,6 @@ from resting_func.conn_stats import get_nbs_inputs, nbs_bct_corr_z, nbs_report, 
 from resting_func.static_connectivity import create_significant_conn_mat, plot_significant_conn_mat
 from resting_func.set_paths import get_paths
 import numpy as np
-import pandas as pd
-import os
-import glob
 from itertools import combinations
 
 input_dir, output_dir = get_paths()
@@ -77,6 +74,67 @@ def run_nbs():
                         continue
     return None
 
+def run_pairwise_nbs():
+
+    group_dict = {'old_control': [1, 2, 3, 4, 6, 7, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23],
+                    'thal_control': [52, 54, 55, 56, 58],
+                    'pulvinar': [51, 53, 59, 60]}
+    
+    pairs = list(combinations(group_dict.keys(), 2))
+    freqs_dict = {'theta': np.arange(4, 9),
+                    'alpha': np.arange(8, 13),
+                    'low_beta': np.arange(12, 17),
+    }
+    condition_list = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
+    metrics=['plv']
+    metric=metrics[0]
+
+    for pair in pairs:
+        for i, freqs in enumerate(freqs_dict.values()):
+            for condition in condition_list:
+                
+                try:
+                    list_1 = group_dict[pair[0]]
+                    list_2 = group_dict[pair[1]]
+
+                    pop_dict1 = {'subject_list': list_1,
+                                    'freqs': freqs,
+                                    'metric': metric,
+                                    'condition': condition
+                    }
+
+                    pop_dict2 = {'subject_list': list_2,
+                                    'freqs': freqs,
+                                    'metric': metric,
+                                    'condition': condition
+                    }
+
+
+                    mat_list, y_vec = get_nbs_inputs(input_dir, pop_dict1, pop_dict2)
+
+                    # Run NBS
+                    print(f'Running NBS for {pair[0]} vs {pair[1]} for {freqs} Hz, {condition} condition - metric {metric}')
+                    pvals, adj, null = nbs_bct_corr_z(mat_list, thresh=0.5, y_vec=y_vec)
+
+                    # Save report
+                    def get_prefix(string):
+                        return string.split('_')[0]
+                    prefix1 = get_prefix(pair[0])
+                    prefix2 = get_prefix(pair[1])
+                    freq_string = list(freqs_dict.keys())[i]
+
+                    if condition == 'RESTINGSTATEOPEN':
+                        name1 = f'{prefix1}-{freq_string}-{metric}-open'
+                        name2 = f'{prefix2}-{freq_string}-{metric}-open'
+                    elif condition == 'RESTINGSTATECLOSE':
+                        name1 = f'{prefix1}-{freq_string}-{metric}-closed'
+                        name2 = f'{prefix2}-{freq_string}-{metric}-closed'
+                    nbs_report(pvals, adj, null, 0.5, output_dir, name1, name2)
+                except:
+                    print(f'Error with {pair[0]} vs {pair[1]} for {freqs} Hz, {condition} condition, - metric {metric}')
+                    continue
+
+    return None
 
 def run_anovas():
     '''
@@ -91,11 +149,10 @@ def run_anovas():
     freqs_dict = {'theta': np.arange(4, 9),
                     'alpha': np.arange(8, 13),
                     'low_beta': np.arange(12, 17),
-                    'high_beta': np.arange(16, 31),
     }
-    thresh = 0.5
+    thresh = 0.7
     cond = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
-    metrics = ['plv', 'pli']
+    metrics = ['pli']
 
     for metric in metrics:
         for condition in cond:
@@ -119,7 +176,7 @@ def run_anovas():
                                 'condition': condition
                     }
 
-                    name = f'{freq_name}-{condition}-{metric}-ANOVA'
+                    name = f'{freq_name}-{condition}-{metric}-{thresh}-ANOVA'
 
                     mat_list, y_vec = get_nbs_inputs(input_dir, old, thal, pulv)
                     pvals, adj, null = nbs_bct_corr_z(mat_list, thresh=thresh, y_vec=y_vec)
