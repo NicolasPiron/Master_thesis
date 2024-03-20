@@ -81,12 +81,10 @@ def run_pairwise_nbs():
                     'pulvinar': [51, 53, 59, 60]}
     
     pairs = list(combinations(group_dict.keys(), 2))
-    freqs_dict = {'theta': np.arange(4, 9),
-                    'alpha': np.arange(8, 13),
-                    'low_beta': np.arange(12, 17),
+    freqs_dict = {'alpha': np.arange(8, 13),
     }
     condition_list = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
-    metrics=['plv']
+    metrics=['pli']
     metric=metrics[0]
 
     for pair in pairs:
@@ -114,7 +112,7 @@ def run_pairwise_nbs():
 
                     # Run NBS
                     print(f'Running NBS for {pair[0]} vs {pair[1]} for {freqs} Hz, {condition} condition - metric {metric}')
-                    pvals, adj, null = nbs_bct_corr_z(mat_list, thresh=0.5, y_vec=y_vec)
+                    pvals, adj, null = nbs_bct_corr_z(mat_list, thresh=0.7, y_vec=y_vec)
 
                     # Save report
                     def get_prefix(string):
@@ -129,7 +127,7 @@ def run_pairwise_nbs():
                     elif condition == 'RESTINGSTATECLOSE':
                         name1 = f'{prefix1}-{freq_string}-{metric}-closed'
                         name2 = f'{prefix2}-{freq_string}-{metric}-closed'
-                    nbs_report(pvals, adj, null, 0.5, output_dir, name1, name2)
+                    nbs_report(pvals, adj, null, 0.7, output_dir, name1, name2)
                 except:
                     print(f'Error with {pair[0]} vs {pair[1]} for {freqs} Hz, {condition} condition, - metric {metric}')
                     continue
@@ -176,7 +174,7 @@ def run_anovas():
                                 'condition': condition
                     }
 
-                    name = f'{freq_name}-{condition}-{metric}-{thresh}-ANOVA'
+                    name = f'{freq_name}-{condition}-{metric}-ANOVA'
 
                     mat_list, y_vec = get_nbs_inputs(input_dir, old, thal, pulv)
                     pvals, adj, null = nbs_bct_corr_z(mat_list, thresh=thresh, y_vec=y_vec)
@@ -194,4 +192,5 @@ if __name__ == '__main__':
     #create_significant_conn_mat(input_dir, output_dir)
     #plot_significant_conn_mat(input_dir, output_dir)
 
-    run_anovas()
+    #run_anovas()
+    run_pairwise_nbs()
