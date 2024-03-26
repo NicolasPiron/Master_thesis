@@ -617,7 +617,6 @@ def invert_left_right(src_data):
 
     return ordered_src_data
 
-
 def create_conn_matrix_subject_src(subject_id, condition, metric, freqs, input_dir, invert_sides=False):
 
     # Load source data
@@ -647,12 +646,6 @@ def save_conn_matrix_src(subject_id, condition, metric, freqs, input_dir, conn_2
     df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{condition}.csv'))
     print(f'===== Connectivity matrix saved for subject {subject_id} - {condition} =====')
 
-def get_conn_src(subject_id, condition, metric, freqs, input_dir):
-
-    conn_2D = create_conn_matrix_subject_src(subject_id, condition, metric, freqs, input_dir)
-    save_conn_matrix_src(subject_id, condition, metric, freqs, input_dir, conn_2D)
-
-    return conn_2D
 
 def plot_mat_src(subject_id, condition, metric, freqs, input_dir):
 
@@ -666,7 +659,10 @@ def plot_mat_src(subject_id, condition, metric, freqs, input_dir):
     fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level', 'figs', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{condition}.png'))
     print(f'===== Connectivity plot saved for subject {subject_id} - {condition} =====')
 
-if __name__ == '__main__':
+def get_conn_src(subject_id, condition, metric, freqs, input_dir, invert_sides=False):
 
-    get_conn_src('01', 'RESTINGSTATEOPEN', 'ciplv', [8, 12], '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc')
-    plot_mat_src('01', 'RESTINGSTATEOPEN', 'ciplv', [8, 12], '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc')
+    conn_2D = create_conn_matrix_subject_src(subject_id, condition, metric, freqs, input_dir, invert_sides=invert_sides)
+    save_conn_matrix_src(subject_id, condition, metric, freqs, input_dir, conn_2D)
+    plot_mat_src(subject_id, condition, metric, freqs, input_dir)
+
+    return None 
