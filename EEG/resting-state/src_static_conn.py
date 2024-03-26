@@ -13,10 +13,14 @@ for subject_id in subject_list:
     subject_id = str(subject_id)
     for condition in ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']:
         for freq in freqs:
-            if subject_id in right_lesion:
-                static_connectivity.get_conn_src(subject_id, condition, metric=metric,
-                                                  freqs=freq, input_dir=input_dir, invert_sides=True)
-            else:
-                static_connectivity.get_conn_src(subject_id, condition, metric=metric,
-                                                  freqs=freq, input_dir=input_dir, invert_sides=False)
+            try:
+                if subject_id in right_lesion:
+                    static_connectivity.get_conn_src(subject_id, condition, metric=metric,
+                                                    freqs=freq, input_dir=input_dir, invert_sides=True)
+                else:
+                    static_connectivity.get_conn_src(subject_id, condition, metric=metric,
+                                                    freqs=freq, input_dir=input_dir, invert_sides=False)
+            except:
+                print(f'Error in {subject_id} - {condition} - {freq}')
+                continue
 

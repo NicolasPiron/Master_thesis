@@ -108,7 +108,7 @@ def plot_conn_circle(conn_matrix, population, metric, freqs, condition):
 
     return fig
 
-def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir):
+def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir, invert_sides=False):
     ''' 
     Create connectivity matrix for a single subject, for a single metric and frequency band. 
     Plot the connectivity matrix and save it as 2 png files (circle and matrix). Save the connectivity matrix as a csv file.
@@ -135,8 +135,13 @@ def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir)
     '''
 
     # Load resting state data (eyes open and eyes closed)
-    rs_open_epochs_path = os.path.join(input_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-RESTINGSTATEOPEN.fif')
-    rs_closed_epochs_path = os.path.join(input_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-RESTINGSTATECLOSE.fif')
+    if invert_sides:
+        epo_dir = 'inverted_epochs'
+    else:
+        epo_dir = 'cleaned_epochs'
+
+    rs_open_epochs_path = os.path.join(input_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', epo_dir, f'sub-{subject_id}-cleaned_epochs-RESTINGSTATEOPEN.fif')
+    rs_closed_epochs_path = os.path.join(input_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', epo_dir, f'sub-{subject_id}-cleaned_epochs-RESTINGSTATECLOSE.fif')
 
     try:
         rs_open_epochs = mne.read_epochs(rs_open_epochs_path)
@@ -661,8 +666,10 @@ def plot_mat_src(subject_id, condition, metric, freqs, input_dir):
 
 def get_conn_src(subject_id, condition, metric, freqs, input_dir, invert_sides=False):
 
-    conn_2D = create_conn_matrix_subject_src(subject_id, condition, metric, freqs, input_dir, invert_sides=invert_sides)
-    save_conn_matrix_src(subject_id, condition, metric, freqs, input_dir, conn_2D)
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level',
+                                        'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{condition}.csv')):
+        conn_2D = create_conn_matrix_subject_src(subject_id, condition, metric, freqs, input_dir, invert_sides=invert_sides)
+        save_conn_matrix_src(subject_id, condition, metric, freqs, input_dir, conn_2D)
     plot_mat_src(subject_id, condition, metric, freqs, input_dir)
 
     return None 
