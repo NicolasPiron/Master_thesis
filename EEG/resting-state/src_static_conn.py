@@ -1,13 +1,14 @@
 import resting_func.static_connectivity as static_connectivity
 from resting_func.set_paths import get_paths
 from resting_func.set_subject_lists import get_subject_list
+import numpy as np
 
 input_dir, output_dir = get_paths()
 subject_list = get_subject_list()
 
 right_lesion = [51, 53, 54, 58, 59]
 metric = 'ciplv'
-freqs = [(4, 8), (8, 12), (12, 16), (16, 30)]
+freqs = [np.arange(4,9), np.arange(8, 13), np.arange(12, 17), np.arange(16, 31)]
 
 for subject_id in subject_list:
     subject_id = str(subject_id)
