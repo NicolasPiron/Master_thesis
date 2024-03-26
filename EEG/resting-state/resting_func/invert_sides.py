@@ -33,4 +33,4 @@ def invert_sides(subject_id, condition, input_dir):
     if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'inverted_epochs')):
         os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'inverted_epochs'))
     inverted_epochs.save(os.path.join(input_dir, f'sub-{subject_id}', condition,
-                                         'inverted_epochs', f'sub-{subject_id}_cleaned_epochs-{condition}.fif'))
+                                         'inverted_epochs', f'sub-{subject_id}-cleaned_epochs-{condition}.fif'), overwrite=True)
