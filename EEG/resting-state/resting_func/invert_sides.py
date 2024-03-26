@@ -4,7 +4,7 @@ import os
 
 def invert_sides(subject_id, condition, input_dir):
 
-    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', condition,
+    epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'cleaned_epochs',
                                          f'sub-{subject_id}-cleaned_epochs-{condition}.fif'))
     epochs.info['bads'] = []
     data = epochs.get_data()
