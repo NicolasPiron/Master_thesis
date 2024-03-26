@@ -1,6 +1,7 @@
 import os
 import re
 import mne
+from mne.datasets import fetch_fsaverage
 from mne_connectivity import spectral_connectivity_time
 from mne_connectivity.viz import plot_connectivity_circle
 from mne.viz import circular_layout
@@ -9,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from colour import Color
 
-def plot_conn_matrix(conn_matrix, population, metric, freqs, condition):
+def plot_conn_matrix(conn_matrix, population, metric, freqs, condition, vmax):
     '''
     Plot connectivity matrix for a single population, metric, frequency band and condition.
     Only to plot poplutation average connectivity matrix.
@@ -42,8 +43,9 @@ def plot_conn_matrix(conn_matrix, population, metric, freqs, condition):
     ax.set_yticks(np.arange(len(chan_names)))
     ax.set_xticklabels(chan_names, rotation=90, fontsize=8)
     ax.set_yticklabels(chan_names, fontsize=8)
-    im0 = ax.imshow(conn_matrix, vmin=0, vmax=1)
-    fig.colorbar(im0,shrink=0.81)
+    im0 = ax.imshow(conn_matrix, vmin=0, vmax=vmax)
+    fig.colorbar(im0,shrink=0.73)
+    plt.tight_layout()
 
     return fig
     
@@ -575,3 +577,96 @@ def plot_significant_conn_mat(input_dir, output_dir):
         except:
             print(f'Error with {dir}')
             continue
+
+############################################################################################################
+# full matrix source-level
+        
+
+def load_src_data(subject_id, condition, input_dir):
+
+    try:
+        src = np.load(os.path.join(input_dir, f'sub-{subject_id}', condition,
+                                    'stc_epochs', f'sub-{subject_id}-{condition}-stc_epochs.npy'))
+        print(f'Source data loaded for subject {subject_id} - {condition}')
+        return src
+    except:
+        print(f'Error loading source data for subject {subject_id} - {condition}')
+        return None
+    
+
+def get_label_names():
+    subjects_dir = fetch_fsaverage()
+    labels = mne.read_labels_from_annot('', parc='aparc', subjects_dir=subjects_dir)
+    labels = [label for label in labels if 'unknown' not in label.name]
+    label_names = [label.name for label in labels]
+    return label_names
+    
+def invert_left_right(src_data):
+
+    label_names = get_label_names()
+    left_idx = [label_names.index(label) for label in label_names if '-lh' in label]
+    right_idx = [label_names.index(label) for label in label_names if '-rh' in label]
+    
+    left_side = src_data[:,left_idx,:]
+    right_side = src_data[:,right_idx,:]
+
+    ordered_src_data = np.zeros(src_data.shape)
+    
+    ordered_src_data[:,left_idx,:] = right_side
+    ordered_src_data[:,right_idx,:] = left_side
+
+    return ordered_src_data
+
+
+def create_conn_matrix_subject_src(subject_id, condition, metric, freqs, input_dir, invert_sides=False):
+
+    # Load source data
+    src = load_src_data(subject_id, condition, input_dir)
+    if invert_sides:
+        src = invert_left_right(src)
+
+    # Create connectivity matrix
+    conn_2D = spectral_connectivity_time(src, freqs=freqs, method=metric, sfreq=512, fmin=freqs[0], fmax=freqs[-1],
+                                          average=True, faverage=True, mode='multitaper').get_data().reshape(68, 68)
+    print(f'===== Connectivity matrix created for subject {subject_id} - {condition} =====')
+
+    return conn_2D
+
+def save_conn_matrix_src(subject_id, condition, metric, freqs, input_dir, conn_2D, invert_sides=False):
+
+    # Save connectivity matrix as csv
+
+    label_names =  get_label_names()
+    if invert_sides:
+        label_names = [label.replace('-lh', '-rh') if '-lh' in label else label.replace('-rh', '-lh') for label in label_names]
+
+    df = pd.DataFrame(conn_2D, columns=label_names, index=label_names)
+
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level', 'conn_data')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level', 'conn_data'))
+    df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{condition}.csv'))
+    print(f'===== Connectivity matrix saved for subject {subject_id} - {condition} =====')
+
+def get_conn_src(subject_id, condition, metric, freqs, input_dir):
+
+    conn_2D = create_conn_matrix_subject_src(subject_id, condition, metric, freqs, input_dir)
+    save_conn_matrix_src(subject_id, condition, metric, freqs, input_dir, conn_2D)
+
+    return conn_2D
+
+def plot_mat_src(subject_id, condition, metric, freqs, input_dir):
+
+    df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{condition}.csv'), index_col=0)
+
+    fig = plot_conn_matrix(df, f'sub-{subject_id}', metric, freqs, condition, vmax=0.25)
+    plt.close()
+
+    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level', 'figs')):
+        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level', 'figs'))
+    fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level', 'figs', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{condition}.png'))
+    print(f'===== Connectivity plot saved for subject {subject_id} - {condition} =====')
+
+if __name__ == '__main__':
+
+    get_conn_src('01', 'RESTINGSTATEOPEN', 'ciplv', [8, 12], '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc')
+    plot_mat_src('01', 'RESTINGSTATEOPEN', 'ciplv', [8, 12], '/Users/nicolaspiron/Documents/PULSATION/Python_MNE/output_preproc')
