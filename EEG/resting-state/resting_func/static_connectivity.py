@@ -600,7 +600,14 @@ def load_src_data(subject_id, condition, input_dir):
     
 
 def get_label_names():
-    subjects_dir = fetch_fsaverage()
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if 'nicolaspiron/Documents' in script_dir:
+        subjects_dir = fetch_fsaverage(verbose=True)
+    elif 'shared_PULSATION' in script_dir:
+        subjects_dir = '/home/nicolasp/shared_PULSATION/MNE-fsaverage-data/fsaverage'
+    else:
+        raise Exception('Please specify the path to the fsaverage directory in the create_stc_epochs function.')
     labels = mne.read_labels_from_annot('', parc='aparc', subjects_dir=subjects_dir)
     labels = [label for label in labels if 'unknown' not in label.name]
     label_names = [label.name for label in labels]
