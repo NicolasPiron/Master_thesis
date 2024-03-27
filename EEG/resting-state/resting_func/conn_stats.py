@@ -364,11 +364,11 @@ def nbs_report(pvals, adj, null, thresh, output_dir, *names):
     adj_df = adj_df.applymap(lambda x: 1 if x > 1 else x)
 
     # Save the dataframes
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str)):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str))
-    pvals_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str, 'pvals.csv'))
-    null_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str, 'null.csv'))
-    adj_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', names_str, 'adj.csv'))
+    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str)):
+        os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str))
+    pvals_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str, 'pvals.csv'))
+    null_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str, 'null.csv'))
+    adj_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str, 'adj.csv'))
 
 def global_pval_df(input_dir, output_dir):
 

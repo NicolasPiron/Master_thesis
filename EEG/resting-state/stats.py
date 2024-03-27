@@ -151,7 +151,7 @@ def run_anovas():
     }
     thresh = 0.7
     cond = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
-    metrics = ['pli']
+    metrics = ['ciplv']
 
     for metric in metrics:
         for condition in cond:
@@ -193,5 +193,5 @@ if __name__ == '__main__':
     #create_significant_conn_mat(input_dir, output_dir)
     #plot_significant_conn_mat(input_dir, output_dir)
 
-    #run_anovas()
-    run_pairwise_nbs()
+    run_anovas()
+    #run_pairwise_nbs()
