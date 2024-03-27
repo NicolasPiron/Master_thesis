@@ -30,12 +30,12 @@ def create_stc_epochs(subject_id):
     else:
         raise Exception('Please specify the path to the fsaverage directory in the create_stc_epochs function.')
     
-    for condition in ['RESTINGSTATECLOSE', 'RESTINGSTATEOPEN']: 
+    for condition in ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']: 
 
         print(f'========== WORKING ON {condition} - {subject_id}')
 
         epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', condition,
-                                              'preprocessing', 'additional', '07-epochs-10s', f'sub-{subject_id}-{condition}-10s-epo.fif'))
+                                            'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-{condition}.fif'))
         info = epochs.info
         info['bads'] = []
 
@@ -103,7 +103,7 @@ def compute_source_psd_rs(subject_id, condition):
     print(f'========== WORKING ON {condition} - {subject_id}')
 
     epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', condition,
-                                            'preprocessing', 'additional', '07-epochs-10s', f'sub-{subject_id}-{condition}-10s-epo.fif'))
+                                            'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-{condition}.fif'))
     info = epochs.info
     info['bads'] = []
 
