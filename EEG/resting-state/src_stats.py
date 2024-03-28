@@ -128,6 +128,6 @@ def run_anovas():
 
 if __name__ == '__main__':
 
-    run_anovas()
-    #global_pval_df(input_dir, output_dir, source=True)
-    #run_pairwise_nbs()
+    #run_anovas()
+    global_pval_df(input_dir, output_dir, source=True)
+    run_pairwise_nbs()

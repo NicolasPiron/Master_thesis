@@ -191,10 +191,11 @@ def run_anovas():
 
 if __name__ == '__main__':
     #run_nbs()
-    #global_pval_df(input_dir, output_dir)
     #plot_bin_mat(input_dir)
     #create_significant_conn_mat(input_dir, output_dir)
     #plot_significant_conn_mat(input_dir, output_dir)
 
-    run_anovas()
-    run_pairwise_nbs()
+    #run_anovas()
+    #run_pairwise_nbs()
+
+    global_pval_df(input_dir, output_dir, source=False)
