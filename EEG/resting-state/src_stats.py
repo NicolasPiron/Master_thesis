@@ -68,10 +68,10 @@ def run_pairwise_nbs():
 
     return None
 
-# {'theta': np.arange(4, 9),
-#                     'alpha': np.arange(8, 13),
-#                     'low_beta': np.arange(12, 17),
-#     }
+{'theta': np.arange(4, 9),
+                    'alpha': np.arange(8, 13),
+                    'low_beta': np.arange(12, 17),
+    }
 
 def run_anovas():
     '''
@@ -119,6 +119,7 @@ def run_anovas():
 
                     mat_list, y_vec = get_nbs_inputs(input_dir, old, thal, pulv)
                     pvals, adj, null = nbs_bct_corr_z(mat_list, thresh=thresh, y_vec=y_vec)
+                    print('all good until here')
                     nbs_report(pvals, adj, null, thresh, output_dir, name, source=True)
                 except:
                     print(f'Error with {freqs} Hz, {condition} condition, threshold {thresh}')
@@ -128,6 +129,6 @@ def run_anovas():
 
 if __name__ == '__main__':
 
-    #run_anovas()
-    global_pval_df(input_dir, output_dir, source=True)
+    run_anovas()
     run_pairwise_nbs()
+    global_pval_df(input_dir, output_dir, source=True)

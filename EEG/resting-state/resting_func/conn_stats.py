@@ -273,7 +273,7 @@ def get_nbs_inputs(input_dir, *population_dicts, source=False):
             elif condition == 'RESTINGSTATECLOSE':
                 cnd_abrv = 'closed'
             if source:
-                df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level'
+                df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level',
                                                'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{condition}.csv'), index_col=0)
             else:
                 df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{cnd_abrv}.csv'), index_col=0)
