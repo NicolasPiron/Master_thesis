@@ -239,7 +239,7 @@ def nbs_bct_corr_z(corr_arr, thresh, y_vec, k=1000, extent=True, verbose=False):
     return pvals, adj, null
 
 
-def get_nbs_inputs(input_dir, *population_dicts):
+def get_nbs_inputs(input_dir, *population_dicts, source=False):
     ''' Gets you the matrices and the y_vec in the right format for the NBS function.
 
     Parameters
@@ -260,7 +260,7 @@ def get_nbs_inputs(input_dir, *population_dicts):
     group_vec : np.ndarray
         vector with the group of each subject (0 = 1st group, 1 = 2nd group, etc)
     '''
-    def get_subjects_df_list(subject_list, metric, freqs, condition, input_dir):
+    def get_subjects_df_list(subject_list, metric, freqs, condition, input_dir, source=source):
         '''
         Create a list with the matrix (df) of each subject. Transform each matrix to fill the upper triangle with the lower triangle values.
         '''
@@ -272,7 +272,11 @@ def get_nbs_inputs(input_dir, *population_dicts):
                 cnd_abrv = 'open'
             elif condition == 'RESTINGSTATECLOSE':
                 cnd_abrv = 'closed'
-            df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{cnd_abrv}.csv'), index_col=0)
+            if source:
+                df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'source-level'
+                                               'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{condition}.csv'), index_col=0)
+            else:
+                df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-{cnd_abrv}.csv'), index_col=0)
             df = np.triu(df.T, 1) + df
             matrix_list.append(df)
         return matrix_list
@@ -314,7 +318,7 @@ def get_nbs_inputs(input_dir, *population_dicts):
 
     return stacked_matrices, group_vec
 
-def nbs_report(pvals, adj, null, thresh, output_dir, *names):
+def nbs_report(pvals, adj, null, thresh, output_dir, *names, source=False):
     ''' Create a report with the results of the NBS analysis. 
 
     Parameters
@@ -356,7 +360,10 @@ def nbs_report(pvals, adj, null, thresh, output_dir, *names):
 
     # Create a dataframe with the adjacency matrix
     # Get the channels names to use them as columns and index
-    ref_matrix = pd.read_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'old_control', 'conn_data', 'old_control-static-plv-4-8-open.csv'), index_col=0)
+    if source:
+        ref_matrix = pd.read_csv(os.path.join(output_dir, 'sub-01', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'source-level', 'conn_data', 'sub-01-static-ciplv-4-8-RESTINGSTATEOPEN.csv'), index_col=0)
+    else:
+        ref_matrix = pd.read_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'old_control', 'conn_data', 'old_control-static-plv-4-8-open.csv'), index_col=0)
     chan_names = ref_matrix.index.values
     adj_df = pd.DataFrame(adj, columns=chan_names, index=chan_names)
 
@@ -364,15 +371,25 @@ def nbs_report(pvals, adj, null, thresh, output_dir, *names):
     adj_df = adj_df.applymap(lambda x: 1 if x > 1 else x)
 
     # Save the dataframes
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str)):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str))
-    pvals_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str, 'pvals.csv'))
-    null_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str, 'null.csv'))
-    adj_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str, 'adj.csv'))
+    if source:
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', 'clean_nbs_results', names_str)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', 'clean_nbs_results', names_str))
+        pvals_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', 'clean_nbs_results', names_str, 'pvals.csv'))
+        null_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', 'clean_nbs_results', names_str, 'null.csv'))
+        adj_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', 'clean_nbs_results', names_str, 'adj.csv'))
+    else:
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str)):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str))
+        pvals_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str, 'pvals.csv'))
+        null_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str, 'null.csv'))
+        adj_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', names_str, 'adj.csv'))
 
-def global_pval_df(input_dir, output_dir):
+def global_pval_df(input_dir, output_dir, source=False):
 
-    nbs_dir = os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results')
+    if source:
+        nbs_dir = os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', 'clean_nbs_results')
+    else:
+        nbs_dir = os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results')
     nbs_list = sorted(glob.glob(nbs_dir + '/*'))
 
     df_list = []
@@ -390,15 +407,23 @@ def global_pval_df(input_dir, output_dir):
 
     # stack the dfs
     full_df = pd.concat(df_list, axis=0)
+
     # take only the significant pvals
     sign_df = full_df[full_df['pvals'] < 0.05]
 
     # save the dfs
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals')):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals'))
-        print('===== all_pvals directory was created =====')
-    full_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals', 'all_pvals.csv'))
-    sign_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'nbs_results', 'all_pvals', 'sign_pvals.csv'))
+    if source:
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', 'clean_nbs_results', 'all_pvals')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', 'clean_nbs_results', 'all_pvals'))
+            print('===== all_pvals directory was created =====')
+        full_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', 'clean_nbs_results', 'all_pvals', 'all_pvals.csv'))
+        sign_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', 'clean_nbs_results', 'all_pvals', 'sign_pvals.csv'))
+    else:
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', 'all_pvals')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', 'all_pvals'))
+            print('===== all_pvals directory was created =====')
+        full_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', 'all_pvals', 'all_pvals.csv'))
+        sign_df.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'clean_nbs_results', 'all_pvals', 'sign_pvals.csv'))
 
     return full_df
 
