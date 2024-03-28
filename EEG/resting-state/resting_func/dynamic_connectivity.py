@@ -442,7 +442,7 @@ def plot_dynamic_src_conn(plot_conn_dict, subject_id, condition, band, spe_indic
                 ax.fill_between(t, mean+std, mean-std, alpha=0.2)
                 ax.hlines(mean, xmin=t[0], xmax=t[-1], colors='k', linestyles='--')
             ax.set_title(f'global source conn - sub {subject_id} - {cond_name} - {freqs_name} band')
-            ax.set_ylabel('ft connectivity')
+            ax.set_ylabel('global connectivity')
             ax.set_xlabel('time (s)')
             ax.legend()
         
