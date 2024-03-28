@@ -49,7 +49,7 @@ def plot_conn_matrix(conn_matrix, population, metric, freqs, condition, vmax):
 
     return fig
     
-def plot_conn_circle(conn_matrix, population, metric, freqs, condition):
+def plot_conn_circle(conn_matrix, population, metric, freqs, condition, vmin=0.6, vmax=1):
     '''
     Plot connectivity circle for a single population, metric, frequency band and condition.
 
@@ -101,7 +101,7 @@ def plot_conn_circle(conn_matrix, population, metric, freqs, condition):
                     subplot_kw=dict(polar=True))
     plot_connectivity_circle(conn_matrix, node_names=chan_names, node_angles=node_angles, node_colors=correct_order,
                              facecolor='white', textcolor='black', node_edgecolor='white',
-                            vmin=0.6, vmax=1, n_lines=300,
+                            vmin=vmin, vmax=vmax, n_lines=300,
                             title= f'{population} - {condition} - {metric} - {freqs[0]}-{freqs[-1]} Hz' ,
                             ax=ax, show=False)
 
@@ -248,7 +248,7 @@ def create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir,
 
     return df_open, df_closed
 
-def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir):
+def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir, source=False):
     ''' 
     Create connectivity matrices for a group of subjects, for a single metric and frequency band (2 conditions - eyes open and closed).
 
@@ -264,6 +264,8 @@ def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir)
         Path to input directory.
     output_dir : str
         Path to output directory.
+    source : bool
+        If True, source-level connectivity matrices will be used. If False, sensor-level connectivity matrices will be used.
 
     Returns
     -------
@@ -283,13 +285,21 @@ def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir)
         subject_id = str(subject_id).zfill(2)
 
         try:
-            if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.csv')) and os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv')):
-                print(f'===== Loading connectivity matrices for subject {subject_id} =====')
-                df_open = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.csv'), index_col=0)
-                df_closed = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv'), index_col=0)
+            if source:
+                if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'source-level', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-RESTINGSTATEOPEN.csv')) and os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv')):
+                    print(f'===== Loading connectivity matrices for subject {subject_id} =====')
+                    df_open = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'source-level', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-RESTINGSTATEOPEN.csv'), index_col=0)
+                    df_closed = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'connectivity', 'static', 'source-level', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-RESTINGSTATECLOSE.csv'), index_col=0)
+                else:
+                    print(f'===== WARNING Connectivity matrices not found for {subject_id} =====')
             else:
-                print(f'===== Connectivity matrices not found for {subject_id}, creating it now =====')
-                df_open, df_closed = create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir)
+                if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.csv')) and os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv')):
+                    print(f'===== Loading connectivity matrices for subject {subject_id} =====')
+                    df_open = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.csv'), index_col=0)
+                    df_closed = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv'), index_col=0)
+                else:
+                    print(f'===== Connectivity matrices not found for {subject_id}, creating it now =====')
+                    df_open, df_closed = create_conn_matrix_subject(subject_id, metric, freqs, input_dir, output_dir)
 
             matrices_open.append(df_open)
             matrices_closed.append(df_closed)
@@ -316,7 +326,7 @@ def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir)
 
     return df_open_group, df_closed_group
 
-def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metric, freqs, output_dir):
+def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metric, freqs, output_dir, source=False):
     ''' 
     Plot and save group average connectivity matrices for a single metric and frequency band (2 conditions - eyes open and closed).
 
@@ -334,35 +344,70 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
         List of frequencies to be used for connectivity analysis.
     output_dir : str
         Path to output directory.
+    source : bool
+        If True, source-level connectivity matrices will be used. If False, sensor-level connectivity matrices will be used.
 
     Returns
     -------
     None.
     '''
 
-    fig_open = plot_conn_matrix(df_open_group, population, metric, freqs, 'open')
-    plt.close()
-    fig_closed = plot_conn_matrix(df_closed_group, population, metric, freqs, 'closed')
-    plt.close()
-    fig_open_circle = plot_conn_circle(df_open_group, population, metric, freqs, 'open') 
-    fig_closed_circle = plot_conn_circle(df_closed_group, population, metric, freqs, 'closed')
-    print(f'===== Connectivity plots created for {population} =====')
+    if source:
 
-    # Save figures
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs')):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs'))
-    fig_open.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.png'))
-    fig_open_circle.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open-circle.png'))
-    fig_closed.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.png'))
-    fig_closed_circle.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed-circle.png'))
-    print(f'===== Connectivity plots saved for {population} =====')
+        vmax_mat = 0.5
+        vmin_circle = 0
+        vmax_circle = 0.4
+        fig_open = plot_conn_matrix(df_open_group, population, metric, freqs, 'open', vmax_mat)
+        plt.close()
+        fig_closed = plot_conn_matrix(df_closed_group, population, metric, freqs, 'closed', vmin_circle, vmax_circle)
+        plt.close()
+        fig_open_circle = plot_conn_circle(df_open_group, population, metric, freqs, 'open', vmax_mat) 
+        fig_closed_circle = plot_conn_circle(df_closed_group, population, metric, freqs, 'closed', vmin_circle, vmax_circle)
+        print(f'===== Connectivity plots created for {population} =====')
 
-    # Save connectivity matrix as csv
-    if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'conn_data')):
-        os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'conn_data'))
-    df_open_group.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'conn_data', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.csv'))
-    df_closed_group.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'conn_data', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv'))
-    print(f'===== Connectivity matrices saved for {population} =====')
+        # Save figures
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs'))
+        fig_open.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.png'))
+        fig_open_circle.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open-circle.png'))
+        fig_closed.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.png'))
+        fig_closed_circle.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed-circle.png'))
+        print(f'===== Connectivity plots saved for {population} =====')
+
+        # Save connectivity matrix as csv
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'conn_data')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'conn_data'))
+        df_open_group.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'conn_data', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.csv'))
+        df_closed_group.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'conn_data', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv'))
+        print(f'===== Connectivity matrices saved for {population} =====')
+
+    else:
+        vmax_mat = 0.5
+        vmin_circle = 0
+        vmax_circle = 0.4
+        fig_open = plot_conn_matrix(df_open_group, population, metric, freqs, 'open', vmax_mat)
+        plt.close()
+        fig_closed = plot_conn_matrix(df_closed_group, population, metric, freqs, 'closed', vmin_circle, vmax_circle)
+        plt.close()
+        fig_open_circle = plot_conn_circle(df_open_group, population, metric, freqs, 'open', vmax_mat) 
+        fig_closed_circle = plot_conn_circle(df_closed_group, population, metric, freqs, 'closed', vmin_circle, vmax_circle)
+        print(f'===== Connectivity plots created for {population} =====')
+
+        # Save figures
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs'))
+        fig_open.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.png'))
+        fig_open_circle.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open-circle.png'))
+        fig_closed.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.png'))
+        fig_closed_circle.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed-circle.png'))
+        print(f'===== Connectivity plots saved for {population} =====')
+
+        # Save connectivity matrix as csv
+        if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'conn_data')):
+            os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'conn_data'))
+        df_open_group.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'conn_data', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.csv'))
+        df_closed_group.to_csv(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', population, 'conn_data', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv'))
+        print(f'===== Connectivity matrices saved for {population} =====')
 
 def find_elements_in_dir_name(dir_name):
     '''
