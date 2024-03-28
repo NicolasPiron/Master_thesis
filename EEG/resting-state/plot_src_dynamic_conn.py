@@ -26,7 +26,19 @@ for directory in sorted(os.listdir(i)):
             for cond in conditions:
                 for band in bands:
                     dc.pipeline_src(subject_id, cond, band, spe_indices=False)
-                    print(f'Finished with subject {subject_id} and condition {cond} and band {band}')
+                    print(f'Global - finished with subject {subject_id} and condition {cond} and band {band}')
         except:
             print(f'Error with subject {subject_id} -- most likely no data')
+            continue
+
+for directory in sorted(os.listdir(i)):
+    if 'sub-' in directory:
+        subject_id = directory.split('-')[1]
+        try:
+            for cond in conditions:
+                for band in bands:
+                    dc.pipeline_src(subject_id, cond, band, spe_indices=True)
+                    print(f'Fronto-parietal - finished with subject {subject_id} and condition {cond} and band {band}')
+        except:
+            print(f'Fronto-parietal - Error with subject {subject_id} -- most likely no data')
             continue
