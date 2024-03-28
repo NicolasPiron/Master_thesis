@@ -81,11 +81,12 @@ def run_pairwise_nbs():
                     'pulvinar': [51, 53, 59, 60]}
     
     pairs = list(combinations(group_dict.keys(), 2))
-    freqs_dict = {'theta': np.arange(4, 9),
-                  'low_beta': np.arange(12, 17),
+    freqs_dict = {'alpha': np.arange(8, 13), 
+                'theta': np.arange(4, 9),
+                'low_beta': np.arange(12, 17),
     }
-    condition_list = ['RESTINGSTATECLOSE']
-    metrics=['pli']
+    condition_list = ['RESTINGSTATEOPEN','RESTINGSTATECLOSE']
+    metrics=['ciplv']
     metric=metrics[0]
 
     for pair in pairs:
@@ -135,6 +136,11 @@ def run_pairwise_nbs():
 
     return None
 
+# {'theta': np.arange(4, 9),
+#                     'alpha': np.arange(8, 13),
+#                     'low_beta': np.arange(12, 17),
+#     }
+
 def run_anovas():
     '''
     Runs ANOVA on all groups, with different metrics, frequencies and conditions
@@ -145,10 +151,7 @@ def run_anovas():
                     'pulvinar': [51, 53, 59, 60]
     }
 
-    freqs_dict = {'theta': np.arange(4, 9),
-                    'alpha': np.arange(8, 13),
-                    'low_beta': np.arange(12, 17),
-    }
+    freqs_dict = {'high_beta': np.arange(16, 31)}
     thresh = 0.7
     cond = ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']
     metrics = ['ciplv']
@@ -194,4 +197,4 @@ if __name__ == '__main__':
     #plot_significant_conn_mat(input_dir, output_dir)
 
     run_anovas()
-    #run_pairwise_nbs()
+    run_pairwise_nbs()
