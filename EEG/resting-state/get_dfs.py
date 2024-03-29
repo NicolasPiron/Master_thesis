@@ -81,7 +81,7 @@ def get_sj_global_src_conn(subject_id, input_dir):
     
     if conn_dfs:
         df = pd.concat(conn_dfs)
-        df_pivoted = df.pivot_table(index=['ID', 'group', 'freq', 'level', 'eyes'],
+        df_pivoted = df.pivot_table(index=['ID', 'group', 'freq', 'eyes'],
                                            columns='metric', values='ciplv').reset_index()
         df_pivoted['range'] = df_pivoted['max'] - df_pivoted['min']
         df_pivoted.rename_axis('index', axis='columns', inplace=True)
