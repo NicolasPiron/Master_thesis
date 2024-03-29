@@ -17,7 +17,7 @@ def get_sj_conn(subject_id, input_dir):
         for level in levels:
             for freq_band in freq_bands:
                 file_path = os.path.join(input_dir, f'sub-{subject_id}', cond, 'connectivity', 'dynamic',
-                                         f'{level}-level', 'metrics', f'sub-{subject_id}-{cond}-{freq_band}-global-conn-metrics.csv')
+                                         f'{level}-level', 'metrics', f'sub-{subject_id}-{cond}-{freq_band}-ciplv-global-conn-metrics.csv')
                 try:
                     df = pd.read_csv(file_path)
                     df.insert(0, "ID", subject_id)
@@ -31,10 +31,8 @@ def get_sj_conn(subject_id, input_dir):
     
     if conn_dfs:
         df = pd.concat(conn_dfs)
-        df_melted = pd.melt(df, id_vars=['ID', 'group', 'metric', 'freq', 'level', 'eyes'],
-                            value_vars=['plv', 'pli'], var_name='conn_type', value_name='value')
-        df_pivoted = df_melted.pivot_table(index=['ID', 'group', 'freq', 'level', 'conn_type', 'eyes'],
-                                           columns='metric', values='value').reset_index()
+        df_pivoted = df.pivot_table(index=['ID', 'group', 'freq', 'level', 'eyes'],
+                                           columns='metric', values='ciplv').reset_index()
         df_pivoted['range'] = df_pivoted['max'] - df_pivoted['min']
         df_pivoted.rename_axis('index', axis='columns', inplace=True)
         return df_pivoted
@@ -53,7 +51,7 @@ def get_conn_dataset(input_dir):
     
     if not os.path.exists(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df')):
         os.makedirs(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df'))
-    df.to_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df', 'all_subj_conn.csv'), index=False)
+    df.to_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df', 'all_subj_conn_ciplv.csv'), index=False)
     
     return df
 
@@ -70,7 +68,7 @@ def get_sj_global_src_conn(subject_id, input_dir):
     for cond, cond_name in conditions.items():
             for freq_band in freq_bands:
                 file_path = os.path.join(input_dir, f'sub-{subject_id}', cond, 'connectivity', 'dynamic',
-                                         f'source-level', 'metrics', f'sub-{subject_id}-{cond}-global-{freq_band}-global-conn-metrics.csv')
+                                         f'source-level', 'metrics', f'sub-{subject_id}-{cond}-{freq_band}-ciplv-global-conn-metrics.csv')
                 try:
                     df = pd.read_csv(file_path)
                     df.insert(0, "ID", subject_id)
@@ -83,10 +81,8 @@ def get_sj_global_src_conn(subject_id, input_dir):
     
     if conn_dfs:
         df = pd.concat(conn_dfs)
-        df_melted = pd.melt(df, id_vars=['ID', 'group', 'metric', 'freq', 'eyes'],
-                            value_vars=['plv', 'pli'], var_name='conn_type', value_name='value')
-        df_pivoted = df_melted.pivot_table(index=['ID', 'group', 'freq', 'conn_type', 'eyes'],
-                                           columns='metric', values='value').reset_index()
+        df_pivoted = df.pivot_table(index=['ID', 'group', 'freq', 'level', 'eyes'],
+                                           columns='metric', values='ciplv').reset_index()
         df_pivoted['range'] = df_pivoted['max'] - df_pivoted['min']
         df_pivoted.rename_axis('index', axis='columns', inplace=True)
         return df_pivoted
@@ -104,7 +100,7 @@ def get_global_src_conn_dataset(input_dir):
     
     if not os.path.exists(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df')):
         os.makedirs(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df'))
-    df.to_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df', 'all_subj_global_src_conn.csv'), index=False)
+    df.to_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df', 'all_subj_global_src_conn_ciplv.csv'), index=False)
     
     return df
 
@@ -121,30 +117,16 @@ def get_sj_hemi_src_conn(subject_id, input_dir):
     for cond, cond_name in conditions.items():
         for freq_band in freq_bands:
             file_path = os.path.join(input_dir, f'sub-{subject_id}', cond, 'connectivity', 'dynamic',
-                                         f'source-level', 'metrics', f'sub-{subject_id}-{cond}-{freq_band}-hemi-conn-metrics.csv')
+                                         f'source-level', 'metrics', f'sub-{subject_id}-{cond}-{freq_band}-ciplv-hemi-conn-metrics.csv')
             try:
                 df = pd.read_csv(file_path)
+                df['side'] = df['metric'].apply(lambda x: 'left' if x.startswith('left_') else 'right')
+                df['metric'] = df['metric'].str.replace('left_', '').str.replace('right_', '')
                 df.insert(0, "ID", subject_id)
                 df.insert(1, "group", group)
                 df['freq'] = freq_band
                 df['eyes'] = cond_name
-                df_plv = df.iloc[:,:5]
-                df_plv = df_plv.rename(columns={'left_plv': 'left',
-                                       'right_plv': 'right'})
-                df_plv=pd.melt(df_plv, id_vars=['ID', 'group', 'metric'], 
-                              value_vars=['left', 'right'], var_name='side', value_name='plv')
-                df_pli = df.iloc[:,5:]
-                df_pli = df_pli.rename(columns={'left_pli': 'left',
-                                       'right_pli': 'right'})
-                df_pli=pd.melt(df_pli, id_vars=['freq', 'eyes'], 
-                              value_vars=['left', 'right'], var_name='side', value_name='pli')
-                reorg_df = pd.concat([df_plv, df_pli], axis=1)
-                reorg_df = reorg_df.loc[:,~reorg_df.columns.duplicated()].copy()
-                reorg_df = pd.melt(reorg_df, id_vars=['ID', 'group', 'metric', 'side', 'freq', 'eyes'], 
-                              value_vars=['plv', 'pli'], var_name='conn_type', value_name='value')
-                df_pivoted = reorg_df.pivot_table(index=['ID', 'group', 'side', 'freq', 'eyes', 'conn_type'],
-                                           columns='metric', values='value').reset_index()
-                conn_dfs.append(df_pivoted)
+                conn_dfs.append(df)
             except FileNotFoundError as e:
                 print(f'File not found: {file_path}')
 
@@ -164,7 +146,7 @@ def get_hemi_src_conn_dataset(input_dir):
     
     if not os.path.exists(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df')):
         os.makedirs(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df'))
-    df.to_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df', 'all_subj_hemi_src_conn.csv'), index=False)
+    df.to_csv(os.path.join(input_dir, 'all_subj', 'resting-state', 'connectivity', 'dynamic', 'df', 'all_subj_hemi_src_conn_ciplv.csv'), index=False)
     
     return df
 
@@ -222,4 +204,4 @@ if __name__ == '__main__':
     get_conn_dataset(i)
     get_global_src_conn_dataset(i)
     get_hemi_src_conn_dataset(i)
-    get_power_dataset(i)
+    #get_power_dataset(i)
