@@ -117,7 +117,7 @@ def run_anovas():
 
                     name = f'{freq_name}-{condition}-{metric}-ANOVA'
 
-                    mat_list, y_vec = get_nbs_inputs(input_dir, old, thal, pulv)
+                    mat_list, y_vec = get_nbs_inputs(input_dir, old, thal, pulv, source=True)
                     pvals, adj, null = nbs_bct_corr_z(mat_list, thresh=thresh, y_vec=y_vec)
                     print('all good until here')
                     nbs_report(pvals, adj, null, thresh, output_dir, name, source=True)
