@@ -111,7 +111,11 @@ def plot_conn_circle(conn_matrix, population, metric, freqs, condition, vmin=0.6
     correct_order = [color_list[i] for i in index_list]
 
     # Create node angles
-    node_angles = circular_layout(chan_names, new_node_order, start_pos=74,
+    if source : 
+        node_angles = circular_layout(chan_names, new_node_order, start_pos=90,
+                                group_boundaries=[0,34], group_sep=3)
+    else:
+        node_angles = circular_layout(chan_names, new_node_order, start_pos=74,
                                 group_boundaries=[0, 5, 32, 37], group_sep=3)
 
     conn_matrix = conn_matrix.values
@@ -343,6 +347,7 @@ def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir,
     df_closed_group = df_closed_group/len(matrices_closed)
 
     print(f'===== Group average connectivity matrices created. Subjects {subject_data_not_found} were not included =====')
+    print(f'===== matrix size : {df_open_group.shape[0]} X {df_open_group.shape[-1]} =====')
 
     return df_open_group, df_closed_group
 
@@ -374,6 +379,7 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
 
     if source:
 
+        print('until here')
         vmax_mat = 0.5
         vmin_circle = 0
         vmax_circle = 0.4
@@ -381,6 +387,7 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
         plt.close()
         fig_closed = plot_conn_matrix(df_closed_group, population, metric, freqs, 'closed', vmax_mat)
         plt.close()
+        print('mats ok')
         fig_open_circle = plot_conn_circle(df_open_group, population, metric, freqs, 'open', vmin_circle, vmax_circle) 
         fig_closed_circle = plot_conn_circle(df_closed_group, population, metric, freqs, 'closed', vmin_circle, vmax_circle)
         print(f'===== Connectivity plots created for {population} =====')
