@@ -8,7 +8,7 @@ input_dir, output_dir = get_paths()
 subject_list = get_subject_list()
 
 pulvinar = ['51', '53', '59', '60']
-old_control = [sub for sub in subject_list if sub < 50]
+old_control = [sub for sub in subject_list if int(sub) < 50]
 thal_control = ['52', '54', '55', '56', '58']
 
 group_dict = {'old_control':old_control, 'thal_control':thal_control, 'pulvinar':pulvinar}
