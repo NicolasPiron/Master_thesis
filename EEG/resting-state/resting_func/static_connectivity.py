@@ -49,7 +49,7 @@ def plot_conn_matrix(conn_matrix, population, metric, freqs, condition, vmax):
 
     return fig
     
-def plot_conn_circle(conn_matrix, population, metric, freqs, condition, vmin=0.6, vmax=1):
+def plot_conn_circle(conn_matrix, population, metric, freqs, condition, vmin=0.6, vmax=1, source=False):
     '''
     Plot connectivity circle for a single population, metric, frequency band and condition.
 
@@ -65,6 +65,12 @@ def plot_conn_circle(conn_matrix, population, metric, freqs, condition, vmin=0.6
         List of frequencies to be used for connectivity analysis.
     condition : str
         Condition name (i.e. open or closed).
+    vmin : float
+        Minimum value for the colorbar.
+    vmax : float
+        Maximum value for the colorbar.
+    source : bool
+        If True, source-level connectivity matrices will be used. If False, sensor-level connectivity matrices will be used.
 
     Returns
     -------
@@ -72,16 +78,29 @@ def plot_conn_circle(conn_matrix, population, metric, freqs, condition, vmin=0.6
         Connectivity circle.
     '''
 
-    # Create a gradient
-    red = Color("red")
-    colors = list(red.range_to(Color("blue"),64))
-    color_list = [col.get_rgb() for col in colors]
+    if source:
 
-    # Reorder channels
-    new_node_order= ['Fpz', 'AFz', 'Fz', 'FCz', 'Cz','Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3','FC1', 'C1',
-                    'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7', 'PO3','O1', 'Iz', 'Oz', 'POz',
-                    'Pz', 'CPz', 'O2', 'PO4', 'PO8', 'P10', 'P8', 'P6', 'P4', 'P2', 'CP2', 'CP4',
-                    'CP6', 'TP8', 'T8', 'C6', 'C4', 'C2', 'FC2', 'FC4', 'FC6', 'FT8', 'F8', 'F6', 'F4', 'F2', 'AF4', 'AF8','Fp2']
+        red = Color("red")
+        colors = list(red.range_to(Color("blue"),68))
+        color_list = [col.get_rgb() for col in colors]
+
+        chan_names = conn_matrix.index.values
+        lh = [col for col in chan_names if col.endswith('-lh')]
+        rh = [col for col in chan_names if col.endswith('-rh')]
+        rh.reverse()
+        new_node_order = lh + rh
+
+    else:
+        # Create a gradient
+        red = Color("red")
+        colors = list(red.range_to(Color("blue"),64))
+        color_list = [col.get_rgb() for col in colors]
+
+        # Reorder channels
+        new_node_order= ['Fpz', 'AFz', 'Fz', 'FCz', 'Cz','Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3','FC1', 'C1',
+                        'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7', 'PO3','O1', 'Iz', 'Oz', 'POz',
+                        'Pz', 'CPz', 'O2', 'PO4', 'PO8', 'P10', 'P8', 'P6', 'P4', 'P2', 'CP2', 'CP4',
+                        'CP6', 'TP8', 'T8', 'C6', 'C4', 'C2', 'FC2', 'FC4', 'FC6', 'FT8', 'F8', 'F6', 'F4', 'F2', 'AF4', 'AF8','Fp2']
 
     # Reorder colors
     chan_names = conn_matrix.index.values
