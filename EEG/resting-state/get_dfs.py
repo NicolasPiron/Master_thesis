@@ -16,8 +16,12 @@ def get_sj_conn(subject_id, input_dir):
     for cond, cond_name in conditions.items():
         for level in levels:
             for freq_band in freq_bands:
-                file_path = os.path.join(input_dir, f'sub-{subject_id}', cond, 'connectivity', 'dynamic',
-                                         f'{level}-level', 'metrics', f'sub-{subject_id}-{cond}-{freq_band}-ciplv-global-conn-metrics.csv')
+                if level == 'sensor':
+                    file_path = os.path.join(input_dir, f'sub-{subject_id}', cond, 'connectivity', 'dynamic',
+                                            f'{level}-level', 'metrics', f'sub-{subject_id}-{cond}-{freq_band}-ciplv-global-conn-metrics.csv')
+                elif level == 'source':
+                    file_path = os.path.join(input_dir, f'sub-{subject_id}', cond, 'connectivity', 'dynamic',
+                                            f'{level}-level', 'metrics', f'sub-{subject_id}-{cond}-{freq_band}-ciplv-fpdy-conn-metrics.csv')
                 try:
                     df = pd.read_csv(file_path)
                     df.insert(0, "ID", subject_id)

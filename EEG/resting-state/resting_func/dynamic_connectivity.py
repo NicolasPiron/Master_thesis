@@ -376,7 +376,7 @@ def save_src_dc_metrics(plot_conn_dict,  subject_id, condition, band, spe_indice
     # save the metrics in a .csv file
     if spe_indices:
         with open(os.path.join(input_dir, f'sub-{subject_id}', condition, 'connectivity', 'dynamic', 'source-level', 'metrics',
-                                f'sub-{subject_id}-{condition}-{band[0]}-ciplv-global-conn-metrics.csv'), 'w', newline='') as csvfile:
+                                f'sub-{subject_id}-{condition}-{band[0]}-ciplv-fpdy-conn-metrics.csv'), 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['metric', 'ciplv'])
             for key, value in ciplv_dict.items():
