@@ -359,9 +359,9 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
         vmax_circle = 0.4
         fig_open = plot_conn_matrix(df_open_group, population, metric, freqs, 'open', vmax_mat)
         plt.close()
-        fig_closed = plot_conn_matrix(df_closed_group, population, metric, freqs, 'closed', vmin_circle, vmax_circle)
+        fig_closed = plot_conn_matrix(df_closed_group, population, metric, freqs, 'closed', vmax_mat)
         plt.close()
-        fig_open_circle = plot_conn_circle(df_open_group, population, metric, freqs, 'open', vmax_mat) 
+        fig_open_circle = plot_conn_circle(df_open_group, population, metric, freqs, 'open', vmin_circle, vmax_circle) 
         fig_closed_circle = plot_conn_circle(df_closed_group, population, metric, freqs, 'closed', vmin_circle, vmax_circle)
         print(f'===== Connectivity plots created for {population} =====')
 
