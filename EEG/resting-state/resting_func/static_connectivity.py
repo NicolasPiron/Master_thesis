@@ -286,7 +286,8 @@ def create_conn_matrix_group(subject_list, metric, freqs, input_dir, output_dir,
 
         try:
             if source:
-                if os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'source-level', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-RESTINGSTATEOPEN.csv')) and os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'connectivity', 'static', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.csv')):
+                path = os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'source-level', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-RESTINGSTATEOPEN.csv')
+                if os.path.exists(path):
                     print(f'===== Loading connectivity matrices for subject {subject_id} =====')
                     df_open = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATEOPEN', 'connectivity', 'static', 'source-level', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-RESTINGSTATEOPEN.csv'), index_col=0)
                     df_closed = pd.read_csv(os.path.join(output_dir, f'sub-{subject_id}', 'RESTINGSTATECLOSE', 'connectivity', 'static', 'source-level', 'conn_data', f'sub-{subject_id}-static-{metric}-{freqs[0]}-{freqs[-1]}-RESTINGSTATECLOSE.csv'), index_col=0)
