@@ -379,7 +379,6 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
 
     if source:
 
-        print('until here')
         vmax_mat = 0.5
         vmin_circle = 0
         vmax_circle = 0.4
@@ -387,18 +386,17 @@ def plot_and_save_group_matrix(df_open_group, df_closed_group, population, metri
         plt.close()
         fig_closed = plot_conn_matrix(df_closed_group, population, metric, freqs, 'closed', vmax_mat)
         plt.close()
-        print('mats ok')
-        fig_open_circle = plot_conn_circle(df_open_group, population, metric, freqs, 'open', vmin_circle, vmax_circle) 
-        fig_closed_circle = plot_conn_circle(df_closed_group, population, metric, freqs, 'closed', vmin_circle, vmax_circle)
+        #fig_open_circle = plot_conn_circle(df_open_group, population, metric, freqs, 'open', vmin_circle, vmax_circle) 
+        #fig_closed_circle = plot_conn_circle(df_closed_group, population, metric, freqs, 'closed', vmin_circle, vmax_circle)
         print(f'===== Connectivity plots created for {population} =====')
 
         # Save figures
         if not os.path.exists(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs')):
             os.makedirs(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs'))
         fig_open.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open.png'))
-        fig_open_circle.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open-circle.png'))
+        #fig_open_circle.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-open-circle.png'))
         fig_closed.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed.png'))
-        fig_closed_circle.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed-circle.png'))
+        #fig_closed_circle.savefig(os.path.join(output_dir, 'all_subj', 'resting-state', 'connectivity', 'static', 'source', population, 'figs', f'{population}-static-{metric}-{freqs[0]}-{freqs[-1]}-closed-circle.png'))
         print(f'===== Connectivity plots saved for {population} =====')
 
         # Save connectivity matrix as csv
