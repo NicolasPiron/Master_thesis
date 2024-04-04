@@ -2120,6 +2120,7 @@ def P1_amp_around_peak_per_epoch_all_subj(input_dir, output_dir):
 
 ############################################
 # Functions to get a long format df for seaborn
+############################################
 
 def compute_diff(subject_id, cond, input_dir, swapped=False):
     
@@ -2192,3 +2193,65 @@ def create_long_n2pc_df(subjects, input_dir):
     if not os.path.exists(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'long_format_n2pc')):
         os.makedirs(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'long_format_n2pc'))
     full_df.to_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'long_format_n2pc', 'long_format_n2pc.csv'))
+
+############################################
+# P1
+
+def get_p1_data(subject_id, input_dir, swapped=False):
+
+    path = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc',
+                    'evoked-N2pc', f'sub-{subject_id}-all-ave.fif' )
+    evk = mne.read_evokeds(path)
+    evk=evk[0]
+    evk.info['bads'] = []
+    t = evk.times
+
+    if swapped:
+        o1 = evk.copy().pick('O2').get_data().reshape(512)
+        o2 = evk.copy().pick('O1').get_data().reshape(512)
+    else:
+        o1 = evk.copy().pick('O1').get_data().reshape(512)
+        o2 = evk.copy().pick('O2').get_data().reshape(512)
+    oz = evk.copy().pick('Oz').get_data().reshape(512)
+
+    return o1, o2, oz, t
+
+def create_long_p1_df_subj(subject_id, input_dir, swapped=False):
+    
+    o1, o2, oz, t = get_p1_data(subject_id, input_dir, swapped=swapped)
+    s_id = [subject_id]*len(t)
+    grp = [get_group(subject_id)]*len(t)
+    data = {'time':t,
+            'O1':o1,
+            'O2':o2,
+            'Oz':oz,
+            'ID':s_id,
+            'group':grp,
+           }
+    df = pd.DataFrame(data)
+
+    melted_df = pd.melt(df, id_vars=['time', 'ID', 'group'], value_vars=['O1', 'O2', 'Oz'], var_name='channel', value_name='signal')
+
+    return melted_df
+
+def create_long_p1_df(subjects, input_dir):
+    
+    df_list = list()
+    right_lesion_patients = [51, 53, 54, 58, 59]
+        
+    for subject_id in subjects:
+        try:
+            if int(subject_id) in right_lesion_patients:
+                df = create_long_p1_df_subj(subject_id, input_dir, swapped=True)
+                df_list.append(df)
+            else:
+                df = create_long_p1_df_subj(subject_id, input_dir, swapped=False)
+                df_list.append(df)
+        except:
+            print(f'No data for subject {subject_id}')
+            continue
+           
+    full_df = pd.concat(df_list, axis=0)
+    if not os.path.exists(os.path.join(input_dir, 'all_subj', 'N2pc', 'p1-values', 'long_format_p1')):
+        os.makedirs(os.path.join(input_dir, 'all_subj', 'N2pc', 'p1-values', 'long_format_p1'))
+    full_df.to_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'p1-values', 'long_format_p1', 'long_format_p1.csv'))
