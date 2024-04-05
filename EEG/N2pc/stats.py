@@ -68,13 +68,18 @@ def stats_n2pc(X):
     alpha = 0.05
 
     n_samples, n_tests = X.shape
-    #threshold_uncorrected = stats.t.ppf(1.0 - alpha, n_samples - 1)
+    threshold_uncorrected = stats.t.ppf(1.0 - alpha, n_samples - 1)
 
-    #reject_bonferroni, pval_bonferroni = bonferroni_correction(pval, alpha=alpha)
-    #threshold_bonferroni = stats.t.ppf(1.0 - alpha / n_tests, n_samples - 1)
+    reject_bonferroni, pval_bonferroni = bonferroni_correction(pval, alpha=alpha)
+    threshold_bonferroni = stats.t.ppf(1.0 - alpha / n_tests, n_samples - 1)
 
     reject_fdr, pval_fdr = fdr_correction(pval, alpha=alpha, method="indep")
-    threshold_fdr = np.min(np.abs(T)[reject_fdr])
+
+    if np.sum(reject_fdr) == 0:
+        threshold_fdr = 0
+    else:
+        threshold_fdr = np.min(np.abs(T)[reject_fdr])
+
 
     return T, reject_fdr, pval_fdr, threshold_fdr
 
@@ -119,10 +124,21 @@ def plot_n2pc(T, times, reject_fdr, pval_fdr, threshold_fdr, group):
 
 
 def main():
-    subject_list = ['01', '02', '03']
-    X, times = get_n2pc_array_group(subject_list)
-    T, reject_fdr, pval_fdr, threshold_fdr = stats_n2pc(X)
-    plot_n2pc(T, times, reject_fdr, pval_fdr, threshold_fdr, 'test')
+    group_dict = {'old':['18', '19', '20', '21', '22'],
+                  'thalamus': ['52', '54', '55', '56', '58'],
+                  'pulvinar':['51', '53', '59', '60'],
+                    'young': ['71', '72', '75', '76', '77']
+                    }
+    
+    for group, subject_list in group_dict.items():
+        try:
+            X, times = get_n2pc_array_group(subject_list)
+            T, reject_fdr, pval_fdr, threshold_fdr = stats_n2pc(X)
+            plot_n2pc(T, times, reject_fdr, pval_fdr, threshold_fdr, group)
+        except:
+            print(f'Error in group {group}')
+            continue
+  
 
 if __name__ == '__main__':
     main()
