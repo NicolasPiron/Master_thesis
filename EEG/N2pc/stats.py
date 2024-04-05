@@ -48,7 +48,7 @@ def get_n2pc_array_group(subject_list):
     for subject_id in subject_list:
         x, times = get_n2pc_array_subject(subject_id)
         array_list.append(x)
-    X = np.concatenate(X, axis=0)
+    X = np.concatenate(array_list, axis=0)
     return X, times
 
 
