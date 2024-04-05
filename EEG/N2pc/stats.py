@@ -98,27 +98,28 @@ def plot_n2pc(T, times, reject_fdr, pval_fdr, threshold_fdr, group):
     ax.plot(times, T, "k", label="T-stat")
     xmin, xmax = plt.xlim()
 
-    ax.hlines(
-        threshold_fdr,
-        xmin,
-        xmax,
-        linestyle="--",
-        colors="b",
-        label="p=0.05 (FDR)",
-        linewidth=2,
-    )
-    ax.hlines(
-        -threshold_fdr,
-        xmin,
-        xmax,
-        linestyle="--",
-        colors="b",
-        linewidth=2,
-    )
+    if threshold_fdr != 0:
+        ax.hlines(
+            threshold_fdr,
+            xmin,
+            xmax,
+            linestyle="--",
+            colors="b",
+            label="p=0.05 (FDR)",
+            linewidth=2,
+        )
+        ax.hlines(
+            -threshold_fdr,
+            xmin,
+            xmax,
+            linestyle="--",
+            colors="b",
+            linewidth=2,
+        )
     ax.legend()
     ax.set_title(f"{group} N2pc T-test")
     ax.set_xlabel("Time (ms)")
-    ax.set_xlabel("T-stat")
+    ax.set_ylabel("T-stat")
     #plt.show()
     fig.savefig(os.path.join(path, f'{group}-ttest.png'))
 
