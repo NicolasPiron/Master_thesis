@@ -50,7 +50,7 @@ def get_long_subject(subject_id, swap_sides=False):
 
 def get_long_all_subjects(subject_list):
 
-    to_be_swapped = [51, 53, 54, 58, 59]
+    to_be_swapped = ['51', '53', '54', '58', '59']
 
     _, o = get_paths()
     path = os.path.join(o, 'all_subj', 'resting-state', 'power', 'df')
