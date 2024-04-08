@@ -82,10 +82,17 @@ def stats_n2pc(X):
         threshold_fdr = np.min(np.abs(T)[reject_fdr])
 
 
-    return T, pval, reject_fdr, pval_fdr, threshold_fdr
+    return T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected
 
 
-def plot_n2pc(T, times, reject_fdr, pval_fdr, threshold_fdr, group):
+def plot_hline(ax, y, xmin, xmax, color, label=None):
+        
+        if label:
+            ax.hlines(y,xmin,xmax,linestyle="--",colors=color,label=label,linewidth=2)
+        else:
+            ax.hlines(y,xmin,xmax,linestyle="--",colors=color,linewidth=2)
+
+def plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group):
     '''
     Plot T values of N2pc array
     '''
@@ -98,25 +105,13 @@ def plot_n2pc(T, times, reject_fdr, pval_fdr, threshold_fdr, group):
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(times, T, "k", label="T-stat")
     xmin, xmax = plt.xlim()
+    plot_hline(ax, threshold_uncorrected, xmin, xmax, "r", "p=0.05 (uncorrected)")
+    plot_hline(ax, -threshold_uncorrected, xmin, xmax, "r")
 
     if threshold_fdr != 0:
-        ax.hlines(
-            threshold_fdr,
-            xmin,
-            xmax,
-            linestyle="--",
-            colors="b",
-            label="p=0.05 (FDR)",
-            linewidth=2,
-        )
-        ax.hlines(
-            -threshold_fdr,
-            xmin,
-            xmax,
-            linestyle="--",
-            colors="b",
-            linewidth=2,
-        )
+        plot_hline(ax, threshold_fdr, xmin, xmax, "b", "p=0.05 (FDR)")
+        plot_hline(ax, -threshold_fdr, xmin, xmax, "b")
+
     ax.legend()
     ax.set_title(f"{group} N2pc T-test")
     ax.set_xlabel("Time (ms)")
@@ -184,43 +179,27 @@ def permutations(subject_list, n_subjects, k, n_epochs):
         
     return t_values, pvals, reject_fdr, pvals_fdr, thresholds_fdr, times
 
-def plot_permutations(t_values, pvals, times, group):
+def plot_permutations(t_values, thresholds_fdr, times, group):
 
     _, o = get_paths()
     path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'permutations')
     if not os.path.exists(path):
         os.makedirs(path)
 
-    m_pvals = pvals.mean(axis=0)
-    m_reject_fdr, m_pval_fdr = fdr_correction(m_pvals, alpha=0.05, method="indep")
-    
-    if np.sum(m_reject_fdr) == 0:
-        threshold_fdr = 0
-    else:
-        threshold_fdr = np.min(np.abs(t_values.mean(axis=0))[m_reject_fdr])
+    #m_pvals = pvals.mean(axis=0)
+    #m_reject_fdr, m_pval_fdr = fdr_correction(m_pvals, alpha=0.05, method="indep")
+
+    m_thresh_fdr = np.where(thresholds_fdr == 0, np.nan, thresholds_fdr)
+    # Compute mean ignoring NaN values
+    m_thresh_fdr = np.nanmean(m_thresh_fdr, axis=0)
 
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(times, np.mean(t_values, axis=0), "k", label="T-stat")
     xmin, xmax = plt.xlim()
 
-    if threshold_fdr != 0:
-        ax.hlines(
-            threshold_fdr,
-            xmin,
-            xmax,
-            linestyle="--",
-            colors="b",
-            label="p=0.05 (FDR)",
-            linewidth=2,
-        )
-        ax.hlines(
-            -threshold_fdr,
-            xmin,
-            xmax,
-            linestyle="--",
-            colors="b",
-            linewidth=2,
-        )
+    if m_thresh_fdr != 0:
+        plot_hline(ax, m_thresh_fdr, xmin, xmax, "p=0.05 (FDR)", "b")
+        plot_hline(ax, -m_thresh_fdr, xmin, xmax, "b")
     ax.legend()
     ax.set_title(f"N2pc T-test {group} - Permutations")
     ax.set_xlabel("Time (ms)")
@@ -231,6 +210,7 @@ def plot_permutations(t_values, pvals, times, group):
 
 
 def main_permutations():
+
     group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
                   'thalamus': ['52', '54', '55', '56', '58'],
                   'pulvinar':['51', '53', '59', '60'],
@@ -246,6 +226,7 @@ def main_permutations():
             continue
 
 def main():
+
     group_dict = {'old':['18', '19', '20', '21', '22'],
                   'thalamus': ['52', '54', '55', '56', '58'],
                   'pulvinar':['51', '53', '59', '60'],
@@ -255,12 +236,13 @@ def main():
     for group, subject_list in group_dict.items():
         try:
             X, times = get_n2pc_array_group(subject_list)
-            T, reject_fdr, pval_fdr, threshold_fdr = stats_n2pc(X)
-            plot_n2pc(T, times, reject_fdr, pval_fdr, threshold_fdr, group)
+            T, _, _, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
+            plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group)
         except:
             print(f'Error in group {group}')
             continue
   
 
 if __name__ == '__main__':
+    main()
     main_permutations()
