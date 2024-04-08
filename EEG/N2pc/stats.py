@@ -164,7 +164,7 @@ def permutations(subject_list, n_subjects, k, n_epochs):
         #    X = X[0:n_epochs,:]
         #elif X.shape[0] < n_epochs:
         #    print('WARNING - NOT ENOUGH EPOCHS')
-        T, pval, reject_fdr, pval_fdr, threshold_fdr = stats_n2pc(X)
+        T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
         t_values.append(T)
         rejects_fdr.append(reject_fdr)
         pvals.append(pval)
@@ -197,15 +197,15 @@ def plot_permutations(t_values, thresholds_fdr, times, group):
     ax.plot(times, np.mean(t_values, axis=0), "k", label="T-stat")
     xmin, xmax = plt.xlim()
 
-    if m_thresh_fdr != 0:
-        plot_hline(ax, m_thresh_fdr, xmin, xmax, "p=0.05 (FDR)", "b")
+    if np.sum(m_thresh_fdr) != 0:
+        plot_hline(ax, m_thresh_fdr, xmin, xmax, "b", "p=0.05 (FDR)")
         plot_hline(ax, -m_thresh_fdr, xmin, xmax, "b")
     ax.legend()
     ax.set_title(f"N2pc T-test {group} - Permutations")
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("T-stat")
     plt.tight_layout()
-    plt.show()
+    #plt.show()
     fig.savefig(os.path.join(path, f'{group}-ttest.png'))
 
 
@@ -216,11 +216,11 @@ def main_permutations():
                   'pulvinar':['51', '53', '59', '60'],
                     'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
                     }
-    
+    group_dict = {'test':['01', '02', '03']}
     for group, subject_list in group_dict.items():
         try:
-            t_values, pvals, _, _, _, times = permutations(subject_list, 4, 1000, 100)
-            plot_permutations(t_values, pvals, times, group)
+            t_values,_, _, _, threshold_fdr, times = permutations(subject_list, 2, 100, 100)
+            plot_permutations(t_values, threshold_fdr, times, group)
         except:
             print(f'Error in group {group}')
             continue
@@ -228,15 +228,17 @@ def main_permutations():
 def main():
 
     group_dict = {'old':['18', '19', '20', '21', '22'],
+                 'pulvinar':['51', '53', '59', '60'],
                   'thalamus': ['52', '54', '55', '56', '58'],
-                  'pulvinar':['51', '53', '59', '60'],
-                    'young': ['71', '72', '75', '76', '77']
-                    }
+                   'young': ['71', '72', '75', '76', '77']
+                   }
+
+    group_dict = {'test':['01', '02', '03']}
     
     for group, subject_list in group_dict.items():
         try:
             X, times = get_n2pc_array_group(subject_list)
-            T, _, _, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
+            T, _, _, _, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
             plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group)
         except:
             print(f'Error in group {group}')
