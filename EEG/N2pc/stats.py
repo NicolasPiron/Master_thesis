@@ -216,7 +216,7 @@ def main_permutations():
                   'pulvinar':['51', '53', '59', '60'],
                     'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
                     }
-    group_dict = {'test':['01', '02', '03']}
+    #group_dict = {'test':['01', '02', '03']}
     for group, subject_list in group_dict.items():
         try:
             t_values,_, _, _, threshold_fdr, times = permutations(subject_list, 2, 100, 100)
@@ -233,7 +233,7 @@ def main():
                    'young': ['71', '72', '75', '76', '77']
                    }
 
-    group_dict = {'test':['01', '02', '03']}
+    #group_dict = {'test':['01', '02', '03']}
     
     for group, subject_list in group_dict.items():
         try:
