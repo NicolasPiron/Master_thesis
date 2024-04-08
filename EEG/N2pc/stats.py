@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
+import random
 import os
 import mne
 from mne import io
@@ -81,7 +82,7 @@ def stats_n2pc(X):
         threshold_fdr = np.min(np.abs(T)[reject_fdr])
 
 
-    return T, reject_fdr, pval_fdr, threshold_fdr
+    return T, pval, reject_fdr, pval_fdr, threshold_fdr
 
 
 def plot_n2pc(T, times, reject_fdr, pval_fdr, threshold_fdr, group):
@@ -120,9 +121,129 @@ def plot_n2pc(T, times, reject_fdr, pval_fdr, threshold_fdr, group):
     ax.set_title(f"{group} N2pc T-test")
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("T-stat")
+    plt.tight_layout()
     #plt.show()
     fig.savefig(os.path.join(path, f'{group}-ttest.png'))
 
+
+def load_data(subject_list):
+    
+    subject_data = {}
+    for subject in subject_list:
+        subject_data[subject] = get_n2pc_array_subject(subject)
+    
+    return subject_data
+
+def extract_data(subject_list, subject_data):
+    
+    subset = {}
+    for subject_id in subject_list:
+        subset[subject_id] = subject_data[subject_id]
+        
+    return subset
+
+def concat_data(subject_data):
+    
+    array_list = []
+    for data in subject_data.values():
+        x = data[0]
+        times = data[1]
+        array_list.append(x)
+    X = np.concatenate(array_list, axis=0)
+    return X, times
+
+def permutations(subject_list, n_subjects, k, n_epochs):
+    
+    all_subjects_data = load_data(subject_list)
+    t_values = []
+    rejects_fdr = []
+    pvals = []
+    pvals_fdr = []
+    thresholds_fdr = []
+    
+    for i in range(k):
+        sample = random.sample(subject_list, n_subjects)
+        data = extract_data(sample, all_subjects_data)
+        X, times = concat_data(data)
+        #if X.shape[0] > n_epochs:
+        #    X = X[0:n_epochs,:]
+        #elif X.shape[0] < n_epochs:
+        #    print('WARNING - NOT ENOUGH EPOCHS')
+        T, pval, reject_fdr, pval_fdr, threshold_fdr = stats_n2pc(X)
+        t_values.append(T)
+        rejects_fdr.append(reject_fdr)
+        pvals.append(pval)
+        pvals_fdr.append(pval_fdr)
+        thresholds_fdr.append(threshold_fdr)
+         
+    t_values = np.array(t_values)
+    rejects_fdr = np.array(rejects_fdr)
+    pvals = np.array(pvals)
+    pvals_fdr = np.array(pvals_fdr)
+    thresholds_fdr = np.array(thresholds_fdr)
+        
+    return t_values, pvals, reject_fdr, pvals_fdr, thresholds_fdr, times
+
+def plot_permutations(t_values, pvals, times, group):
+
+    _, o = get_paths()
+    path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'permutations')
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    m_pvals = pvals.mean(axis=0)
+    m_reject_fdr, m_pval_fdr = fdr_correction(m_pvals, alpha=0.05, method="indep")
+    
+    if np.sum(m_reject_fdr) == 0:
+        threshold_fdr = 0
+    else:
+        threshold_fdr = np.min(np.abs(t_values.mean(axis=0))[m_reject_fdr])
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(times, np.mean(t_values, axis=0), "k", label="T-stat")
+    xmin, xmax = plt.xlim()
+
+    if threshold_fdr != 0:
+        ax.hlines(
+            threshold_fdr,
+            xmin,
+            xmax,
+            linestyle="--",
+            colors="b",
+            label="p=0.05 (FDR)",
+            linewidth=2,
+        )
+        ax.hlines(
+            -threshold_fdr,
+            xmin,
+            xmax,
+            linestyle="--",
+            colors="b",
+            linewidth=2,
+        )
+    ax.legend()
+    ax.set_title(f"N2pc T-test {group} - Permutations")
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel("T-stat")
+    plt.tight_layout()
+    plt.show()
+    fig.savefig(os.path.join(path, f'{group}-ttest.png'))
+
+
+def main_permutations():
+    group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
+                  'thalamus': ['52', '54', '55', '56', '58'],
+                  'pulvinar':['51', '53', '59', '60'],
+                    'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+                    }
+    
+    for group, subject_list in group_dict.items():
+        try:
+            t_values, pvals, _, _, _, times = permutations(subject_list, 4, 1000, 100)
+            plot_permutations(t_values, pvals, times, group)
+        except:
+            print(f'Error in group {group}')
+            continue
 
 def main():
     group_dict = {'old':['18', '19', '20', '21', '22'],
@@ -142,4 +263,4 @@ def main():
   
 
 if __name__ == '__main__':
-    main()
+    main_permutations()
