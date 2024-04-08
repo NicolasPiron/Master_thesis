@@ -195,10 +195,12 @@ def plot_permutations(t_values, thresholds_fdr, times, group):
 
     m_t_values = np.mean(t_values, axis=0)
     sd_t_values = np.std(t_values, axis=0)
+    conf_interval = np.percentile(t_values, [2.5, 97.5], axis=0)
 
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(times, m_t_values, "k", label="T-stat")
-    ax.fill_between(times, m_t_values - sd_t_values, m_t_values + sd_t_values, color="k", alpha=0.2)
+    #ax.fill_between(times, m_t_values - sd_t_values, m_t_values + sd_t_values, color="k", alpha=0.2)
+    ax.fill_between(times, conf_interval[0], conf_interval[1], color="k", alpha=0.2)
     xmin, xmax = plt.xlim()
 
     if np.sum(m_thresh_fdr) != 0:
