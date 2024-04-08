@@ -60,8 +60,9 @@ if __name__ == '__main__':
 
     subject_list = get_subject_list()
     df = get_long_all_subjects(subject_list)
+    subject_in_df = df['ID'].unique()
     print('========== Done ==========')
-    print(f'subjects in df : {df['ID'].unique()}')
+    print(f'subjects in df : {subject_in_df}')
 
 
 
