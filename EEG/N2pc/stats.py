@@ -193,8 +193,12 @@ def plot_permutations(t_values, thresholds_fdr, times, group):
     # Compute mean ignoring NaN values
     m_thresh_fdr = np.nanmean(m_thresh_fdr, axis=0)
 
+    m_t_values = np.mean(t_values, axis=0)
+    sd_t_values = np.std(t_values, axis=0)
+
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(times, np.mean(t_values, axis=0), "k", label="T-stat")
+    ax.plot(times, m_t_values, "k", label="T-stat")
+    ax.fill_between(times, m_t_values - sd_t_values, m_t_values + sd_t_values, color="k", alpha=0.2)
     xmin, xmax = plt.xlim()
 
     if np.sum(m_thresh_fdr) != 0:
@@ -219,7 +223,7 @@ def main_permutations():
     #group_dict = {'test':['01', '02', '03']}
     for group, subject_list in group_dict.items():
         try:
-            t_values,_, _, _, threshold_fdr, times = permutations(subject_list, 2, 100, 100)
+            t_values,_, _, _, threshold_fdr, times = permutations(subject_list, 4, 2000, 100)
             plot_permutations(t_values, threshold_fdr, times, group)
         except:
             print(f'Error in group {group}')
