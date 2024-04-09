@@ -120,6 +120,33 @@ def plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group):
     #plt.show()
     fig.savefig(os.path.join(path, f'{group}-ttest.png'))
 
+def plot_n2pc_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
+    '''
+    Plot T values of N2pc array
+    '''
+
+    _, o = get_paths()
+    path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 't-test', 'individual', f'sub-{subject_id}')
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(times, T, "k", label="T-stat")
+    xmin, xmax = plt.xlim()
+    plot_hline(ax, threshold_uncorrected, xmin, xmax, "r", "p=0.05 (uncorrected)")
+    plot_hline(ax, -threshold_uncorrected, xmin, xmax, "r")
+
+    if threshold_fdr != 0:
+        plot_hline(ax, threshold_fdr, xmin, xmax, "b", "p=0.05 (FDR)")
+        plot_hline(ax, -threshold_fdr, xmin, xmax, "b")
+
+    ax.legend()
+    ax.set_title(f"sub-{subject_id} N2pc T-test")
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel("T-stat")
+    plt.tight_layout()
+    #plt.show()
+    fig.savefig(os.path.join(path, f'sub-{subject_id}-ttest.png'))
 
 def load_data(subject_list):
     
@@ -215,6 +242,18 @@ def plot_permutations(t_values, thresholds_fdr, times, group):
     fig.savefig(os.path.join(path, f'{group}-ttest.png'))
 
 
+def main_single_subject():
+
+    subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23',
+                    '51', '52', '53', '54', '55', '56', '58', '59', '60',
+                    '70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+
+    for subject_id in subject_list:
+
+        X, times = get_n2pc_array_subject(subject_id)
+        T, _, _, _, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
+        plot_n2pc_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id)
+
 def main_permutations():
 
     group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
@@ -252,5 +291,6 @@ def main():
   
 
 if __name__ == '__main__':
-    main()
-    main_permutations()
+    #main()
+    #main_permutations()
+    main_single_subject()
