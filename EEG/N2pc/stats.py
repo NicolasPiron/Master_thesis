@@ -112,6 +112,7 @@ def plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group):
         plot_hline(ax, threshold_fdr, xmin, xmax, "b", "p=0.05 (FDR)")
         plot_hline(ax, -threshold_fdr, xmin, xmax, "b")
 
+    ax.set_ylim(-9, 4)
     ax.legend()
     ax.set_title(f"{group} N2pc T-test")
     ax.set_xlabel("Time (ms)")
