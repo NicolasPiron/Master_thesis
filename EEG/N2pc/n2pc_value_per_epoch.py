@@ -51,24 +51,5 @@ def loop_over_all_subj(input_dir, output_dir):
 
 if __name__ == '__main__':
 
-
-     # Create an ArgumentParser object to handle command-line arguments
-    parser = argparse.ArgumentParser(description="Run specific functions based on user input")
-    # Add an argument to specify the mode (single or all)
-    parser.add_argument("mode", choices=["single", "all"], help="Choose 'single' for single subject or 'all' for all subjects")
-    # Parse the command-line arguments
-    args = parser.parse_args()
-
-    # Check the value of the 'mode' argument and run the corresponding function
-    if args.mode == "single":
-        # Prompt the user to enter a two-digit number for the single subject
-        subject_id = input("Enter a two-digit number for the single subject: ")
-        erp.get_df_n2pc_values_epoch(subject_id, input_dir, output_dir)
-        print(f'==================== Dataframe created and saved for subject {subject_id}! :)')
-
-    elif args.mode == "all":
-        # Call the all subjects function
-        loop_over_all_subj(input_dir, output_dir)
-
-    else:
-        print("Invalid mode. Please choose 'single' or 'all'.")
+    #erp.get_df_n2pc_values_epoch('01', input_dir, output_dir)
+    loop_over_all_subj(input_dir, output_dir)

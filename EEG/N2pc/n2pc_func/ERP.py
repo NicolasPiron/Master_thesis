@@ -1371,10 +1371,8 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
     epochs_status = reject_log['bad_epochs']
 
     # initialize the df
-    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'index_reset', 'saccade', 'condition', 'target_side', '150-200ms', '200-250ms',
-                                '250-300ms', '260-310ms', '270-320ms', '280-330ms', '290-340ms', '300-350ms', '350-400ms',
-                                '400-450ms', '450-500ms', '500-550ms', '550-600ms', '200-300ms', '300-400ms', '400-500ms',
-                                '500-600ms', '200-400ms', '300-500ms', '400-600ms', 'total 200-600ms'])
+    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'index_reset', 'saccade', 'condition', 'target_side',
+                                '250-350ms'])
     
     # create row for each epoch
     df['epoch_index'] = range(1,len(epochs_status)+1)
@@ -1447,90 +1445,20 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
 
             # create the time points based on sfreq
             sfreq = epochs.info['sfreq'] 
-            t_150 = sfreq * 0.15
-            t_150 = math.ceil(t_150)
-            t_200 = sfreq * 0.2
-            t_200 = math.ceil(t_200)
+
             t_250 = sfreq * 0.25
             t_250 = math.ceil(t_250)
-            t_260 = sfreq * 0.26
-            t_260 = math.ceil(t_260)
-            t_270 = sfreq * 0.27
-            t_270 = math.ceil(t_270)
-            t_280 = sfreq * 0.28
-            t_280 = math.ceil(t_280)
-            t_290 = sfreq * 0.29
-            t_290 = math.ceil(t_290)
-            t_300 = sfreq * 0.3
-            t_300 = math.ceil(t_300)
-            t_310 = sfreq * 0.31
-            t_310 = math.ceil(t_310)
-            t_320 = sfreq * 0.32
-            t_320 = math.ceil(t_320)
-            t_330 = sfreq * 0.33
-            t_330 = math.ceil(t_330)
-            t_340 = sfreq * 0.34
-            t_340 = math.ceil(t_340)
             t_350 = sfreq * 0.35
             t_350 = math.ceil(t_350)
-            t_400 = sfreq * 0.4
-            t_400 = math.ceil(t_400)
-            t_450 = sfreq * 0.45
-            t_450 = math.ceil(t_450)
-            t_500 = sfreq * 0.5
-            t_500 = math.ceil(t_500)
-            t_550 = sfreq * 0.55
-            t_550 = math.ceil(t_550)
-            t_600 = sfreq * 0.6
-            t_600 = math.ceil(t_600)
-
+            
             # slice the data into 50ms and 100ms windows
-            diff_150_200 = diff[t_150:t_200].mean()
-            diff_200_250 = diff[t_200:t_250].mean()
-            diff_250_300 = diff[t_250:t_300].mean()
-            diff_260_310 = diff[t_260:t_310].mean()
-            diff_270_320 = diff[t_270:t_320].mean()
-            diff_280_330 = diff[t_280:t_330].mean()
-            diff_290_340 = diff[t_290:t_340].mean()
-            diff_300_350 = diff[t_300:t_350].mean()
-            diff_350_400 = diff[t_350:t_400].mean()
-            diff_400_450 = diff[t_400:t_450].mean()
-            diff_450_500 = diff[t_450:t_500].mean()
-            diff_500_550 = diff[t_500:t_550].mean()
-            diff_550_600 = diff[t_550:t_600].mean()
-            diff_200_300 = diff[t_200:t_300].mean()
-            diff_300_400 = diff[t_300:t_400].mean()
-            diff_400_500 = diff[t_400:t_500].mean()
-            diff_500_600 = diff[t_500:t_600].mean()
-            diff_200_400 = diff[t_200:t_400].mean()
-            diff_300_500 = diff[t_300:t_500].mean()
-            diff_400_600 = diff[t_400:t_600].mean()
-            diff_200_600 = diff[t_200:t_600].mean()
+            
+            diff_250_350 = diff[t_250:t_350].mean()
 
             # fill the dataframe with everything we just computed 
             df.iloc[row_number, 5] = cond
             df.iloc[row_number, 6] = target_side
-            df.iloc[row_number, 7] = diff_150_200
-            df.iloc[row_number, 8] = diff_200_250
-            df.iloc[row_number, 9] = diff_250_300
-            df.iloc[row_number, 10] = diff_260_310
-            df.iloc[row_number, 11] = diff_270_320
-            df.iloc[row_number, 12] = diff_280_330
-            df.iloc[row_number, 13] = diff_290_340
-            df.iloc[row_number, 14] = diff_300_350
-            df.iloc[row_number, 15] = diff_350_400
-            df.iloc[row_number, 16] = diff_400_450
-            df.iloc[row_number, 17] = diff_450_500
-            df.iloc[row_number, 18] = diff_500_550
-            df.iloc[row_number, 19] = diff_550_600
-            df.iloc[row_number, 20] = diff_200_300
-            df.iloc[row_number, 21] = diff_300_400
-            df.iloc[row_number, 22] = diff_400_500
-            df.iloc[row_number, 23] = diff_500_600
-            df.iloc[row_number, 24] = diff_200_400
-            df.iloc[row_number, 25] = diff_300_500
-            df.iloc[row_number, 26] = diff_400_600
-            df.iloc[row_number, 27] = diff_200_600
+            df.iloc[row_number, 7] = diff_250_350           
     
     print(f'========== df created for subject {subject_id}')
 
