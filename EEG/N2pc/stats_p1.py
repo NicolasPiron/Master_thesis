@@ -93,7 +93,7 @@ def plot_p1(T, times, threshold_fdr, threshold_uncorrected, group):
         os.makedirs(path)
 
     # find the peak index (max T values between 0 and 200 ms)
-    window = np.logical_and(times >= 0, times <= 200)
+    window = np.logical_and(times >= 80, times <= 180)
     peak_t = times[window][np.argmax(T[window])]
 
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -132,7 +132,7 @@ def plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
         os.makedirs(path)
 
      # find the peak index (max T values between 0 and 200 ms)
-    window = np.logical_and(times >= 0, times <= 200)
+    window = np.logical_and(times >= 80, times <= 180)
     peak_t = times[window][np.argmax(T[window])]
 
     fig, ax = plt.subplots(figsize=(12, 6))
