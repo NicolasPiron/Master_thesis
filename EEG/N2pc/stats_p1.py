@@ -27,7 +27,7 @@ def get_p1_array_subject(subject_id):
     path = os.path.join(i, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif')
     epochs = mne.read_epochs(path)
     times = 1e3 * epochs.times
-    X = epochs.get_data(picks=['O1', 'O2']).mean(axis=1) 
+    X = epochs.get_data(picks=['O1', 'O2', 'PO3', 'PO4', 'PO7', 'PO8']).mean(axis=1) 
 
     return X, times
 
