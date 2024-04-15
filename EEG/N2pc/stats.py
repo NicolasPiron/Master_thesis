@@ -102,6 +102,10 @@ def plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group):
     if not os.path.exists(path):
         os.makedirs(path)
 
+    # find the peak index (min T values between 180 and 300 ms)
+    window = np.logical_and(times >= 180, times <= 300)
+    peak_t = times[window][np.argmin(T[window])]
+
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(times, T, "k", label="T-stat")
     xmin, xmax = plt.xlim()
@@ -112,9 +116,10 @@ def plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group):
         plot_hline(ax, threshold_fdr, xmin, xmax, "b", "p=0.05 (FDR)")
         plot_hline(ax, -threshold_fdr, xmin, xmax, "b")
 
+    ax.fill_between([peak_t - 25, peak_t + 25], -9, 4, color="blue", alpha=0.2)
     ax.set_ylim(-9, 4)
     ax.legend()
-    ax.set_title(f"{group} N2pc T-test")
+    ax.set_title(f"{group} N2pc T-test - peak at {peak_t:.0f} ms")
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("T-stat")
     plt.tight_layout()
