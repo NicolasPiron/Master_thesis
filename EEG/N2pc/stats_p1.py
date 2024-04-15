@@ -121,8 +121,6 @@ def plot_p1(T, times, threshold_fdr, threshold_uncorrected, group):
     #plt.show()
     fig.savefig(os.path.join(path, f'{group}-ttest.png'))
 
- 
-
 def plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
     '''
     Plot T values of P1 array
@@ -132,6 +130,10 @@ def plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
     path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 't-test', 'individual', f'sub-{subject_id}')
     if not os.path.exists(path):
         os.makedirs(path)
+
+     # find the peak index (max T values between 0 and 200 ms)
+    window = np.logical_and(times >= 0, times <= 200)
+    peak_t = times[window][np.argmax(T[window])]
 
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(times, T, "k", label="T-stat")
@@ -144,7 +146,10 @@ def plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
         plot_hline(ax, -threshold_fdr, xmin, xmax, "b")
 
     ax.legend()
-    ax.set_title(f"sub-{subject_id} P1 T-test")
+    ax.grid(True)
+    ymin, ymax = ax.get_ylim()
+    ax.fill_between([peak_t - 25, peak_t + 25], ymin, ymax, color="blue", alpha=0.2)
+    ax.set_title(f"sub-{subject_id} P1 T-test - peak at {peak_t:.0f} ms")
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("T-stat")
     plt.tight_layout()
@@ -169,7 +174,19 @@ def main():
         except:
             print(f'Error in group {group}')
             continue
-  
+
+def main_single_subject():
+
+    subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23',
+                    '51', '52', '53', '54', '55', '56', '58', '59', '60',
+                    '70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+
+    for subject_id in subject_list:
+
+        X, times = get_p1_array_subject(subject_id)
+        T, _, _, _, threshold_fdr, threshold_uncorrected = stats_p1(X)
+        plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id)
 
 if __name__ == '__main__':
-    main()
+    #main()
+    main_single_subject()
