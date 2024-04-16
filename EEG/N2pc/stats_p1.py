@@ -5,7 +5,7 @@ import pandas as pd
 from scipy import stats
 import matplotlib.pyplot as plt
 import seaborn as sns
-from mne.stats import bonferroni_correction, fdr_correction
+from mne.stats import bonferroni_correction, fdr_correction, permutation_cluster_test
 from n2pc_func.set_paths import get_paths
 
 def get_p1_array_subject(subject_id):
@@ -30,9 +30,6 @@ def get_p1_array_subject(subject_id):
     X = epochs.get_data(picks=['O1', 'O2', 'PO3', 'PO4', 'PO7', 'PO8']).mean(axis=1) 
 
     return X, times
-
-x, _ = get_p1_array_subject('01')
-print(x.shape)
 
 def get_p1_array_group(subject_list):
 
@@ -156,6 +153,86 @@ def plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
     #plt.show()
     fig.savefig(os.path.join(path, f'sub-{subject_id}-ttest.png'))
 
+############################################################################################################
+# ANOVAs and pairwise t-tests
+############################################################################################################
+
+def run_perm_cluster_test(*groups_vals):
+
+    threshold = None
+    T_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
+    groups_vals,
+    n_permutations=1000,
+    threshold=threshold,
+    tail=0,
+    n_jobs=None,
+    out_type="mask",
+)
+    return T_obs, clusters, cluster_p_values, H0
+
+def plot_anova(T_obs, clusters, cluster_p_values, times):
+
+    _, o = get_paths()
+    path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 'ANOVA')
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    for i_c, c in enumerate(clusters):
+        c = c[0]
+        if cluster_p_values[i_c] <= 0.05:
+            h = ax.axvspan(times[c.start], times[c.stop - 1], color="r", alpha=0.3)
+        else:
+            ax.axvspan(times[c.start], times[c.stop - 1], color=(0.3, 0.3, 0.3), alpha=0.3)
+
+    ax.plot(times, T_obs, "g")
+    ax.set_title("N2pc ANOVA")
+    ax.legend((h,), ("cluster p-value < 0.05",))
+    ax.set_xlabel("time (ms)")
+    ax.set_ylabel("f-values")
+    plt.tight_layout()
+    fig.savefig(os.path.join(path, 'anova.png'))
+
+def plot_pairwise(T_obs, clusters, cluster_p_values, times, groups_dict):
+
+    _, o = get_paths()
+    path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 'ANOVA')
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    g1_values = list(groups_dict.values())[0]
+    g2_values = list(groups_dict.values())[1]
+    g1_name = list(groups_dict.keys())[0]
+    g2_name = list(groups_dict.keys())[1]
+
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(8, 4))
+    ax.set_title(f'N2pc Pairwise F-test - {g1_name} vs {g2_name}')
+    ax.plot(
+        times,
+        g1_values.mean(axis=0) - g2_values.mean(axis=0),
+        label=f"ERP Contrast ({g1_name} - {g2_name})",
+    )
+    ax.set_ylabel("electric potential (uV)")
+    ax.legend()
+
+    for i_c, c in enumerate(clusters):
+        c = c[0]
+        if cluster_p_values[i_c] <= 0.05:
+            h = ax2.axvspan(times[c.start], times[c.stop - 1], color="r", alpha=0.3)
+        else:
+            ax2.axvspan(times[c.start], times[c.stop - 1], color=(0.3, 0.3, 0.3), alpha=0.3)
+
+    hf = plt.plot(times, T_obs, "g")
+    ax2.legend((h,), ("cluster p-value < 0.05",))
+    ax2.set_xlabel("time (ms)")
+    ax2.set_ylabel("f-values")
+    plt.tight_layout()
+    fig.savefig(os.path.join(path, f'pairwise-{g1_name}-vs-{g2_name}.png'))
+
+############################################################################################################
+# Main functions
+############################################################################################################
+
 def main():
 
     group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
@@ -187,6 +264,38 @@ def main_single_subject():
         T, _, _, _, threshold_fdr, threshold_uncorrected = stats_p1(X)
         plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id)
 
+def main_anova():
+     
+    group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
+                  'thalamus': ['52', '54', '55', '56', '58'],
+                  'pulvinar':['51', '53', '59', '60']
+                    }
+    # group_dict = {'old':['01'],
+    #              'thalamus':['02'],
+    #              'pulvinar':['03']}
+  
+    old_vals, _ = get_p1_array_group(group_dict['old'])
+    thalamus_vals, _ = get_p1_array_group(group_dict['thalamus'])
+    pulvinar_vals, times = get_p1_array_group(group_dict['pulvinar'])
+
+    T_obs, clusters, cluster_p_values, H0 = run_perm_cluster_test(old_vals, thalamus_vals, pulvinar_vals)
+    print('H0: ', H0)
+    plot_anova(T_obs, clusters, cluster_p_values, times)
+
+    group_dict1 = {'old': old_vals, 'thalamus': thalamus_vals}
+    group_dict2 = {'old': old_vals, 'pulvinar': pulvinar_vals}
+    group_dict3 = {'thalamus': thalamus_vals, 'pulvinar': pulvinar_vals}
+
+    T_obs1, clusters1, cluster_p_values1, H01 = run_perm_cluster_test(old_vals, thalamus_vals)
+    T_obs2, clusters2, cluster_p_values2, H02 = run_perm_cluster_test(old_vals, pulvinar_vals)
+    T_obs3, clusters3, cluster_p_values3, H03 = run_perm_cluster_test(thalamus_vals, pulvinar_vals)
+
+    plot_pairwise(T_obs1, clusters1, cluster_p_values1, times, group_dict1) 
+    plot_pairwise(T_obs2, clusters2, cluster_p_values2, times, group_dict2)
+    plot_pairwise(T_obs3, clusters3, cluster_p_values3, times, group_dict3)
+
+
 if __name__ == '__main__':
     #main()
-    main_single_subject()
+    #main_single_subject()
+    main_anova()

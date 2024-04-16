@@ -254,7 +254,7 @@ def plot_permutations(t_values, thresholds_fdr, times, group):
 
 def run_perm_cluster_test(*groups_vals):
 
-    threshold = 6.0
+    threshold = None
     T_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
     groups_vals,
     n_permutations=1000,
