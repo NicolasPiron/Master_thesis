@@ -205,7 +205,7 @@ def get_power_dataset(input_dir):
 if __name__ == '__main__':
 
     i, o = get_paths()
-    get_conn_dataset(i)
-    get_global_src_conn_dataset(i)
-    get_hemi_src_conn_dataset(i)
-    #get_power_dataset(i)
+    #get_conn_dataset(i)
+    #get_global_src_conn_dataset(i)
+    #get_hemi_src_conn_dataset(i)
+    get_power_dataset(i)

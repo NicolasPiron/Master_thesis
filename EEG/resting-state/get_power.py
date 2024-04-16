@@ -13,7 +13,7 @@ def get_paths():
 
     return input_dir, output_dir
 
-get_src_power = True
+get_src_power = False
 
 i, o = get_paths()
 for directory in sorted(os.listdir(i)):

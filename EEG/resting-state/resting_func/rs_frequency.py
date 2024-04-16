@@ -85,6 +85,7 @@ def get_data(subject_id, condition):
 
 def get_freq_bands():
     freq_bands = {
+        'delta': [1, 4],
         'theta': [4, 8],
         'alpha': [8, 13],
         'low_beta':[13, 16],
