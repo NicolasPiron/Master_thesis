@@ -1372,7 +1372,7 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
 
     # initialize the df
     df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'index_reset', 'saccade', 'condition', 'target_side',
-                                '250-350ms'])
+                                '245-395ms'])
     
     # create row for each epoch
     df['epoch_index'] = range(1,len(epochs_status)+1)
@@ -1446,14 +1446,14 @@ def get_df_n2pc_values_epoch(subject_id, input_dir, output_dir):
             # create the time points based on sfreq
             sfreq = epochs.info['sfreq'] 
 
-            t_250 = sfreq * 0.25
-            t_250 = math.ceil(t_250)
-            t_350 = sfreq * 0.35
-            t_350 = math.ceil(t_350)
+            t_245 = sfreq * 0.245
+            t_245 = math.ceil(t_245)
+            t_395 = sfreq * 0.395
+            t_395 = math.ceil(t_395)
             
             # slice the data into 50ms and 100ms windows
             
-            diff_250_350 = diff[t_250:t_350].mean()
+            diff_250_350 = diff[t_245:t_395].mean()
 
             # fill the dataframe with everything we just computed 
             df.iloc[row_number, 5] = cond
