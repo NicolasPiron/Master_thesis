@@ -22,6 +22,8 @@ def get_n2pc_array_subject(subject_id):
     -------
     X : np.array
         The N2pc array of shape (n_trials, n_timepoints)
+    times : np.array
+        The timepoints of the N2pc array
     '''
 
     i, _ = get_paths()
@@ -64,6 +66,18 @@ def stats_n2pc(X):
 
     Returns
     -------
+    T : np.array
+        The T-statistics of the N2pc array
+    pval : np.array
+        The p-values of the T-statistics
+    reject_fdr : np.array
+        Boolean array indicating the rejected null hypothesis for FDR correction
+    pval_fdr : np.array
+        The p-values of the FDR corrected T-statistics
+    threshold_fdr : float
+        The threshold for FDR correction
+    threshold_uncorrected : float
+        The threshold for uncorrected p-values
     '''
     T, pval = stats.ttest_1samp(X, 0)
     alpha = 0.05
@@ -102,8 +116,8 @@ def plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    # find the peak index (min T values between 180 and 300 ms)
-    window = np.logical_and(times >= 180, times <= 300)
+    # find the peak index (min T values between 180 and 400 ms)
+    window = np.logical_and(times >= 180, times <= 400)
     peak_t = times[window][np.argmin(T[window])]
 
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -406,7 +420,7 @@ def main_anova():
     plot_pairwise(T_obs3, clusters3, cluster_p_values3, times, group_dict3)
 
 if __name__ == '__main__':
-    #main()
+    main()
     #main_permutations()
     #main_single_subject()
-    main_anova()
+    #main_anova()
