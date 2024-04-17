@@ -9,7 +9,7 @@ from mne.stats import bonferroni_correction, fdr_correction, permutation_cluster
 from n2pc_func.set_paths import get_paths
 
 
-def get_n2pc_array_subject(subject_id):
+def get_n2pc_array_subject(subject_id, side=None, invert=False):
     '''
     Get the N2pc array for a given subject
 
@@ -17,6 +17,10 @@ def get_n2pc_array_subject(subject_id):
     ----------
     subject_id : str
         The subject id
+    side : str
+        The side of the target ('left' or 'right'). if None, both sides are considered
+    invert : bool
+        If True, left and right sides are inverted
     
     Returns
     -------
@@ -30,6 +34,7 @@ def get_n2pc_array_subject(subject_id):
     path = os.path.join(i, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif')
     epochs = mne.read_epochs(path)
     times = 1e3 * epochs.times
+
     target_left = mne.concatenate_epochs([epochs['dis_top/target_l'],
                                       epochs['no_dis/target_l'],
                                       epochs['dis_bot/target_l'],
@@ -38,18 +43,34 @@ def get_n2pc_array_subject(subject_id):
                                       epochs['no_dis/target_r'],
                                       epochs['dis_bot/target_r'],
                                       epochs['dis_left/target_r']])
+    
+    # pretty ugly way to invert the data (-> do like the lesion is on the left)
+    if invert:
+        target_left, target_right = target_right, target_left
+        x_left = target_left.get_data(picks=['PO7']) - target_left.get_data(picks=['PO8'])
+        x_right = target_right.get_data(picks=['PO8']) - target_right.get_data(picks=['PO7'])
+    else:
+        x_left = target_left.get_data(picks=['PO8']) - target_left.get_data(picks=['PO7'])
+        x_right = target_right.get_data(picks=['PO7']) - target_right.get_data(picks=['PO8'])
 
-    x_left = target_left.get_data(picks=['PO8']) - target_left.get_data(picks=['PO7'])
-    x_right = target_right.get_data(picks=['PO7']) - target_right.get_data(picks=['PO8'])
-    x = np.concatenate((x_left, x_right), axis=0)
+    if side == 'left':
+        x = x_left
+    elif side == 'right':
+        x = x_right
+    else:
+        x = np.concatenate((x_left, x_right), axis=0)
     X = x.reshape(x.shape[0], x.shape[2])
     return X, times
 
-def get_n2pc_array_group(subject_list):
+def get_n2pc_array_group(subject_list, side=None):
 
+    invert_subjects = ['51', '53', '54', '58', '59']
     array_list = []
     for subject_id in subject_list:
-        x, times = get_n2pc_array_subject(subject_id)
+        if subject_id in invert_subjects:
+            x, times = get_n2pc_array_subject(subject_id, side=side, invert=True)
+        else:
+            x, times = get_n2pc_array_subject(subject_id, side=side)
         array_list.append(x)
     X = np.concatenate(array_list, axis=0)
     return X, times
@@ -95,7 +116,6 @@ def stats_n2pc(X):
     else:
         threshold_fdr = np.min(np.abs(T)[reject_fdr])
 
-
     return T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected
 
 
@@ -106,19 +126,27 @@ def plot_hline(ax, y, xmin, xmax, color, label=None):
         else:
             ax.hlines(y,xmin,xmax,linestyle="--",colors=color,linewidth=2)
 
-def plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group):
+def plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group, side=None):
     '''
     Plot T values of N2pc array
     '''
 
-    _, o = get_paths()
-    path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 't-test')
-    if not os.path.exists(path):
-        os.makedirs(path)
-
     # find the peak index (min T values between 180 and 400 ms)
     window = np.logical_and(times >= 180, times <= 400)
     peak_t = times[window][np.argmin(T[window])]
+
+    _, o = get_paths()
+    if side != None:
+        path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 't-test', 'laterality')
+        title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms - target {side}"
+        fname = f'{group}-ttest-{side}.png'
+    else:
+        path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 't-test')
+        title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms"
+        fname = f'{group}-ttest.png'
+
+    if not os.path.exists(path):
+        os.makedirs(path)
 
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(times, T, "k", label="T-stat")
@@ -130,15 +158,15 @@ def plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group):
         plot_hline(ax, threshold_fdr, xmin, xmax, "b", "p=0.05 (FDR)")
         plot_hline(ax, -threshold_fdr, xmin, xmax, "b")
 
-    ax.fill_between([peak_t - 25, peak_t + 25], -9, 4, color="blue", alpha=0.2)
+    ax.fill_between([peak_t - 75, peak_t + 75], -9, 4, color="blue", alpha=0.2)
     ax.set_ylim(-9, 4)
     ax.legend()
-    ax.set_title(f"{group} N2pc T-test - peak at {peak_t:.0f} ms")
+    ax.set_title(title)
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("T-stat")
     plt.tight_layout()
     #plt.show()
-    fig.savefig(os.path.join(path, f'{group}-ttest.png'))
+    fig.savefig(os.path.join(path, fname))
 
 def plot_n2pc_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
     '''
@@ -167,99 +195,6 @@ def plot_n2pc_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id
     plt.tight_layout()
     #plt.show()
     fig.savefig(os.path.join(path, f'sub-{subject_id}-ttest.png'))
-
-def load_data(subject_list):
-    
-    subject_data = {}
-    for subject in subject_list:
-        subject_data[subject] = get_n2pc_array_subject(subject)
-    
-    return subject_data
-
-def extract_data(subject_list, subject_data):
-    
-    subset = {}
-    for subject_id in subject_list:
-        subset[subject_id] = subject_data[subject_id]
-        
-    return subset
-
-def concat_data(subject_data):
-    
-    array_list = []
-    for data in subject_data.values():
-        x = data[0]
-        times = data[1]
-        array_list.append(x)
-    X = np.concatenate(array_list, axis=0)
-    return X, times
-
-def permutations(subject_list, n_subjects, k, n_epochs):
-    
-    all_subjects_data = load_data(subject_list)
-    t_values = []
-    rejects_fdr = []
-    pvals = []
-    pvals_fdr = []
-    thresholds_fdr = []
-    
-    for i in range(k):
-        sample = random.sample(subject_list, n_subjects)
-        data = extract_data(sample, all_subjects_data)
-        X, times = concat_data(data)
-        #if X.shape[0] > n_epochs:
-        #    X = X[0:n_epochs,:]
-        #elif X.shape[0] < n_epochs:
-        #    print('WARNING - NOT ENOUGH EPOCHS')
-        T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
-        t_values.append(T)
-        rejects_fdr.append(reject_fdr)
-        pvals.append(pval)
-        pvals_fdr.append(pval_fdr)
-        thresholds_fdr.append(threshold_fdr)
-         
-    t_values = np.array(t_values)
-    rejects_fdr = np.array(rejects_fdr)
-    pvals = np.array(pvals)
-    pvals_fdr = np.array(pvals_fdr)
-    thresholds_fdr = np.array(thresholds_fdr)
-        
-    return t_values, pvals, reject_fdr, pvals_fdr, thresholds_fdr, times
-
-def plot_permutations(t_values, thresholds_fdr, times, group):
-
-    _, o = get_paths()
-    path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'permutations')
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    #m_pvals = pvals.mean(axis=0)
-    #m_reject_fdr, m_pval_fdr = fdr_correction(m_pvals, alpha=0.05, method="indep")
-
-    m_thresh_fdr = np.where(thresholds_fdr == 0, np.nan, thresholds_fdr)
-    # Compute mean ignoring NaN values
-    m_thresh_fdr = np.nanmean(m_thresh_fdr, axis=0)
-
-    m_t_values = np.mean(t_values, axis=0)
-    sd_t_values = np.std(t_values, axis=0)
-    conf_interval = np.percentile(t_values, [2.5, 97.5], axis=0)
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(times, m_t_values, "k", label="T-stat")
-    #ax.fill_between(times, m_t_values - sd_t_values, m_t_values + sd_t_values, color="k", alpha=0.2)
-    ax.fill_between(times, conf_interval[0], conf_interval[1], color="k", alpha=0.2)
-    xmin, xmax = plt.xlim()
-
-    if np.sum(m_thresh_fdr) != 0:
-        plot_hline(ax, m_thresh_fdr, xmin, xmax, "b", "p=0.05 (FDR)")
-        plot_hline(ax, -m_thresh_fdr, xmin, xmax, "b")
-    ax.legend()
-    ax.set_title(f"N2pc T-test {group} - Permutations")
-    ax.set_xlabel("Time (ms)")
-    ax.set_ylabel("T-stat")
-    plt.tight_layout()
-    #plt.show()
-    fig.savefig(os.path.join(path, f'{group}-ttest.png'))
 
 
 ############################################################################################################
@@ -354,22 +289,6 @@ def main_single_subject():
         T, _, _, _, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
         plot_n2pc_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id)
 
-def main_permutations():
-
-    group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
-                  'thalamus': ['52', '54', '55', '56', '58'],
-                  'pulvinar':['51', '53', '59', '60'],
-                    'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
-                    }
-    #group_dict = {'test':['01', '02', '03']}
-    for group, subject_list in group_dict.items():
-        try:
-            t_values,_, _, _, threshold_fdr, times = permutations(subject_list, 4, 2000, 100)
-            plot_permutations(t_values, threshold_fdr, times, group)
-        except:
-            print(f'Error in group {group}')
-            continue
-
 def main():
 
     group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
@@ -381,14 +300,35 @@ def main():
     #group_dict = {'test':['01', '02', '03']}
     
     for group, subject_list in group_dict.items():
+
         try:
-            X, times = get_n2pc_array_group(subject_list)
+            X, times = get_n2pc_array_group(subject_list, side=None)
             T, _, _, _, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
-            plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group)
+            plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group, side=None)
         except:
             print(f'Error in group {group}')
             continue
-  
+
+def main_sides():
+
+    group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
+                  'thalamus': ['52', '54', '55', '56', '58'],
+                  'pulvinar':['51', '53', '59', '60'],
+                    'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+                    }
+
+    # group_dict = {'test':['01', '02', '03']}
+    
+    for group, subject_list in group_dict.items():
+        for side in ['left', 'right']:
+            try:
+                X, times = get_n2pc_array_group(subject_list, side=side)
+                T, _, _, _, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
+                plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group, side=side)
+            except:
+                print(f'Error in group {group}')
+                continue
+
 def main_anova():
      
     group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
@@ -420,7 +360,120 @@ def main_anova():
     plot_pairwise(T_obs3, clusters3, cluster_p_values3, times, group_dict3)
 
 if __name__ == '__main__':
-    main()
-    #main_permutations()
+    #main()
+    main_sides()
     #main_single_subject()
     #main_anova()
+
+############################################################################################################
+# unused functions
+############################################################################################################
+
+# def load_data(subject_list):
+    
+#     subject_data = {}
+#     for subject in subject_list:
+#         subject_data[subject] = get_n2pc_array_subject(subject)
+    
+#     return subject_data
+
+# def extract_data(subject_list, subject_data):
+    
+#     subset = {}
+#     for subject_id in subject_list:
+#         subset[subject_id] = subject_data[subject_id]
+        
+#     return subset
+
+# def concat_data(subject_data):
+    
+#     array_list = []
+#     for data in subject_data.values():
+#         x = data[0]
+#         times = data[1]
+#         array_list.append(x)
+#     X = np.concatenate(array_list, axis=0)
+#     return X, times
+
+# def permutations(subject_list, n_subjects, k, n_epochs):
+    
+#     all_subjects_data = load_data(subject_list)
+#     t_values = []
+#     rejects_fdr = []
+#     pvals = []
+#     pvals_fdr = []
+#     thresholds_fdr = []
+    
+#     for i in range(k):
+#         sample = random.sample(subject_list, n_subjects)
+#         data = extract_data(sample, all_subjects_data)
+#         X, times = concat_data(data)
+#         #if X.shape[0] > n_epochs:
+#         #    X = X[0:n_epochs,:]
+#         #elif X.shape[0] < n_epochs:
+#         #    print('WARNING - NOT ENOUGH EPOCHS')
+#         T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
+#         t_values.append(T)
+#         rejects_fdr.append(reject_fdr)
+#         pvals.append(pval)
+#         pvals_fdr.append(pval_fdr)
+#         thresholds_fdr.append(threshold_fdr)
+         
+#     t_values = np.array(t_values)
+#     rejects_fdr = np.array(rejects_fdr)
+#     pvals = np.array(pvals)
+#     pvals_fdr = np.array(pvals_fdr)
+#     thresholds_fdr = np.array(thresholds_fdr)
+        
+#     return t_values, pvals, reject_fdr, pvals_fdr, thresholds_fdr, times
+
+# def plot_permutations(t_values, thresholds_fdr, times, group):
+
+#     _, o = get_paths()
+#     path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'permutations')
+#     if not os.path.exists(path):
+#         os.makedirs(path)
+
+#     #m_pvals = pvals.mean(axis=0)
+#     #m_reject_fdr, m_pval_fdr = fdr_correction(m_pvals, alpha=0.05, method="indep")
+
+#     m_thresh_fdr = np.where(thresholds_fdr == 0, np.nan, thresholds_fdr)
+#     # Compute mean ignoring NaN values
+#     m_thresh_fdr = np.nanmean(m_thresh_fdr, axis=0)
+
+#     m_t_values = np.mean(t_values, axis=0)
+#     sd_t_values = np.std(t_values, axis=0)
+#     conf_interval = np.percentile(t_values, [2.5, 97.5], axis=0)
+
+#     fig, ax = plt.subplots(figsize=(12, 6))
+#     ax.plot(times, m_t_values, "k", label="T-stat")
+#     #ax.fill_between(times, m_t_values - sd_t_values, m_t_values + sd_t_values, color="k", alpha=0.2)
+#     ax.fill_between(times, conf_interval[0], conf_interval[1], color="k", alpha=0.2)
+#     xmin, xmax = plt.xlim()
+
+#     if np.sum(m_thresh_fdr) != 0:
+#         plot_hline(ax, m_thresh_fdr, xmin, xmax, "b", "p=0.05 (FDR)")
+#         plot_hline(ax, -m_thresh_fdr, xmin, xmax, "b")
+#     ax.legend()
+#     ax.set_title(f"N2pc T-test {group} - Permutations")
+#     ax.set_xlabel("Time (ms)")
+#     ax.set_ylabel("T-stat")
+#     plt.tight_layout()
+#     #plt.show()
+#     fig.savefig(os.path.join(path, f'{group}-ttest.png'))
+
+# def main_permutations():
+
+#     group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
+#                   'thalamus': ['52', '54', '55', '56', '58'],
+#                   'pulvinar':['51', '53', '59', '60'],
+#                     'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+#                     }
+#     #group_dict = {'test':['01', '02', '03']}
+#     for group, subject_list in group_dict.items():
+#         try:
+#             t_values,_, _, _, threshold_fdr, times = permutations(subject_list, 4, 2000, 100)
+#             plot_permutations(t_values, threshold_fdr, times, group)
+#         except:
+#             print(f'Error in group {group}')
+#             continue
