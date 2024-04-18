@@ -3,7 +3,7 @@ from resting_func.set_paths import get_paths
 
 input_dir, output_dir = get_paths()
 
-subject_list = [51, 53, 54, 58, 59]
+subject_list = [52, 55, 56, 60]
 
 for subject_id in subject_list:
     for condition in ['RESTINGSTATEOPEN', 'RESTINGSTATECLOSE']:
