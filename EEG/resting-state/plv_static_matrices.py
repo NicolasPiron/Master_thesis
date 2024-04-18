@@ -14,7 +14,7 @@ thal_control = ['52', '54', '55', '56', '58']
 group_dict = {'old_control':old_control, 'thal_control':thal_control, 'pulvinar':pulvinar}
 
 # Define parameters
-subject_list = ['52', '55', '56', '60']
+subject_list = ['51', '52', '53', '54', '55', '56', '58', '59', '60']
 metric_list = ['ciplv']
 freqs_list = [np.arange(4,9), np.arange(8, 13), np.arange(12, 17), np.arange(16, 31)]
 
