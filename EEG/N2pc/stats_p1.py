@@ -99,7 +99,7 @@ def plot_p1(T, times, threshold_fdr, threshold_uncorrected, group, side=None):
     _, o = get_paths()
     if side != None:
         path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 't-test', 'laterality')
-        title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms - target {side}"
+        title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms - {side} cluster"
         fname = f'{group}-ttest-{side}.png'
     else:
         path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 't-test')
