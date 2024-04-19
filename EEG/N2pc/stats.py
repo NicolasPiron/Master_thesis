@@ -64,7 +64,7 @@ def get_n2pc_array_subject(subject_id, side=None, invert=False):
 
 def get_n2pc_array_group(subject_list, side=None):
 
-    invert_subjects = ['51', '53', '54', '58', '59']
+    invert_subjects = ['52', '54', '55', '56', '58']
     array_list = []
     for subject_id in subject_list:
         if subject_id in invert_subjects:

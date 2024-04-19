@@ -8,7 +8,7 @@ import seaborn as sns
 from mne.stats import bonferroni_correction, fdr_correction, permutation_cluster_test
 from n2pc_func.set_paths import get_paths
 
-def get_p1_array_subject(subject_id):
+def get_p1_array_subject(subject_id, side=None):
     '''
     Get the P1 array for a given subject
 
@@ -16,6 +16,8 @@ def get_p1_array_subject(subject_id):
     ----------
     subject_id : str
         The subject id
+    side : str
+        The side of the target ('left' or 'right'). if None, both sides are considered
     
     Returns
     -------
@@ -27,15 +29,20 @@ def get_p1_array_subject(subject_id):
     path = os.path.join(i, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif')
     epochs = mne.read_epochs(path)
     times = 1e3 * epochs.times
-    X = epochs.get_data(picks=['O1', 'O2', 'PO3', 'PO4', 'PO7', 'PO8']).mean(axis=1) 
+    if side == 'left':
+        X = epochs.get_data(picks=['PO7', 'O1', 'PO3']).mean(axis=1)
+    elif side == 'right':
+        X = epochs.get_data(picks=['PO8', 'O2', 'PO4']).mean(axis=1)
+    else:
+        X = epochs.get_data(picks=['O1', 'O2', 'PO3', 'PO4', 'PO7', 'PO8']).mean(axis=1) 
 
     return X, times
 
-def get_p1_array_group(subject_list):
+def get_p1_array_group(subject_list, side=None):
 
     array_list = []
     for subject_id in subject_list:
-        x, times = get_p1_array_subject(subject_id)
+        x, times = get_p1_array_subject(subject_id, side=side)
         array_list.append(x)
     X = np.concatenate(array_list, axis=0)
     return X, times
@@ -79,19 +86,29 @@ def plot_hline(ax, y, xmin, xmax, color, label=None):
         else:
             ax.hlines(y,xmin,xmax,linestyle="--",colors=color,linewidth=2)
 
-def plot_p1(T, times, threshold_fdr, threshold_uncorrected, group):
+def plot_p1(T, times, threshold_fdr, threshold_uncorrected, group, side=None):
     '''
     Plot T values of P1 array
     '''
 
-    _, o = get_paths()
-    path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 't-test')
-    if not os.path.exists(path):
-        os.makedirs(path)
 
     # find the peak index (max T values between 0 and 200 ms)
     window = np.logical_and(times >= 80, times <= 180)
     peak_t = times[window][np.argmax(T[window])]
+
+    _, o = get_paths()
+    if side != None:
+        path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 't-test', 'laterality')
+        title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms - target {side}"
+        fname = f'{group}-ttest-{side}.png'
+    else:
+        path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 't-test')
+        title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms"
+        fname = f'{group}-ttest.png'
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(times, T, "k", label="T-stat")
@@ -111,12 +128,13 @@ def plot_p1(T, times, threshold_fdr, threshold_uncorrected, group):
     ax.fill_between([peak_t - 25, peak_t + 25], ymin, ymax, color="blue", alpha=0.2)
     #ax.set_ylim(-9, 9)
     ax.legend()
-    ax.set_title(f"{group} P1 T-test - peak at {peak_t:.0f} ms")
+    ax.set_title(title)
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("T-stat")
     plt.tight_layout()
     #plt.show()
-    fig.savefig(os.path.join(path, f'{group}-ttest.png'))
+    fig.savefig(os.path.join(path, fname))
+
 
 def plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
     '''
@@ -186,7 +204,7 @@ def plot_anova(T_obs, clusters, cluster_p_values, times):
             ax.axvspan(times[c.start], times[c.stop - 1], color=(0.3, 0.3, 0.3), alpha=0.3)
 
     ax.plot(times, T_obs, "g")
-    ax.set_title("N2pc ANOVA")
+    ax.set_title("P1 ANOVA")
     ax.legend((h,), ("cluster p-value < 0.05",))
     ax.set_xlabel("time (ms)")
     ax.set_ylabel("f-values")
@@ -206,7 +224,7 @@ def plot_pairwise(T_obs, clusters, cluster_p_values, times, groups_dict):
     g2_name = list(groups_dict.keys())[1]
 
     fig, (ax, ax2) = plt.subplots(2, 1, figsize=(8, 4))
-    ax.set_title(f'N2pc Pairwise F-test - {g1_name} vs {g2_name}')
+    ax.set_title(f'P1 Pairwise F-test - {g1_name} vs {g2_name}')
     ax.plot(
         times,
         g1_values.mean(axis=0) - g2_values.mean(axis=0),
@@ -251,6 +269,26 @@ def main():
         except:
             print(f'Error in group {group}')
             continue
+
+def main_sides():
+
+    group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
+                  'thalamus': ['52', '54', '55', '56', '58'],
+                  'pulvinar':['51', '53', '59', '60'],
+                    'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+                    }
+
+    # group_dict = {'test':['01', '02', '03']}
+    
+    for group, subject_list in group_dict.items():
+        for side in ['left', 'right']:
+            try:
+                X, times = get_p1_array_group(subject_list, side=side)
+                T, _, _, _, threshold_fdr, threshold_uncorrected = stats_p1(X)
+                plot_p1(T, times, threshold_fdr, threshold_uncorrected, group, side=side)
+            except:
+                print(f'Error in group {group}')
+                continue
 
 def main_single_subject():
 
@@ -298,4 +336,5 @@ def main_anova():
 if __name__ == '__main__':
     #main()
     #main_single_subject()
-    main_anova()
+    #main_anova()
+    main_sides()
