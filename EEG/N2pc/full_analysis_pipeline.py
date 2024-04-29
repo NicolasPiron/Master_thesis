@@ -32,8 +32,8 @@ for subject_id in full_subject_list:
     try:
         erp.P1_pipeline_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
     except:
-        print(f'Error with subject {subject_id} during P1_pipeline_single_subj')
-        continue
+         print(f'Error with subject {subject_id} during P1_pipeline_single_subj')
+         continue
 #    try:
 #        erp.combine_evoked_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
 #    except:
@@ -95,12 +95,12 @@ for subject_id in full_subject_list:
 #        print(f'Error with subject {subject_id} during plot_tfr_single_subj')
 #        pass
 
-for population, subject_list in population_dict.items():
-    try:
-        erp.plot_P1_grand_average(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
-    except:
-        print(f'Error with population {population} during plot_P1_grand_average')
-        continue
+# for population, subject_list in population_dict.items():
+#     try:
+#         erp.plot_P1_grand_average(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
+#     except:
+#         print(f'Error with population {population} during plot_P1_grand_average')
+#         continue
 #    try:
 #        erp.combine_evoked_population(input_dir=input_dir, output_dir=output_dir, subject_list=subject_list, population=population)
 #    except:

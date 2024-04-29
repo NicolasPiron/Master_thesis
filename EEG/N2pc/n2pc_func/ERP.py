@@ -1900,11 +1900,11 @@ def get_P1_latency_single_subj(subject_id, input_dir, output_dir):
 
     # Load the evoked data
     evk = mne.read_evokeds(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}-all-ave.fif'))
-    evk.info['bads'] = []
+    evk[0].info['bads'] = []
     evk = evk[0].copy().pick('Oz')
 
-    tmin = 0.
-    tmax = 0.2
+    tmin = 0.08
+    tmax = 0.18
 
     ch, lat, amp = evk.get_peak(tmin=tmin, tmax=tmax, mode="pos", return_amplitude=True)
 
@@ -1934,10 +1934,10 @@ def P1_amp_around_peak_per_epoch_single_subj(subject_id, input_dir, output_dir):
     # Define the epochs status (rejected or not)
     epochs_status = reject_log['bad_epochs']
 
-    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'index_reset', 'saccade', 'condition', 'target_side', 'latency','amp_Oz', 'amp_O1', 'amp_O2'])
+    df = pd.DataFrame(columns=['ID','epoch_index', 'epoch_dropped', 'index_reset', 'saccade', 'condition', 'target_side', 'latency','P1', 'diff_lr'])
 
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency', f'sub-{subject_id}-P1-peak-latency.csv')):
-        get_P1_latency_single_subj(subject_id, input_dir, output_dir)
+    #if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency', f'sub-{subject_id}-P1-peak-latency.csv')):
+    get_P1_latency_single_subj(subject_id, input_dir, output_dir)
     peak_latency_df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'peak-latency', f'sub-{subject_id}-P1-peak-latency.csv'))
     peak_latency = peak_latency_df['peak_latency'].values[0]
 
@@ -1975,14 +1975,32 @@ def P1_amp_around_peak_per_epoch_single_subj(subject_id, input_dir, output_dir):
             print(f'========= epoch {row_number+1} was dropped',)
         else:
 
+
+            sfreq = epochs.info['sfreq']
+            tmin = peak_latency - 0.020
+            tmin = math.ceil(tmin * sfreq)
+            tmax = peak_latency + 0.020
+            tmax = math.ceil(tmax * sfreq)
+            #t = math.ceil(peak_latency * sfreq)
+
+            # UNFINISHED - 
+
             # get the epoch index (after epochs rejection)
             epoch_idx = int(df['index_reset'].loc[row_number])
+
+
+            amp_left = epochs[epoch_idx].get_data(picks=['O1', 'PO3', 'PO7']).mean(axis=1).reshape(410)[tmin:tmax].mean()
+            amp_right = epochs[epoch_idx].get_data(picks=['O2', 'PO4', 'PO8']).mean(axis=1).reshape(410)[tmin:tmax].mean()
+            amp = amp_right + amp_left / 2
+
 
             epoch_id = epochs.events[epoch_idx][2]
             if epoch_id in [1, 3, 5, 7]:
                 target_side = 'left'
+                diff = amp_right - amp_left
             elif epoch_id in [2, 4, 6, 8]:
                 target_side = 'right'
+                diff = amp_left - amp_right
             
             if epoch_id in [1, 2, 5, 6]:
                 cond = 'Dis_mid'
@@ -1991,22 +2009,11 @@ def P1_amp_around_peak_per_epoch_single_subj(subject_id, input_dir, output_dir):
             elif epoch_id in [7, 8]:
                 cond = 'Dis_contra'
 
-            sfreq = epochs.info['sfreq']
-            tmin = peak_latency - 0.020
-            tmin = math.ceil(tmin * sfreq)
-            tmax = peak_latency + 0.020
-            tmax = math.ceil(tmax * sfreq)
-
-            amp_Oz = epochs[epoch_idx].get_data(picks=['Oz']).reshape(410)[tmin:tmax].mean()
-            amp_O1 = epochs[epoch_idx].get_data(picks=['O1']).reshape(410)[tmin:tmax].mean()
-            amp_O2 = epochs[epoch_idx].get_data(picks=['O2']).reshape(410)[tmin:tmax].mean()
-
             # fill the dataframe with everything we just computed
             df.iloc[row_number, 5] = cond
             df.iloc[row_number, 6] = target_side
-            df.iloc[row_number, 8] = amp_Oz
-            df.iloc[row_number, 9] = amp_O1
-            df.iloc[row_number, 10] = amp_O2
+            df.iloc[row_number, 8] = amp
+            df.iloc[row_number, 9] = diff
 
     if not os.path.exists(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'p1-values')):
         os.makedirs(os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'p1-values'))
@@ -2026,12 +2033,12 @@ def P1_amp_around_peak_per_epoch_all_subj(input_dir, output_dir):
     dirs.remove('all_subj')
     dirs = sorted(dirs)
     for directory in dirs:
-        if not os.path.exists(os.path.join(input_dir, directory, 'N2pc', 'p1-values', f'{directory}-p1-amplitude-around-peak.csv')):
-            try:
-                P1_amp_around_peak_per_epoch_single_subj(directory[-2:], input_dir, output_dir)
-            except:
-                print(f'========= no P1 amplitude around peak df for subject {directory[-2:]}')
-                continue
+        #if not os.path.exists(os.path.join(input_dir, directory, 'N2pc', 'p1-values', f'{directory}-p1-amplitude-around-peak.csv')):
+        try:
+            P1_amp_around_peak_per_epoch_single_subj(directory[-2:], input_dir, output_dir)
+        except:
+            print(f'========= no P1 amplitude around peak df for subject {directory[-2:]}')
+            continue
         try:
             df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'p1-values', f'{directory}-p1-amplitude-around-peak.csv'), index_col=0)
             df_list.append(df)
