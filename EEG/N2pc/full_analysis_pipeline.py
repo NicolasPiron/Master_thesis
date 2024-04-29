@@ -23,18 +23,18 @@ full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17',
 
 # Loop over subjects and compute n2pc -> plot n2pc waveforms, topomaps and get values
 
-for subject_id in full_subject_list:
-#    try:
-#        erp.to_evoked(subject_id=subject_id, input_dir=input_dir)
-#    except:
-#        print(f'Error with subject {subject_id} during to_evoked')
-#        continue
-    try:
-        erp.P1_pipeline_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
-    except:
-         print(f'Error with subject {subject_id} during P1_pipeline_single_subj')
-         continue
-#    try:
+# for subject_id in full_subject_list:
+# #    try:
+# #        erp.to_evoked(subject_id=subject_id, input_dir=input_dir)
+# #    except:
+# #        print(f'Error with subject {subject_id} during to_evoked')
+# #        continue
+#     try:
+#         erp.P1_pipeline_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
+#     except:
+#          print(f'Error with subject {subject_id} during P1_pipeline_single_subj')
+#          continue
+# #    try:
 #        erp.combine_evoked_single_subj(subject_id=subject_id, input_dir=input_dir, output_dir=output_dir)
 #    except:
 #        print(f'Error with subject {subject_id} during combine_evoked_single_subj')
@@ -168,11 +168,11 @@ for subject_id in full_subject_list:
 #        pass
 
 
-try:
-    erp.P1_amp_around_peak_per_epoch_all_subj(input_dir, output_dir)
-except:
-    print(f'Error with P1_amp_around_peak_per_epoch_all_subj')
-    pass
+# try:
+erp.P1_amp_around_peak_per_epoch_all_subj(input_dir, output_dir)
+# except:
+    # print(f'Error with P1_amp_around_peak_per_epoch_all_subj')
+    # pass
 
 #try:
 #    erp.all_subjects_peak_latencies(input_dir=input_dir, output_dir=output_dir)
