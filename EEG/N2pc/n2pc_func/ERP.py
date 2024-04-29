@@ -2033,19 +2033,19 @@ def P1_amp_around_peak_per_epoch_all_subj(input_dir, output_dir):
     dirs.remove('all_subj')
     dirs = sorted(dirs)
     for directory in dirs:
-        #if not os.path.exists(os.path.join(input_dir, directory, 'N2pc', 'p1-values', f'{directory}-p1-amplitude-around-peak.csv')):
-        try:
-            P1_amp_around_peak_per_epoch_single_subj(directory[-2:], input_dir, output_dir)
-        except:
-            print(f'========= no P1 amplitude around peak df for subject {directory[-2:]}')
-            continue
-        try:
-            df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'p1-values', f'{directory}-p1-amplitude-around-peak.csv'), index_col=0)
-            df_list.append(df)
-            print(f'========= amplitude around peak df for subject {directory} added to the list')
-        except:
-            print(f'========= no df found for subject {directory}')
-    
+        if not os.path.exists(os.path.join(input_dir, directory, 'N2pc', 'p1-values', f'{directory}-p1-amplitude-around-peak.csv')):
+            try:
+                P1_amp_around_peak_per_epoch_single_subj(directory[-2:], input_dir, output_dir)
+            except:
+                print(f'========= no P1 amplitude around peak df for subject {directory[-2:]}')
+                continue
+            try:
+                df = pd.read_csv(os.path.join(input_dir, directory, 'N2pc', 'p1-values', f'{directory}-p1-amplitude-around-peak.csv'), index_col=0)
+                df_list.append(df)
+                print(f'========= amplitude around peak df for subject {directory} added to the list')
+            except:
+                print(f'========= no df found for subject {directory}')
+        
     df = pd.concat(df_list, axis=0)
     print('========= all subjects amplitude around peak df concatenated')
     if not os.path.exists(os.path.join(output_dir, 'all_subj', 'N2pc', 'p1-values', 'p1-values-around-peak')):
