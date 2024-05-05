@@ -171,9 +171,10 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
                                     where=(T[start:end] < 0) & (T[start:end] < -threshold_fdr), 
                                     color='red', alpha=0.3, label='N2pc component')
                             title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms" 
-            plt.legend()
-            legend = ax.legend()
-            plt.setp(legend.get_texts(), fontsize='12', fontweight='bold')
+            if group == 'old':                
+                plt.legend()
+                legend = ax.legend()
+                plt.setp(legend.get_texts(), fontsize='12', fontweight='bold')
 
     plt.xlim(-200, 800)
     plt.grid(color='grey', linewidth=0.5, alpha=0.5)
@@ -182,8 +183,6 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
     for label in (ax.get_xticklabels() + ax.get_yticklabels()):
             label.set_fontsize(12)
             label.set_fontweight('bold')
-    legend = ax.legend()
-    plt.setp(legend.get_texts(), fontsize='12', fontweight='bold')
     plt.title(title, fontsize=14, fontweight='bold')
     plt.tight_layout()
     fig.savefig(os.path.join(path, fname), dpi=300)
@@ -311,10 +310,10 @@ def main_single_subject():
 
 def main():
 
-    group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
-                  'thalamus': ['52', '54', '55', '56', '58'],
-                  'pulvinar':['51', '53', '59', '60'],
-                    'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+    group_dict = {'Old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
+                  'Thalamus': ['52', '54', '55', '56', '58'],
+                  'Pulvinar':['51', '53', '59', '60'],
+                    'Young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
                     }
 
     #group_dict = {'test':['01', '02', '03']}
