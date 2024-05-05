@@ -172,6 +172,10 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
                                         where=(T[start:end] < 0) & (T[start:end] < -threshold_fdr), 
                                         color='red', alpha=0.3, label='N2pc component')
                                 title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms" 
+                        if times[start] >  250 and times[end] < 500:
+                                plt.fill_between(times[start:end], T[start:end], threshold_fdr, 
+                                        where=(T[start:end] > 0) & (T[start:end] < threshold_fdr), 
+                                        color='blue', alpha=0.3, label='Pd component')
                     else:
                         if times[start] >  245 and times[end] < 410:
                                 plt.fill_between(times[start:end], T[start:end], -threshold_fdr, 
