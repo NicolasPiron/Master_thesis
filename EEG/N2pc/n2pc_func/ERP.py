@@ -289,9 +289,9 @@ def combine_evoked_single_subj(subject_id, input_dir, output_dir):
         print(bin_evoked)
 
         # create to list of evoked objects for each condition
-        dis_mid = [bin_evoked[bin_] for bin_ in ['evk_bin1', 'evk_bin2']]
-        no_dis = [bin_evoked[bin_] for bin_ in ['evk_bin3', 'evk_bin4']]
-        dis_contra = [bin_evoked[bin_] for bin_ in ['evk_bin5', 'evk_bin6']]
+        dis_mid = [bin_evoked[bin_].crop(tmin=-0.2, tmax=0.8) for bin_ in ['evk_bin1', 'evk_bin2']]
+        no_dis = [bin_evoked[bin_].crop(tmin=-0.2, tmax=0.8) for bin_ in ['evk_bin3', 'evk_bin4']]
+        dis_contra = [bin_evoked[bin_].crop(tmin=-0.2, tmax=0.8) for bin_ in ['evk_bin5', 'evk_bin6']]
 
         # find right and left channels
         ch_names = list(bin_evoked.values())[0].info['ch_names']
@@ -315,7 +315,7 @@ def combine_evoked_single_subj(subject_id, input_dir, output_dir):
             swapped_data = data.copy()
             swapped_data[RCh] = data[LCh]
             swapped_data[LCh] = data[RCh]
-            swapped = mne.EvokedArray(swapped_data, to_swap.info)
+            swapped = mne.EvokedArray(swapped_data, to_swap.info, tmin=to_swap.times[0])
             combined_pair = mne.combine_evoked([pair[0], swapped], weights='equal')
             combined_pair.comment = pair_names[i]
             # save the combined evoked object
