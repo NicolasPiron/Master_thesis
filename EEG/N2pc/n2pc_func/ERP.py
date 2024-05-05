@@ -64,6 +64,8 @@ def to_evoked(subject_id, input_dir):
     for evoked in evoked_list:
         evoked.comment = evoked.comment.replace('/', '_')
     
+    # combine the same conditions
+
 
     # save the evoked objects in subject directory
     if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc')):
@@ -287,9 +289,9 @@ def combine_evoked_single_subj(subject_id, input_dir, output_dir):
         print(bin_evoked)
 
         # create to list of evoked objects for each condition
-        dis_mid = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin1', 'evk_bin2']]
-        no_dis = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin3', 'evk_bin4']]
-        dis_contra = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin5', 'evk_bin6']]
+        dis_mid = [bin_evoked[bin_] for bin_ in ['evk_bin1', 'evk_bin2']]
+        no_dis = [bin_evoked[bin_] for bin_ in ['evk_bin3', 'evk_bin4']]
+        dis_contra = [bin_evoked[bin_] for bin_ in ['evk_bin5', 'evk_bin6']]
 
         # find right and left channels
         ch_names = list(bin_evoked.values())[0].info['ch_names']
