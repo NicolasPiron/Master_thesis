@@ -166,12 +166,19 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
             # Plot each segment with rejections
             for start, end in zip(start_indices, end_indices):
                     plt.plot(times[start:end], T[start:end], color='k', linewidth=2)
-                    if times[start] >  245 and times[end] < 410:
-                            plt.fill_between(times[start:end], T[start:end], -threshold_fdr, 
-                                    where=(T[start:end] < 0) & (T[start:end] < -threshold_fdr), 
-                                    color='red', alpha=0.3, label='N2pc component')
-                            title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms" 
-            if group == 'old':                
+                    if group == 'Young':
+                        if times[start] >  160 and times[end] < 350:
+                                plt.fill_between(times[start:end], T[start:end], -threshold_fdr, 
+                                        where=(T[start:end] < 0) & (T[start:end] < -threshold_fdr), 
+                                        color='red', alpha=0.3, label='N2pc component')
+                                title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms" 
+                    else:
+                        if times[start] >  245 and times[end] < 410:
+                                plt.fill_between(times[start:end], T[start:end], -threshold_fdr, 
+                                        where=(T[start:end] < 0) & (T[start:end] < -threshold_fdr), 
+                                        color='red', alpha=0.3, label='N2pc component')
+                                title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms" 
+            if group == 'Old' or group == 'Young':                
                 plt.legend()
                 legend = ax.legend()
                 plt.setp(legend.get_texts(), fontsize='12', fontweight='bold')
