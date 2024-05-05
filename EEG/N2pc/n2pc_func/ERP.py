@@ -330,9 +330,9 @@ def combine_swapped_evoked_patient(subject_id, input_dir, output_dir):
     print(bin_evoked)
 
     # create to list of evoked objects for each condition
-    dis_mid = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin1', 'evk_bin2']]
-    no_dis = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin3', 'evk_bin4']]
-    dis_contra = [bin_evoked[bin_].crop(tmin=0, tmax=0.8) for bin_ in ['evk_bin5', 'evk_bin6']]
+    dis_mid = [bin_evoked[bin_].crop(tmin=-0.2, tmax=0.8) for bin_ in ['evk_bin1', 'evk_bin2']]
+    no_dis = [bin_evoked[bin_].crop(tmin=-0.2, tmax=0.8) for bin_ in ['evk_bin3', 'evk_bin4']]
+    dis_contra = [bin_evoked[bin_].crop(tmin=-0.2, tmax=0.8) for bin_ in ['evk_bin5', 'evk_bin6']]
 
     # find right and left channels
     ch_names = list(bin_evoked.values())[0].info['ch_names']
@@ -356,7 +356,7 @@ def combine_swapped_evoked_patient(subject_id, input_dir, output_dir):
         swapped_data = data.copy()
         swapped_data[RCh] = data[LCh]
         swapped_data[LCh] = data[RCh]
-        swapped = mne.EvokedArray(swapped_data, to_swap.info)
+        swapped = mne.EvokedArray(swapped_data, to_swap.info, tmin=to_swap.times[0])
         combined_pair = mne.combine_evoked([pair[0], swapped], weights='equal')
         combined_pair.comment = pair_names[i]
         # save the combined evoked object
@@ -2110,11 +2110,11 @@ def create_long_n2pc_df(subjects, input_dir):
     
     df_list = list()
     conds = ['dis_mid', 'no_dis', 'dis_contra']
-    right_lesion_patients = [51, 53, 54, 58, 59]
+    left_lesion_patients = [52, 55, 56, 60]
         
     for subject_id in subjects:
         try:
-            if int(subject_id) in right_lesion_patients:
+            if int(subject_id) in left_lesion_patients:
                 for cond in conds:
                     df = create_long_n2pc_df_subj(subject_id, cond, input_dir, swapped=True)
                     df_list.append(df)
