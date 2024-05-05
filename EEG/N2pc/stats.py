@@ -126,47 +126,67 @@ def plot_hline(ax, y, xmin, xmax, color, label=None):
         else:
             ax.hlines(y,xmin,xmax,linestyle="--",colors=color,linewidth=2)
 
-def plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group, side=None):
+def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
     '''
     Plot T values of N2pc array
     '''
 
-    # find the peak index (min T values between 180 and 400 ms)
     window = np.logical_and(times >= 180, times <= 400)
-    peak_t = times[window][np.argmin(T[window])]
+    peak_t = times[window][np.argmin(T[window])] # will be used after, if n2pc component is found
 
     _, o = get_paths()
     if side != None:
-        path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 't-test', 'laterality', 'swapped')
-        title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms - target {side}"
-        fname = f'{group}-ttest-{side}.png'
+            path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 't-test', 'laterality', 'swapped')
+            title = f"{group} N2pc T-test - target {side}"
+            fname = f'{group}-ttest-{side}.png'
     else:
-        path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 't-test')
-        title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms"
-        fname = f'{group}-ttest.png'
+            path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 't-test')
+            title = f"{group} N2pc T-test"
+            fname = f'{group}-ttest.png'
+        
+    fig, ax = plt.subplots(figsize=(8, 5))
 
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(times, T, "k", label="T-stat")
+    ax.plot(times, T, color='black')
+        
     xmin, xmax = plt.xlim()
-    plot_hline(ax, threshold_uncorrected, xmin, xmax, "r", "p=0.05 (uncorrected)")
-    plot_hline(ax, -threshold_uncorrected, xmin, xmax, "r")
-
+    # plot_hline(ax, threshold_uncorrected, xmin, xmax, "r", "p=0.05 (uncorrected)")
+    # plot_hline(ax, -threshold_uncorrected, xmin, xmax, "r")
     if threshold_fdr != 0:
-        plot_hline(ax, threshold_fdr, xmin, xmax, "b", "p=0.05 (FDR)")
-        plot_hline(ax, -threshold_fdr, xmin, xmax, "b")
+            plot_hline(ax, threshold_fdr, xmin, xmax, "red", "p=0.05 (FDR)")
+            plot_hline(ax, -threshold_fdr, xmin, xmax, "red")
+            changes = np.diff(reject_fdr.astype(int))
+            start_indices = np.where(changes == 1)[0] + 1
+            end_indices = np.where(changes == -1)[0] + 1
 
-    ax.fill_between([peak_t - 75, peak_t + 75], -9, 4, color="blue", alpha=0.2)
-    ax.set_ylim(-9, 4)
-    ax.legend()
-    ax.set_title(title)
-    ax.set_xlabel("Time (ms)")
-    ax.set_ylabel("T-stat")
+            if reject_fdr[0]:  # Start from the first element if it's True
+                    start_indices = np.insert(start_indices, 0, 0)
+            if reject_fdr[-1]:  # End at the last element if it ends True
+                    end_indices = np.append(end_indices, len(reject_fdr))
+
+            # Plot each segment with rejections
+            for start, end in zip(start_indices, end_indices):
+                    plt.plot(times[start:end], T[start:end], color='k', linewidth=2)
+                    if times[start] >  245 and times[end] < 410:
+                            plt.fill_between(times[start:end], T[start:end], -threshold_fdr, 
+                                    where=(T[start:end] < 0) & (T[start:end] < -threshold_fdr), 
+                                    color='red', alpha=0.3, label='N2pc component')
+                            title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms" 
+            plt.legend()
+            legend = ax.legend()
+            plt.setp(legend.get_texts(), fontsize='12', fontweight='bold')
+
+    plt.xlim(-200, 800)
+    plt.grid(color='grey', linewidth=0.5, alpha=0.5)
+    plt.xlabel('Time (ms)', fontsize=12, fontweight='bold')
+    plt.ylabel('T Values', fontsize=12, fontweight='bold')
+    for label in (ax.get_xticklabels() + ax.get_yticklabels()):
+            label.set_fontsize(12)
+            label.set_fontweight('bold')
+    legend = ax.legend()
+    plt.setp(legend.get_texts(), fontsize='12', fontweight='bold')
+    plt.title(title, fontsize=14, fontweight='bold')
     plt.tight_layout()
-    #plt.show()
-    fig.savefig(os.path.join(path, fname))
+    fig.savefig(os.path.join(path, fname), dpi=300)
 
 def plot_n2pc_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
     '''
@@ -286,7 +306,7 @@ def main_single_subject():
     for subject_id in subject_list:
 
         X, times = get_n2pc_array_subject(subject_id)
-        T, _, _, _, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
+        T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
         plot_n2pc_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id)
 
 def main():
@@ -303,8 +323,8 @@ def main():
 
         try:
             X, times = get_n2pc_array_group(subject_list, side=None)
-            T, _, _, _, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
-            plot_n2pc(T, times, threshold_fdr, threshold_uncorrected, group, side=None)
+            T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
+            plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None)
         except:
             print(f'Error in group {group}')
             continue
@@ -360,8 +380,8 @@ def main_anova():
     plot_pairwise(T_obs3, clusters3, cluster_p_values3, times, group_dict3)
 
 if __name__ == '__main__':
-    #main()
-    main_sides()
+    main()
+    #main_sides()
     #main_single_subject()
     #main_anova()
 
