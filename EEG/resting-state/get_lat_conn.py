@@ -33,7 +33,10 @@ def average_conn_subj(data_path, subject_id):
     grouped = long_df_sorted.groupby('hemi')['ciPLV'].mean()
     grouped = grouped.reset_index()
     grouped.columns = ['hemi', 'ciPLV']
+    # add global average
     grouped.loc[len(grouped.index)] = ['all', long_df_sorted['ciPLV'].mean()]
+    # add difference between hemispheres
+    grouped.loc[len(grouped.index)] = ['diff', grouped.loc[1, 'ciPLV'] - grouped.loc[2, 'ciPLV']]
     grouped['ID'] = subject_id
     return grouped
 
