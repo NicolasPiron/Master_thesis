@@ -47,7 +47,7 @@ def get_vals_subj(subject_id, group1, group2, freq_range, freq_name, condition):
     if '_' in group2:
         group2 = group2.split('_')[0]
     comp_name = f'{group1}-{freq_name}-ciplv-{condition}_VS_{group2}-{freq_name}-ciplv-{condition}_07'
-    adj_mat_path = os.path.join(comparison_path, 'clean_nbs_results', comp_name, 'adj.csv')
+    adj_mat_path = os.path.join(comparison_path, comp_name, 'adj.csv')
     
     sub_mat = pd.read_csv(subj_mat_path, index_col=0)
     adj_mat = pd.read_csv(adj_mat_path, index_col=0)
@@ -183,6 +183,9 @@ def main():
             freq_range = freq_dict[freq_name]
             condition = mapping[combinaison]['condition']
             for subject in subject_dict[group1]:
+                df = get_delta_subject(subject, group1, group2, freq_range, freq_name, condition)
+                df_list.append(df)
+            for subject in subject_dict[group2]:
                 df = get_delta_subject(subject, group1, group2, freq_range, freq_name, condition)
                 df_list.append(df)
     df = pd.concat(df_list)
