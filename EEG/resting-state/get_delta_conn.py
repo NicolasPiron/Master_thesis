@@ -190,3 +190,7 @@ def main():
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
     df.to_csv(fname, index=False)
+
+
+if __name__ == '__main__':
+    main()
