@@ -343,6 +343,7 @@ def main():
             T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
             plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None)
             print(f'n2pc component found in group {group} at {times[np.argmin(T)]}ms')
+            print(f't value at peak: {np.min(T)}, p value: {pval[np.argmin(T)]}')
         except:
             print(f'Error in group {group}')
             continue
