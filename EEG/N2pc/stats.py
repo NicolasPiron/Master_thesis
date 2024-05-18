@@ -141,7 +141,7 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
             fname = f'{group}-ttest-{side}.png'
     else:
             path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 't-test')
-            title = f"{group} N2pc T-test"
+            title = f"{group} N2pc One Sample T-test"
             fname = f'{group}-ttest.png'
         
     fig, ax = plt.subplots(figsize=(6, 4))
@@ -177,7 +177,6 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
                                 plt.fill_between(times[start:end], T[start:end], -threshold_fdr, 
                                         where=(T[start:end] < 0) & (T[start:end] < -threshold_fdr), 
                                         color='red', alpha=0.3, label='N2pc component')
-                                title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms" 
                         if times[start] >  250 and times[end] < 500:
                                 plt.fill_between(times[start:end], T[start:end], threshold_fdr, 
                                         where=(T[start:end] > 0) & (T[start:end] > threshold_fdr), 
@@ -187,7 +186,6 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
                                 plt.fill_between(times[start:end], T[start:end], -threshold_fdr, 
                                         where=(T[start:end] < 0) & (T[start:end] < -threshold_fdr), 
                                         color='red', alpha=0.3, label='N2pc component')
-                                title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms" 
             if group == 'Healthy' or group == 'Young':                
                 plt.legend()
                 legend = ax.legend()
