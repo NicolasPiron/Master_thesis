@@ -144,7 +144,7 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
             title = f"{group} N2pc T-test"
             fname = f'{group}-ttest.png'
         
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(6, 4))
 
     ax.plot(times, T, color='black')
         
@@ -162,6 +162,12 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
                     start_indices = np.insert(start_indices, 0, 0)
             if reject_fdr[-1]:  # End at the last element if it ends True
                     end_indices = np.append(end_indices, len(reject_fdr))
+
+            #print the time points when the t value is significant
+            print(f"significant time points for {group} N2pc component: ")
+            for start, end in zip(start_indices, end_indices):
+                    print(f"from {times[start]:.0f}ms to {times[end]:.0f}ms")
+
 
             # Plot each segment with rejections
             for start, end in zip(start_indices, end_indices):
@@ -187,7 +193,7 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
                 legend = ax.legend()
                 plt.setp(legend.get_texts(), fontsize='12', fontweight='bold')
 
-    plt.xlim(-200, 800)
+    plt.xlim(-200, 600)
     plt.grid(color='grey', linewidth=0.5, alpha=0.5)
     plt.xlabel('Time (ms)', fontsize=12, fontweight='bold')
     plt.ylabel('T Values', fontsize=12, fontweight='bold')
@@ -321,20 +327,22 @@ def main_single_subject():
 
 def main():
 
-    group_dict = {'Healthy':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
-                  'Thalamus': ['52', '54', '55', '56', '58'],
-                  'Pulvinar':['51', '53', '59', '60'],
-                    'Young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
-                    }
+    # group_dict = {'Healthy':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
+    #               'Thalamus': ['52', '54', '55', '56', '58'],
+    #               'Pulvinar':['51', '53', '59', '60'],
+    #                 'Young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+    #                 }
 
-    #group_dict = {'test':['01', '02', '03']}
+    group_dict = {'test':['01', '02']}
     
     for group, subject_list in group_dict.items():
 
         try:
             X, times = get_n2pc_array_group(subject_list, side=None)
+            print(f'number of trials for group {group}: {X.shape[0]}')
             T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected = stats_n2pc(X)
             plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None)
+            print(f'n2pc component found in group {group} at {times[np.argmin(T)]}ms')
         except:
             print(f'Error in group {group}')
             continue
