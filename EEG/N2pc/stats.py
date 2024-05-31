@@ -192,6 +192,7 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
                 plt.setp(legend.get_texts(), fontsize='12', fontweight='bold')
 
     plt.xlim(-200, 600)
+    plt.ylim(-9, 4)
     plt.grid(color='grey', linewidth=0.5, alpha=0.5)
     plt.xlabel('Time (ms)', fontsize=12, fontweight='bold')
     plt.ylabel('T Values', fontsize=12, fontweight='bold')
