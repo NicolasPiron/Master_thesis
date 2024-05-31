@@ -86,57 +86,92 @@ def plot_hline(ax, y, xmin, xmax, color, label=None):
         else:
             ax.hlines(y,xmin,xmax,linestyle="--",colors=color,linewidth=2)
 
-def plot_p1(T, times, threshold_fdr, threshold_uncorrected, group, side=None):
+def plot_p1(T, times, threshold_fdr, reject_fdr, group, side=None):
     '''
     Plot T values of P1 array
     '''
 
-
-    # find the peak index (max T values between 0 and 200 ms)
-    window = np.logical_and(times >= 80, times <= 180)
-    peak_t = times[window][np.argmax(T[window])]
-
     _, o = get_paths()
     if side != None:
-        path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 't-test', 'laterality')
-        title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms - {side} cluster"
-        fname = f'{group}-ttest-{side}.png'
+            path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 't-test', 'laterality', 'swapped')
+            title = f"{group} P100 T-test - target {side}"
+            fname = f'{group}-ttest-{side}.png'
     else:
-        path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 't-test')
-        title = f"{group} N2pc T-test - peak at {peak_t:.0f}ms"
-        fname = f'{group}-ttest.png'
+            path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'P1', 't-test')
+            title = f"{group} P100 One Sample T-test"
+            fname = f'{group}-ttest.png'
 
     if not os.path.exists(path):
         os.makedirs(path)
 
 
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(times, T, "k", label="T-stat")
+    fig, ax = plt.subplots(figsize=(6, 4))
+
+    ax.plot(times, T, color='black')
+        
     xmin, xmax = plt.xlim()
-    plot_hline(ax, threshold_uncorrected, xmin, xmax, "r", "p=0.05 (uncorrected)")
-    plot_hline(ax, -threshold_uncorrected, xmin, xmax, "r")
 
     if threshold_fdr != 0:
-        plot_hline(ax, threshold_fdr, xmin, xmax, "b", "p=0.05 (FDR)")
-        plot_hline(ax, -threshold_fdr, xmin, xmax, "b")
+            
+            plot_hline(ax, threshold_fdr, xmin, xmax, "red", "p=0.05 (FDR)")
+            plot_hline(ax, -threshold_fdr, xmin, xmax, "red")
+            changes = np.diff(reject_fdr.astype(int))
+            start_indices = np.where(changes == 1)[0] + 1
+            end_indices = np.where(changes == -1)[0] + 1
 
-    ymin, ymax = ax.get_ylim()
-    ax.set_xlim(-200, 800)
-    #ax.vlines(peak_t, ymin, ymax, linestyle="--", colors="gray")
-    # add a grey rectangle to highlight the peak
-    ax.grid(True)
-    ax.fill_between([peak_t - 25, peak_t + 25], ymin, ymax, color="blue", alpha=0.2)
-    #ax.set_ylim(-9, 9)
-    ax.legend()
-    ax.set_title(title)
-    ax.set_xlabel("Time (ms)")
-    ax.set_ylabel("T-stat")
+            if reject_fdr[0]:  # Start from the first element if it's True
+                    start_indices = np.insert(start_indices, 0, 0)
+            if reject_fdr[-1]:  # End at the last element if it ends True
+                    end_indices = np.append(end_indices, len(reject_fdr))
+
+            #print the time points when the t value is significant
+            print(f"significant time points for {group} P100 component: ")
+            for start, end in zip(start_indices, end_indices):
+                    try:
+                         print(f"from {times[start]:.0f}ms to {times[end]:.0f}ms")
+                    except:
+                        print('error')
+
+            # Plot each segment with rejections
+            for start, end in zip(start_indices, end_indices):
+
+                    plt.plot(times[start:end], T[start:end], color='k', linewidth=2)
+                    # if group == 'Young':
+                    #     if times[start] >  160 and times[end] < 350:
+                    #             plt.fill_between(times[start:end], T[start:end], -threshold_fdr, 
+                    #                     where=(T[start:end] < 0) & (T[start:end] < -threshold_fdr), 
+                    #                     color='red', alpha=0.3, label='N2pc component')
+                    #     if times[start] >  250 and times[end] < 500:
+                    #             plt.fill_between(times[start:end], T[start:end], threshold_fdr, 
+                    #                     where=(T[start:end] > 0) & (T[start:end] > threshold_fdr), 
+                    #                     color='blue', alpha=0.3, label='Pd component')
+                    # else:
+                    try:
+                        if times[start] >  100 and times[end] < 200:
+                            print(times[start], times[end])
+                            plt.fill_between(times[start:end], T[start:end], threshold_fdr, 
+                                    where=(T[start:end] > 0) & (T[start:end] > threshold_fdr), 
+                                    color='green', alpha=0.3, label='P100 component')
+                    except:
+                        print('error')
+            if group == 'Healthy' or group == 'Young':                
+                plt.legend()
+                legend = ax.legend()
+                plt.setp(legend.get_texts(), fontsize='12', fontweight='bold')
+
+    plt.xlim(-200, 600)
+    plt.grid(color='grey', linewidth=0.5, alpha=0.5)
+    plt.xlabel('Time (ms)', fontsize=12, fontweight='bold')
+    plt.ylabel('T Values', fontsize=12, fontweight='bold')
+    for label in (ax.get_xticklabels() + ax.get_yticklabels()):
+            label.set_fontsize(12)
+            label.set_fontweight('bold')
+    plt.title(title, fontsize=14, fontweight='bold')
     plt.tight_layout()
-    #plt.show()
-    fig.savefig(os.path.join(path, fname))
+    fig.savefig(os.path.join(path, fname), dpi=300)
 
 
-def plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
+def plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id, save_peak=False):
     '''
     Plot T values of P1 array
     '''
@@ -170,6 +205,15 @@ def plot_p1_subject(T, times, threshold_fdr, threshold_uncorrected, subject_id):
     plt.tight_layout()
     #plt.show()
     fig.savefig(os.path.join(path, f'sub-{subject_id}-ttest.png'))
+
+    if save_peak:
+        df = pd.DataFrame(columns=['ID', 'peak_latency'])
+        df['ID'] = np.zeros(1)
+        df.iloc[0, 0] = subject_id
+        df.iloc[0, 1] = peak_t
+        file_path = os.path.join(o, f'sub-{subject_id}', 'N2pc', 'peak-latency', f'sub-{subject_id}-ttest-P1-peak-latency.csv')
+        df.to_csv(file_path)
+
 
 ############################################################################################################
 # ANOVAs and pairwise t-tests
@@ -253,19 +297,19 @@ def plot_pairwise(T_obs, clusters, cluster_p_values, times, groups_dict):
 
 def main():
 
-    group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
-                  'thalamus': ['52', '54', '55', '56', '58'],
-                  'pulvinar':['51', '53', '59', '60'],
-                    'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
-                    }
+    # group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
+    #               'thalamus': ['52', '54', '55', '56', '58'],
+    #               'pulvinar':['51', '53', '59', '60'],
+    #                 'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+    #                 }
 
-    #group_dict = {'test':['01', '02', '03']}
+    group_dict = {'test':['01', '02', '03']}
     
     for group, subject_list in group_dict.items():
         try:
             X, times = get_p1_array_group(subject_list)
-            T, _, _, _, threshold_fdr, threshold_uncorrected = stats_p1(X)
-            plot_p1(T, times, threshold_fdr, threshold_uncorrected, group)
+            T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected = stats_p1(X)
+            plot_p1(T, times, threshold_fdr, reject_fdr, group, side=None)
         except:
             print(f'Error in group {group}')
             continue
@@ -334,7 +378,7 @@ def main_anova():
 
 
 if __name__ == '__main__':
-    #main()
+    main()
     #main_single_subject()
     #main_anova()
-    main_sides()
+    #main_sides()
