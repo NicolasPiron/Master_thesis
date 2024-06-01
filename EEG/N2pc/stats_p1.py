@@ -304,15 +304,19 @@ def main():
                     'Young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
                     }
 
-    #group_dict = {'test':['01', '02', '03']}
+    # group_dict = {'test':['01', '02', '03']}
     
     for group, subject_list in group_dict.items():
         try:
             X, times = get_p1_array_group(subject_list)
             T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected = stats_p1(X)
             plot_p1(T, times, threshold_fdr, reject_fdr, group, side=None)
-            print(f'n2pc component found in group {group} at {times[np.argmax(T)]}ms')
-            print(f't value at peak: {np.max(T)}, p value: {pval[np.argmax(T)]}')
+            
+            # print the max T value between 100 and 200 ms, and the time of the max T value
+            window = np.logical_and(times >= 100, times <= 200)
+            max_t = np.max(T[window])
+            max_t_time = times[window][np.argmax(T[window])]
+            print(f"max T value for {group} P100 component: {max_t} at {max_t_time} ms")
         except:
             print(f'Error in group {group}')
             continue
