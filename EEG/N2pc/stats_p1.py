@@ -160,6 +160,7 @@ def plot_p1(T, times, threshold_fdr, reject_fdr, group, side=None):
                 plt.setp(legend.get_texts(), fontsize='12', fontweight='bold')
 
     plt.xlim(-200, 600)
+    plt.ylim(-60, )
     plt.grid(color='grey', linewidth=0.5, alpha=0.5)
     plt.xlabel('Time (ms)', fontsize=12, fontweight='bold')
     plt.ylabel('T Values', fontsize=12, fontweight='bold')
@@ -297,10 +298,10 @@ def plot_pairwise(T_obs, clusters, cluster_p_values, times, groups_dict):
 
 def main():
 
-    group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
-                  'thalamus': ['52', '54', '55', '56', '58'],
-                  'pulvinar':['51', '53', '59', '60'],
-                    'young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
+    group_dict = {'Healthy':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
+                  'Thalamus': ['52', '54', '55', '56', '58'],
+                  'Pulvinar':['51', '53', '59', '60'],
+                    'Young': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
                     }
 
     #group_dict = {'test':['01', '02', '03']}
@@ -310,6 +311,8 @@ def main():
             X, times = get_p1_array_group(subject_list)
             T, pval, reject_fdr, pval_fdr, threshold_fdr, threshold_uncorrected = stats_p1(X)
             plot_p1(T, times, threshold_fdr, reject_fdr, group, side=None)
+            print(f'n2pc component found in group {group} at {times[np.argmax(T)]}ms')
+            print(f't value at peak: {np.min(T)}, p value: {pval[np.argmax(T)]}')
         except:
             print(f'Error in group {group}')
             continue
