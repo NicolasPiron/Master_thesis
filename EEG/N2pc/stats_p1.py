@@ -146,14 +146,14 @@ def plot_p1(T, times, threshold_fdr, reject_fdr, group, side=None):
                     #                     where=(T[start:end] > 0) & (T[start:end] > threshold_fdr), 
                     #                     color='blue', alpha=0.3, label='Pd component')
                     # else:
-                    try:
-                        if times[start] >  100 and times[end] < 200:
-                            print(times[start], times[end])
-                            plt.fill_between(times[start:end], T[start:end], threshold_fdr, 
-                                    where=(T[start:end] > 0) & (T[start:end] > threshold_fdr), 
-                                    color='green', alpha=0.3, label='P100 component')
-                    except:
-                        print('error')
+                    # try:
+                    #     if times[start] >  100 and times[end] < 200:
+                    #         print(times[start], times[end])
+                    #         plt.fill_between(times[start:end], T[start:end], threshold_fdr, 
+                    #                 where=(T[start:end] > 0) & (T[start:end] > threshold_fdr), 
+                    #                 color='green', alpha=0.3, label='P100 component')
+                    # except:
+                    #     print('error')
             if group == 'Healthy' or group == 'Young':                
                 plt.legend()
                 legend = ax.legend()

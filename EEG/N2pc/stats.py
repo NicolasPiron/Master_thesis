@@ -193,7 +193,7 @@ def plot_n2pc(T, times, threshold_fdr, reject_fdr, group, side=None):
 
     plt.xlim(-200, 600)
     if group == 'Young':
-        plt.ylim(-9, 9)
+        plt.ylim(-9, 12)
     else:
         plt.ylim(-9, 4)
     plt.grid(color='grey', linewidth=0.5, alpha=0.5)
