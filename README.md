@@ -22,9 +22,9 @@ We have 3 different tasks.
 
 - The healthy participants are named from sub-01 to sub-24. Excluded participants (bad data quality - too many interpolated electrodes): [8, 9, 10, 11, 15]
 
-- The stroke participants are named with digits above 50 (i.e sub-51). No exclusion yet. 
+- The stroke participants are named with digits above 50 (i.e sub-51). Participant 57 was excluded.  
 
-- We plan on having a group of younger controls, it is not clear yet how they will be named. 
+- We also analyzed the data from a younger healthy group to validate the task. Their ID goes from sub-70 to sub-87. We excluded partcipants 74 and 83.  
 
 # file organization 
 
