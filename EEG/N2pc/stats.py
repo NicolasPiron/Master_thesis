@@ -435,7 +435,7 @@ def concat_data(subject_data):
     X = np.concatenate(array_list, axis=0)
     return X, times
 
-def resample(subject_list, k=10000, n_epochs=100):
+def resample(subject_list, k=10000, n_epochs=1655):
     
     all_subjects_data = load_data(subject_list)
     t_values = []
