@@ -500,6 +500,26 @@ def plot_permutations(t_values, thresholds_fdr, times, group):
     #plt.show()
     fig.savefig(os.path.join(path, f'{group}-ttest.png'))
 
+def plot_dist(t_values, reject_fdr, group):
+
+    _, o = get_paths()
+    path = os.path.join(o, 'all_subj', 'N2pc', 'stats', 'permutations')
+    if not os.path.exists(path):
+        os.makedirs(path)
+     
+    sig_neg = (t_values < 0) & reject_fdr
+    sig_count = np.sum(sig_neg, axis=1)
+    sig_list = sig_count.tolist()
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(sig_list, bins=10, color='blue', edgecolor='black', alpha=0.7)
+    ax.set_title('Distribution of significant negative t-values')
+    ax.set_xlabel('Number of significant negative t-values')
+    ax.set_ylabel('Frequency')
+    plt.tight_layout()
+    fig.savefig(os.path.join(path, f'{group}-dist.png'))
+    print('Distribution plot saved')
+
 def main_resamp():
 
     group_dict = {'old':['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
@@ -509,8 +529,9 @@ def main_resamp():
     # group_dict = {'test':['01', '02', '03']}
     for group, subject_list in group_dict.items():
         try:
-            t_values,_, _, _, threshold_fdr, times = resample(subject_list)
+            t_values,_, reject_fdr, _, threshold_fdr, times = resample(subject_list)
             plot_permutations(t_values, threshold_fdr, times, group)
+            plot_dist(t_values, reject_fdr, group)
         except:
             print(f'Error in group {group}')
             continue
@@ -518,3 +539,14 @@ def main_resamp():
 
 if __name__ == '__main__':
     main_resamp()
+
+    # t_values = np.array([[-1, -2, 3, 4], [2, 3, 4, 5], [3, 4, -5, 6],
+    #                      [-4, 5, 6, 7], [5, 6, 7, 8], [-6, 7, 8, -8],
+    #                      [-4, 2, 1, -7], [-5, -6, -7, -8], [-9, 7, -8, 9] ]
+    #                      )
+    # reject_fdr = np.array([[True, False, True, False], [True, False, True, False], [True, False, True, False],
+    #                        [True, False, True, False], [True, False, True, False], [True, False, True, False],
+    #                        [True, False, True, False], [True, False, True, False], [True, False, True, False]
+    #                        ])
+
+    # plot_dist(t_values, reject_fdr)
