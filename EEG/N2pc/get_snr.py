@@ -9,7 +9,7 @@ from n2pc_func.set_subject_lists import get_subject_list
 from n2pc_func.ERP import get_snr
 
 # subjects_list = get_subject_list()
-subjects_list = ['01', '02', '03']
+subjects_list = get_subject_list()
 indir, outdir = get_paths()
 
 df_list = []
