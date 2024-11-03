@@ -5,11 +5,12 @@ import seaborn as sns
 import numpy as np
 
 from n2pc_func.set_paths import get_paths
-from n2pc_func.set_subject_lists import get_subject_list
 from n2pc_func.ERP import get_snr
 
 # subjects_list = get_subject_list()
-subjects_list = get_subject_list()
+subjects_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23',
+                '51', '52', '53', '54', '55', '56', '58', '59', '60',
+                '70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
 indir, outdir = get_paths()
 
 df_list = []
