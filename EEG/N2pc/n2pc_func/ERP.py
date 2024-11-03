@@ -424,6 +424,52 @@ def combine_evoked_population(input_dir, output_dir, subject_list, population):
     no_dis_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, f'{population}-no_dis-ave.fif'), overwrite=True)
     dis_contra_combined.save(os.path.join(output_dir, 'all_subj', 'N2pc', 'evoked-N2pc', 'combined', population, f'{population}-dis_contra-ave.fif'), overwrite=True)
     
+
+def get_snr(subject_id, input_dir, output_dir):
+    '''
+    Gets the baseline SD (as a approximation for SNR) of the signal for PO7 and PO8 channels. Saves the values in a csv file, with columns
+    subject_id, channel, SNR.
+
+    Parameters
+    ----------
+    subject_id : str
+        The subject ID to plot.
+    input_dir : str
+        The path to the directory containing the input data.
+    output_dir : str
+        The path to the directory where the output will be saved.
+
+    Returns
+    -------
+    df : pd.DataFrame
+        A dataframe containing the SD values for the PO7 and PO8 channels.
+    '''
+    fname = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'evoked-N2pc', f'sub-{subject_id}-all-ave.fif')
+    evoked = mne.read_evokeds(fname)[0]
+    sfreq = evoked.info['sfreq']
+    baseline_duration = 0.2
+    baseline = int(sfreq * baseline_duration)
+
+    data = evoked.get_data()
+    po7 = data[24, :baseline]
+    po8 = data[61, :baseline]
+    # calculate the SD
+    std_po7 = np.std(po7)
+    std_po8 = np.std(po8)
+
+    # save the values in a csv file
+    output_dir = os.path.join(output_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-SNR')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    df = pd.DataFrame({'ID' : [int(subject_id), int(subject_id)], 'channel' : ['PO7', 'PO8'], 'SNR' : [std_po7, std_po8]})
+    df.to_csv(os.path.join(output_dir, f'sub-{subject_id}-SNR.csv'), index=False)
+    print(f'====================== SNR values saved for subject {subject_id}')
+
+    return df
+    
+
+
 def combine_topo_diff_single_subj(subject_id, input_dir, output_dir):
     '''
     computes and saves the contra minus ipsi scalp for a given subject, for each condition.
