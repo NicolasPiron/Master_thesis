@@ -54,4 +54,5 @@ sns.boxplot(data=df[df['group']!='young'], x='group', y='SNR', color='grey', wid
 sns.swarmplot(data=df[df['group']!='young'], x='group', y='SNR', color='black', size=5,
                 alpha=0.5, ax=ax)   
 sns.despine()
+plt.tight_layout()
 fig.savefig(os.path.join(outpath, 'allsubj_snr.png'), dpi=300)
