@@ -1,8 +1,138 @@
 import mne
+from mne.stats import permutation_cluster_test
 import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import seaborn as sns
+
+############################################################################################################
+# funcs for statistical analysis of time-frequency representations
+############################################################################################################
+
+
+def run_f_test_tfr(sbj_list1, sbj_list2, ch_name, swp_id, input_dir):
+    
+    freqs = np.arange(8, 13, 1)
+
+    tfr_epo1, times = stack_tfr(sbj_list1, swp_id, freqs, input_dir)
+    tfr_epo2, _ = stack_tfr(sbj_list2, swp_id, freqs, input_dir)
+    F_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
+        [tfr_epo1, tfr_epo2],
+        out_type="mask",
+        n_permutations=1000,
+        threshold=6.0,
+        tail=0,
+        seed=np.random.default_rng(seed=8675309),
+    )
+    fig = plot_stat_tfr(tfr_epo1,
+        tfr_epo2,
+        F_obs,
+        clusters,
+        cluster_p_values,
+        times,
+        freqs,
+        ch_name,
+    )
+
+    outdir = os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'stats')
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    fig.savefig(os.path.join(outdir, 'tfr_stat.png'))
+    
+
+def stack_tfr(subject_list, swp_id, freqs, input_dir):
+
+    tfr_list = []
+    for subject_id in subject_list:
+        if subject_id in swp_id:
+            fname = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs',
+                                  'swapped_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc-swp.fif')
+        else:
+            fname = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs',
+                                  f'sub-{subject_id}-cleaned_epochs-N2pc.fif')
+        epochs = mne.read_epochs(fname)
+        epochs.info['bads'] = []
+        times = epochs.times * 1e3
+        tfr = cmpt_tfr(epochs, freqs)
+        tfr_list.append(tfr)
+
+    return np.concatenate(tfr_list, axis=0), times
+
+def cmpt_tfr(epochs, freqs):
+
+    decim = 1
+    n_cycles = 1.5
+    tfr_kwargs = dict(
+        freqs=freqs,
+        n_cycles=n_cycles,
+        decim=decim,
+        return_itc=False,
+        average=False,
+    )
+    tfr = mne.time_frequency.tfr_morlet(epochs, **tfr_kwargs)
+    tfr.apply_baseline(baseline=(-0.2, 0), mode='ratio')
+
+    return tfr.data[:, 0, :, :] # single channel
+
+def f_test_tfr(tfr_epo1, tfr_epo2, thresh=6.0, nperm=1000):
+    ''' '''
+
+    F_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
+        [tfr_epo1, tfr_epo2],
+        out_type="mask",
+        n_permutations=1000,
+        threshold=6.0,
+        tail=0,
+        seed=np.random.default_rng(seed=8675309),
+    )
+
+    return F_obs, clusters, cluster_p_values, H0
+
+def plot_stat_tfr(tfr_epo1, tfr_epo2, F_obs, clusters, cluster_pval,  times, freqs, ch_name):
+    ''' '''
+
+    fig, ax = plt.subplots(figsize=(6, 4), layout="constrained")
+
+    evoked_power_1 = tfr_epo1.mean(axis=0)
+    evoked_power_2 = tfr_epo2.mean(axis=0)
+    evoked_power_contrast = evoked_power_1 - evoked_power_2
+    signs = np.sign(evoked_power_contrast)
+    
+    F_obs_plot = np.nan * np.ones_like(F_obs)
+    for c, p_val in zip(clusters, cluster_pval):
+        if p_val <= 0.05:
+            F_obs_plot[c] = F_obs[c] * signs[c]
+
+    ax.imshow(
+        F_obs,
+        extent=[times[0], times[-1], freqs[0], freqs[-1]],
+        aspect="auto",
+        origin="lower",
+        cmap="gray",
+    )
+    max_F = np.nanmax(abs(F_obs_plot))
+    ax.imshow(
+        F_obs_plot,
+        extent=[times[0], times[-1], freqs[0], freqs[-1]],
+        aspect="auto",
+        origin="lower",
+        cmap="RdBu_r",
+        vmin=-max_F,
+        vmax=max_F,
+    )
+
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel("Frequency (Hz)")
+    ax.set_title(f"Induced power (PO7)")
+    sns.despine()
+    plt.tight_layout()
+
+    return fig
+
+############################################################################################################
+# exploratory tfr visualization 
+############################################################################################################
 
 def get_tfr_scalp_single_subj(subject_id, input_dir, output_dir):
     '''
