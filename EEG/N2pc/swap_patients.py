@@ -12,7 +12,7 @@ for patient in left_lesion_patients:
         print('Error with patient: ', patient, ' for evoked')
         continue
     try:
-        main_swap_epo('01', i)
+        main_swap_epo(patient, i)
     except:
         print('Error with patient: ', patient, ' for epochs')
         continue
