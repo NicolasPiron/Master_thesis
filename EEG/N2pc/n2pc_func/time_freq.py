@@ -1,5 +1,6 @@
 import mne
 from mne.stats import permutation_cluster_test
+from scipy.stats import f
 import numpy as np
 import pandas as pd
 import os
@@ -11,7 +12,32 @@ import seaborn as sns
 ############################################################################################################
 
 
-def run_f_test_tfr(sbj_list1, sbj_list2, ch_name, swp_id, input_dir):
+def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_name: str, swp_id: list, input_dir: str):
+    ''' runs a f-test on the time-frequency representations of two groups of subjects.
+    The test is done on a single channel.
+    The results are plotted and saved in the output directory.
+    
+    Parameters
+    ----------
+    sbj_list1 : list of str
+        List of subject IDs for the first group. (format '01')
+    grpn1 : str
+        Name of the first group.
+    sbj_list2 : list of str
+        List of subject IDs for the second group. (format '01')
+    grpn2 : str
+        Name of the second group.
+    ch_name : str
+        Channel name.
+    swp_id : list of str
+        List of subject IDs for which the epochs were swapped (lesion in the left hemisphere).
+    input_dir : str
+        Path to the data directory.
+
+    Returns
+    -------
+    None.
+    '''
     
     freqs = np.arange(8, 13, 1)
 
@@ -26,7 +52,9 @@ def run_f_test_tfr(sbj_list1, sbj_list2, ch_name, swp_id, input_dir):
         seed=np.random.default_rng(seed=8675309),
     )
     fig = plot_stat_tfr(tfr_epo1,
+        grpn1,
         tfr_epo2,
+        grpn2,
         F_obs,
         clusters,
         cluster_p_values,
@@ -38,10 +66,32 @@ def run_f_test_tfr(sbj_list1, sbj_list2, ch_name, swp_id, input_dir):
     outdir = os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'stats')
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    fig.savefig(os.path.join(outdir, 'tfr_stat.png'))
+    fname = os.path.join(outdir, f'{grpn1}_VS_{grpn2}_{ch_name}_tfr_stat.png')
+    fig.savefig(os.path.join(outdir, fname), dpi=300)
     
 
 def stack_tfr(subject_list, swp_id, freqs, input_dir):
+    ''' Concatenates the time-frequency representations of a list of subjects so they
+    can be compared to another group.
+
+    Parameters
+    ----------
+    subject_list : list of str
+        List of subject IDs.
+    swp_id : list of str
+        List of subject IDs for which the epochs were swapped (lesion in the left hemisphere).
+    freqs : list of float
+        List of frequencies.
+    input_dir : str
+        Path to the input directory.
+
+    Returns
+    -------
+    tfr_list : np.array
+        Array of time-frequency representations, shape (n_epochs, n_freqs, n_times).
+    times : np.array
+        Array of time points for plotting.
+    '''
 
     tfr_list = []
     for subject_id in subject_list:
@@ -60,6 +110,20 @@ def stack_tfr(subject_list, swp_id, freqs, input_dir):
     return np.concatenate(tfr_list, axis=0), times
 
 def cmpt_tfr(epochs, freqs):
+    ''' Computes the time-frequency representation of a single channel.
+    
+    Parameters
+    ----------
+    epochs : mne.Epochs
+        Epochs object.
+    freqs : list of float
+        List of frequencies.
+
+    Returns
+    -------
+    tfr.data : np.array
+        Time-frequency representation, shape (n_epochs, n_freqs, n_times).
+    '''
 
     decim = 1
     n_cycles = 1.5
@@ -75,22 +139,75 @@ def cmpt_tfr(epochs, freqs):
 
     return tfr.data[:, 0, :, :] # single channel
 
-def f_test_tfr(tfr_epo1, tfr_epo2, thresh=6.0, nperm=1000):
-    ''' '''
+def f_test_tfr(tfr_epo1, tfr_epo2, thresh=None, nperm=1000):
+    ''' Computes a f-test on the time-frequency representations of two groups of subjects.
+
+    Parameters
+    ----------
+    tfr_epo1 : np.array
+        Time-frequency representation of the first group, shape (n_epochs, n_freqs, n_times).
+    tfr_epo2 : np.array
+        Time-frequency representation of the second group, shape (n_epochs, n_freqs, n_times).
+    thresh : float
+        Threshold for the cluster test (critical F-value). Set to None for automatic selection
+        to correspond to pval = .05.
+    nperm : int
+        Number of permutations.
+
+    Returns
+    -------
+    F_obs : np.array
+        F-values.
+    clusters : list of np.array
+        List of clusters.
+    cluster_p_values : np.array
+        Cluster p-values.
+    H0 : np.array
+        Permutation distribution.
+    '''
 
     F_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
         [tfr_epo1, tfr_epo2],
         out_type="mask",
-        n_permutations=1000,
-        threshold=6.0,
+        n_permutations=nperm,
+        threshold=thresh, # None -> automatic p-val 0.05
         tail=0,
         seed=np.random.default_rng(seed=8675309),
     )
 
     return F_obs, clusters, cluster_p_values, H0
 
-def plot_stat_tfr(tfr_epo1, tfr_epo2, F_obs, clusters, cluster_pval,  times, freqs, ch_name):
-    ''' '''
+def plot_stat_tfr(tfr_epo1, grpn1, tfr_epo2, grpn2, F_obs, clusters, cluster_pval,  times, freqs, ch_name):
+    ''' Plots the results of the f-test on the time-frequency representations.
+
+    Parameters
+    ----------
+    tfr_epo1 : np.array
+        Time-frequency representation of the first group, shape (n_epochs, n_freqs, n_times).
+    grpn1 : str
+        Name of the first group.
+    tfr_epo2 : np.array
+        Time-frequency representation of the second group, shape (n_epochs, n_freqs, n_times).
+    grpn2 : str
+        Name of the second group.
+    F_obs : np.array
+        F-values.
+    clusters : list of np.array
+        List of clusters.
+    cluster_pval : np.array
+        Cluster p-values.
+    times : np.array
+        Array of time points for plotting.
+    freqs : np.array
+        Array of frequencies for plotting.
+    ch_name : str
+        Channel name.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        Figure.
+    '''
 
     fig, ax = plt.subplots(figsize=(6, 4), layout="constrained")
 
@@ -124,7 +241,7 @@ def plot_stat_tfr(tfr_epo1, tfr_epo2, F_obs, clusters, cluster_pval,  times, fre
 
     ax.set_xlabel("Time (ms)")
     ax.set_ylabel("Frequency (Hz)")
-    ax.set_title(f"Induced power (PO7)")
+    ax.set_title(f"Induced power {grpn1} VS {grpn2} - {ch_name}")
     sns.despine()
     plt.tight_layout()
 
