@@ -41,8 +41,8 @@ def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_
     
     freqs = np.arange(8, 13, 1)
 
-    tfr_epo1, times = stack_tfr(sbj_list1, swp_id, freqs, input_dir)
-    tfr_epo2, _ = stack_tfr(sbj_list2, swp_id, freqs, input_dir)
+    tfr_epo1, times = stack_tfr(sbj_list1, swp_id, freqs, ch_name, input_dir)
+    tfr_epo2, _ = stack_tfr(sbj_list2, swp_id, freqs, ch_name, input_dir)
     F_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
         [tfr_epo1, tfr_epo2],
         out_type="mask",
@@ -70,7 +70,7 @@ def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_
     fig.savefig(os.path.join(outdir, fname), dpi=300)
     
 
-def stack_tfr(subject_list, swp_id, freqs, input_dir):
+def stack_tfr(subject_list, swp_id, freqs, ch_name, input_dir):
     ''' Concatenates the time-frequency representations of a list of subjects so they
     can be compared to another group.
 
@@ -82,6 +82,8 @@ def stack_tfr(subject_list, swp_id, freqs, input_dir):
         List of subject IDs for which the epochs were swapped (lesion in the left hemisphere).
     freqs : list of float
         List of frequencies.
+    ch_name : str
+        Channel name (generally PO7 or PO8).
     input_dir : str
         Path to the input directory.
 
@@ -92,7 +94,6 @@ def stack_tfr(subject_list, swp_id, freqs, input_dir):
     times : np.array
         Array of time points for plotting.
     '''
-
     tfr_list = []
     for subject_id in subject_list:
         if subject_id in swp_id:
@@ -103,6 +104,7 @@ def stack_tfr(subject_list, swp_id, freqs, input_dir):
                                   f'sub-{subject_id}-cleaned_epochs-N2pc.fif')
         epochs = mne.read_epochs(fname)
         epochs.info['bads'] = []
+        epochs.pick_channels([ch_name])
         times = epochs.times * 1e3
         tfr = cmpt_tfr(epochs, freqs)
         tfr_list.append(tfr)
