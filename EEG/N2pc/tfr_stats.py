@@ -7,9 +7,10 @@ population_dict = {'Healthy': ['01', '02', '03', '04', '06', '07', '12', '13', '
                     'Thalamus': ['52', '54', '55', '56', '58'],
                     'Pulvinar': ['51', '53', '59', '60']
 }
+#'Thalamus': 'Pulvinar',
+#                'Healthy': 'Thalamus',
 comp_dict = {'Healthy': 'Pulvinar',
-                'Thalamus': 'Pulvinar',
-                'Healthy': 'Thalamus',
+                
 }
 # population_dict = {'test': ['01', '02'],
 #                    'test2': ['03', '03'],
