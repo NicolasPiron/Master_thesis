@@ -12,7 +12,7 @@ import seaborn as sns
 ############################################################################################################
 
 
-def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_name: str, swp_id: list, input_dir: str):
+def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_name: str, swp_id: list, thresh: float, input_dir: str):
     ''' runs a f-test on the time-frequency representations of two groups of subjects.
     The test is done on a single channel.
     The results are plotted and saved in the output directory.
@@ -47,7 +47,7 @@ def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_
         [tfr_epo1, tfr_epo2],
         out_type="mask",
         n_permutations=1000,
-        threshold=6.0,
+        threshold=thresh,
         tail=0,
         seed=np.random.default_rng(seed=8675309),
     )
@@ -66,7 +66,7 @@ def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_
     outdir = os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'stats')
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    fname = os.path.join(outdir, f'{grpn1}_VS_{grpn2}_{ch_name}_tfr_stat.png')
+    fname = os.path.join(outdir, f'{grpn1}_VS_{grpn2}_{ch_name}_thresh{thresh}_tfr_stat.png')
     fig.savefig(os.path.join(outdir, fname), dpi=300)
     
 
