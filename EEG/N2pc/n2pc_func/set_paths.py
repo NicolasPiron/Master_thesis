@@ -15,6 +15,11 @@ def get_paths():
         input_dir = '/home/nicolasp/shared_PULSATION/derivative'
         output_dir = '/home/nicolasp/shared_PULSATION/derivative'
 
+    elif '/Users/pironn' in script_dir:
+
+        input_dir = '/Users/pironn/Documents/Master/data'
+        output_dir = '/Users/pironn/Documents/Master/data'
+
     else:
 
         print('===================================')

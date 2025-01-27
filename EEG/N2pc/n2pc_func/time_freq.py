@@ -1,11 +1,188 @@
 import mne
 from mne.stats import permutation_cluster_test
-from scipy.stats import f
 import numpy as np
-import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+############################################################################################################
+# additional functions for contra-ipsi comparisons
+############################################################################################################
+
+def run_f_test_latdiff(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, swp_id: list, thresh: float, input_dir: str):
+    ''' runs a f-test on the time-frequency representations of two groups of subjects. Adjusted for contra-ipsi comparisons.'''
+    freqs = np.arange(8, 13, 1)
+    tfr_l_epo1, tfr_r_epo1, times = stack_tfr_latdiff(sbj_list1, swp_id, freqs, input_dir)
+    tfr_l_epo2, tfr_r_epo2, _ = stack_tfr_latdiff(sbj_list2, swp_id, freqs, input_dir)
+    target_side = {'left':[tfr_l_epo1, tfr_l_epo2], 'right':[tfr_r_epo1, tfr_r_epo2]}
+    figs = {}
+    for side, (tfr_epo1, tfr_epo2) in target_side.items():
+        F_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
+            [tfr_epo1, tfr_epo2],
+            out_type="mask",
+            n_permutations=1000,
+            threshold=thresh,
+            tail=0,
+            seed=np.random.default_rng(seed=8675309),
+        )
+        figs[side] = plot_stat_tfr_latdiff(
+            tfr_epo1,
+            grpn1,
+            tfr_epo2,
+            grpn2,
+            F_obs,
+            clusters,
+            cluster_p_values,
+            times,
+            freqs,
+            side,
+        )
+
+    outdir = os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'stats_latdiff')
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    for side, fig in figs.items():
+        fname = os.path.join(outdir, f'{grpn1}_VS_{grpn2}_{side}_thresh{thresh}_tfr_stat.png')
+        fig.savefig(os.path.join(outdir, fname), dpi=300)
+    return figs
+
+
+def plot_stat_tfr_latdiff(tfr_epo1, grpn1, tfr_epo2, grpn2, F_obs, clusters, cluster_pval,  times, freqs, side):
+    ''' Plots the results of the f-test on the time-frequency representations.
+
+    Parameters
+    ----------
+    tfr_epo1 : np.array
+        Time-frequency representation of the first group, shape (n_epochs, n_freqs, n_times).
+    grpn1 : str
+        Name of the first group.
+    tfr_epo2 : np.array
+        Time-frequency representation of the second group, shape (n_epochs, n_freqs, n_times).
+    grpn2 : str
+        Name of the second group.
+    F_obs : np.array
+        F-values.
+    clusters : list of np.array
+        List of clusters.
+    cluster_pval : np.array
+        Cluster p-values.
+    times : np.array
+        Array of time points for plotting.
+    freqs : np.array
+        Array of frequencies for plotting.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        Figure.
+    '''
+
+    fig, ax = plt.subplots(figsize=(6, 4), layout="constrained")
+
+    evoked_power_1 = tfr_epo1.mean(axis=0)
+    evoked_power_2 = tfr_epo2.mean(axis=0)
+    evoked_power_contrast = evoked_power_1 - evoked_power_2
+    signs = np.sign(evoked_power_contrast)
+    
+    F_obs_plot = np.nan * np.ones_like(F_obs)
+    for c, p_val in zip(clusters, cluster_pval):
+        if p_val <= 0.05:
+            F_obs_plot[c] = F_obs[c] * signs[c]
+
+    ax.imshow(
+        F_obs,
+        extent=[times[0], times[-1], freqs[0], freqs[-1]],
+        aspect="auto",
+        origin="lower",
+        cmap="gray",
+    )
+    max_F = np.nanmax(abs(F_obs_plot))
+    ax.imshow(
+        F_obs_plot,
+        extent=[times[0], times[-1], freqs[0], freqs[-1]],
+        aspect="auto",
+        origin="lower",
+        cmap="RdBu_r",
+        vmin=-max_F,
+        vmax=max_F,
+    )
+
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel("Frequency (Hz)")
+    ax.set_title(f"Induced power {grpn1} VS {grpn2} \n target {side}")
+    sns.despine()
+    plt.tight_layout()
+    plt.show()
+    return fig
+
+def stack_tfr_latdiff(subject_list, swp_id, freqs, input_dir):
+    ''' Stacks the time-frequency representations of a list of subjects so they
+    can be compared to another group.
+    IMPORTANT : this time the epochs are averaged by subject before stacking.'''
+    tfr_l_list = []
+    tfr_r_list = []
+    for subject_id in subject_list:
+        if subject_id in swp_id:
+            epochs = load_data(subject_id, True, input_dir)
+        else:
+            epochs = load_data(subject_id, False, input_dir)
+        times = epochs.times * 1e3
+        target_l_tfr, target_r_tfr = extract_latdiff(epochs, freqs)
+        tfr_l_list.append(target_l_tfr)
+        tfr_r_list.append(target_r_tfr)
+    # stack -> axis 0 : subjects, axis 1 : freqs, axis 2 : times
+    return np.stack(tfr_l_list), np.stack(tfr_r_list), times
+
+def load_data(subject_id, swp, input_dir):
+    ''' Loads the epochs of a single subject. If the epochs were swapped (lesion in the left hemisphere),
+    the swapped epochs are loaded.'''
+    if swp:
+        fname = os.path.join(
+            input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs',
+            'swapped_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc-swp.fif'
+        )
+    else:
+        fname = os.path.join(
+            input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs',
+            f'sub-{subject_id}-cleaned_epochs-N2pc.fif'
+        )
+    epochs = mne.read_epochs(fname) 
+    return epochs
+
+def extract_latdiff(epochs, freqs):
+    ''' Extracts the time-frequency representations for the contra and ipsi conditions of a single subject.
+    Returns two tfr objects: one for target_l and one for target_r. 
+    IMPORTANT : this time the epochs are averaged by subject.'''
+    target_l = epochs[
+        'dis_mid/target_l', 
+        'dis_bot/target_l', 
+        'no_dis/target_l', 
+        'dis_right/target_l'
+    ]
+    target_r = epochs[
+        'dis_mid/target_r', 
+        'dis_bot/target_r', 
+        'no_dis/target_r', 
+        'dis_left/target_r'
+    ]
+    # contra - ipsi when target left : PO8 - PO7, when target right : PO7 - PO8
+    chan_dict = {
+        'target_l_ipsi' : target_l.copy().pick_channels(['PO7']),
+        'target_l_contra' : target_l.copy().pick_channels(['PO8']),
+        'target_r_ipsi' : target_r.copy().pick_channels(['PO8']),
+        'target_r_contra' : target_r.copy().pick_channels(['PO7']),
+    }
+    tfr_dict = {chan: cmpt_tfr(epochs, freqs) for chan, epochs in chan_dict.items()}
+    
+    target_r_tfr = tfr_dict['target_r_contra'] - tfr_dict['target_r_ipsi']
+    target_l_tfr = tfr_dict['target_l_contra'] - tfr_dict['target_l_ipsi']
+    print(target_l_tfr.shape)
+
+    target_l_tfr = np.mean(target_l_tfr, axis=0)
+    target_r_tfr = np.mean(target_r_tfr, axis=0)
+    print(target_l_tfr.shape)
+
+    return target_l_tfr, target_r_tfr
 
 ############################################################################################################
 # funcs for statistical analysis of time-frequency representations
