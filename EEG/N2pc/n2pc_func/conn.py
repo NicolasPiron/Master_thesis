@@ -69,8 +69,8 @@ def get_conn_mat(subject_id: str, input_dir: str)-> pd.DataFrame:
     if not os.path.exists(conn_fn):
         epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
         data = epochs.get_data()[:, :64, :]
-        con_mat = cmpt_conn_mat(data)
-        pd.DataFrame(con_mat, index=ch_names, columns=ch_names).to_csv(conn_fn)
+        con_mat = pd.DataFrame(cmpt_conn_mat(data), index=ch_names, columns=ch_names)
+        con_mat.to_csv(conn_fn)
     else:
         con_mat = pd.read_csv(conn_fn, index_col=0)
     return con_mat
