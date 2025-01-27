@@ -76,8 +76,10 @@ def get_average_conn(subject_list, freq_name, freq_range, condition):
 def main():
 
     _, o = get_paths()
-    dir_name = os.path.join(o, 'all_subj', 'resting-state', 'connectivity',
-                        'static', 'average')
+    dir_name = os.path.join(
+        o, 'all_subj', 'resting-state', 'connectivity',
+        'static', 'average'
+    )
     fname = os.path.join(dir_name, 'average_conn.csv')
 
     subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23', '51', '52', '53',

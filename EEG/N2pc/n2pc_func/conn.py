@@ -1,29 +1,101 @@
-import mne
-import os
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from set_paths import get_paths
-from mne.viz import circular_layout
+import os
+import mne
 from mne_connectivity import spectral_connectivity_time
-from mne_connectivity.viz import plot_connectivity_circle
-from mne import read_labels_from_annot
-from mne.datasets import fetch_fsaverage
-from src_rec import combine_conditions
+import matplotlib.pyplot as plt
+import seaborn as sns
+from n2pc_func.params import ch_names
 
-###################################################################################################
-# Basic connectivity functions
-###################################################################################################
+def get_hemi_df(subject_id: str, input_dir: str)-> pd.DataFrame:
+    ''' Get hemisphere dataframe for a given subject. If the dataframe has not been computed yet,
+    it will be computed and saved.'''
+    fn = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'sensor-connectivity', f'sub-{subject_id}-hemi_df.csv')
+    if not os.path.exists(fn):
+        mat = get_conn_mat(subject_id, input_dir)
+        long_df = mat2df(mat)
+        long_df['hemi'] = long_df.apply(get_hemi, axis=1)
+        long_df['ID'] = subject_id
+        long_df.to_csv(fn)
+    else:
+        long_df = pd.read_csv(fn, index_col=0)
+    return long_df
 
-def get_connectivity_matrix(data):
+def get_hemi(row: pd.DataFrame)-> str:
+    ''' Stolen from resting-state/get_lat_conn.py.
+    Get hemisphere of a pair of channels. Left, right, interhemispheric or None if central electrode.'''
+    last_1 = row['index'][-1]
+    last_2 = row['col'][-1]
+    if last_1 == 'z' or last_2 == 'z':
+        return None
+    elif int(last_1)%2 == 0 and int(last_2)%2 == 0:
+        return 'right'
+    elif int(last_1)%2 != 0 and int(last_2)%2 != 0:
+        return 'left'
+    elif (int(last_1)%2 != 0 and int(last_2)%2 == 0) or (int(last_1)%2 == 0 and int(last_2)%2 != 0):
+        return 'inter'
 
+def mat2df(mat: pd.DataFrame)-> pd.DataFrame:
+    '''Stolen from resting-state/get_lat_conn.py (named get_df()).
+    Get a long dataframe from a connectivity matrix.'''
+    long_df = mat.reset_index().melt(id_vars='index', var_name='col', value_name='ciPLV')
+    print(long_df)
+    long_df_sorted = long_df.sort_values(by='ciPLV')
+    long_df_sorted = long_df_sorted[long_df_sorted['ciPLV'] != 0]
+    long_df_sorted.reset_index(drop=True, inplace=True)
+    long_df_sorted['hemi'] = np.nan * len(long_df_sorted)
+    return long_df_sorted
+
+def plot_mat(data, title, ch_names, vmin=-1, vmax=1)-> plt.figure: 
+    ''' Plots a matrix'''
+    fig, ax = plt.subplots(figsize=(7.5, 6))
+    sns.heatmap(data, ax=ax, cmap='coolwarm', center=0,
+                xticklabels=ch_names, yticklabels=ch_names,
+                vmin=vmin, vmax=vmax)
+    ax.set_title(title)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right', fontsize=6)
+    ax.set_yticklabels(ax.get_yticklabels(), fontsize=6)
+    plt.tight_layout()
+    plt.show()
+    return fig
+
+def get_conn_mat(subject_id: str, input_dir: str)-> pd.DataFrame:
+    ''' Get connectivity matrix for a given subject. If the matrix has not been computed yet,
+    it will be computed and saved.'''
+    conn_dir = os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'sensor-connectivity')
+    if not os.path.exists(conn_dir):
+        os.makedirs(conn_dir)
+    conn_fn = os.path.join(conn_dir, f'sub-{subject_id}-connectivity.csv')
+    if not os.path.exists(conn_fn):
+        epochs = mne.read_epochs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs', f'sub-{subject_id}-cleaned_epochs-N2pc.fif'))
+        data = epochs.get_data()[:, :64, :]
+        con_mat = cmpt_conn_mat(data)
+        pd.DataFrame(con_mat, index=ch_names, columns=ch_names).to_csv(conn_fn)
+    else:
+        con_mat = pd.read_csv(conn_fn, index_col=0)
+    return con_mat
+
+def cmpt_conn_mat(epochs:np.array)-> np.array:
+    ''' Compute connectivity matrix from epochs data
+    
+    Parameters
+    ----------
+    epochs : np.array
+        Epochs data
+    
+    Returns
+    -------
+    con_mat : np.array
+        Connectivity matrix
+    '''
     fmin = 8.0
     fmax = 13.0
     freqs = np.arange(fmin, fmax)
     sfreq = 512
+    n_chan = epochs.shape[1]
     con = spectral_connectivity_time(
-        data,
-        method='plv',
+        epochs,
+        method='ciplv',
         average=True,
         mode="multitaper",
         sfreq=sfreq,
@@ -33,279 +105,7 @@ def get_connectivity_matrix(data):
         faverage=True,
         n_jobs=1,
     )
-    con_mat=con.get_data().reshape(int(np.sqrt(4624)), int(np.sqrt(4624)))
 
-    return con_mat
-
-def get_labels(return_names=False):
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    if 'nicolaspiron/Documents' in script_dir:
-        label_path = fetch_fsaverage(verbose=True)
-    elif 'shared_PULSATION' in script_dir:
-        label_path = '/home/nicolasp/shared_PULSATION/MNE-fsaverage-data/fsaverage'
-    else:
-        raise Exception('Please specify the path to the fsaverage directory in the source_set_up function.') 
-    labels = read_labels_from_annot('', parc='aparc', subjects_dir=label_path)
-    labels = [label for label in labels if 'unknown' not in label.name]
-
-    if return_names:
-        label_names = [label.name for label in labels]
-        return labels, label_names
-    else:   
-        return labels
-
-def save_con_mat(con_mat, path, name):
-
-    _, label_names = get_labels(return_names=True)
-    df = pd.DataFrame(con_mat, index=label_names, columns=label_names)
-    df.to_csv(f'{path}/{name}.csv')
-
-def load_con_mat(path, name):
-
-    df = pd.read_csv(f'{path}/{name}.csv', index_col=0)
-    con_mat = df.to_numpy()
-    return con_mat
-
-def plot_con_mat(con_mat, title):
-
-    _, label_names = get_labels(return_names=True)
-
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.set_title(title)
-    ax.set_xticks(np.arange(len(label_names)))
-    ax.set_yticks(np.arange(len(label_names)))
-    ax.set_xticklabels(label_names, rotation=90, fontsize=8)
-    ax.set_yticklabels(label_names, fontsize=8)
-    im0 = ax.imshow(con_mat)
-    fig.colorbar(im0, shrink=0.81)
-    fig.tight_layout()
-
-    return fig
-
-def plot_con_circle(con_mat):
-
-    labels, label_names = get_labels(return_names=True)
-    lh_labels = [name for name in label_names if name.endswith("lh")]
-
-    # Get the y-location of the label
-    label_ypos = list()
-    for name in lh_labels:
-        idx = label_names.index(name)
-        ypos = np.mean(labels[idx].pos[:, 1])
-        label_ypos.append(ypos)
-        
-    # Reorder the labels based on their location
-    lh_labels = [label for (yp, label) in sorted(zip(label_ypos, lh_labels))]
-    # For the right hemi
-    rh_labels = [label[:-2] + "rh" for label in lh_labels]
-    # Save the plot order and create a circular layout
-    node_order = list()
-    node_order.extend(lh_labels[::-1])  # reverse the order
-    node_order.extend(rh_labels)
-    node_angles = circular_layout(
-        label_names, node_order, start_pos=90, group_boundaries=[0, len(label_names) / 2]
-    )
-    label_colors = [label.color for label in labels]
-
-    fig, ax = plt.subplots(figsize=(8, 8), facecolor="black", subplot_kw=dict(polar=True))
-    plot_connectivity_circle(
-        con_mat,
-        label_names,
-        n_lines=300,
-        node_angles=node_angles,
-        node_colors=label_colors,
-        ax=ax,
-        show=False,
-    )
-    fig.tight_layout()
-
-    return fig
-
-###################################################################################################
-# Task-specific connectivity functions
-###################################################################################################
-
-def con_pipeline_single_subj(subject_id):
-
-    input_dir, o = get_paths()
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity')):
-        os.mkdir(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity'))
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'con-matrices')):
-        os.mkdir(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'con-matrices'))
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'con-figures')):
-        os.mkdir(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'con-figures'))
-
-    three_cond_data = combine_conditions(subject_id)
-
-    for condition, data in three_cond_data.items():
-        con_mat = get_connectivity_matrix(data)
-        save_con_mat(con_mat, os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'con-matrices'), f'{condition}-con-mat')
-        mat_fig = plot_con_mat(con_mat, f'{condition}-con-mat')
-        mat_fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'con-figures', f'{condition}-con-mat.png'))
-        plt.close()
-        circle_fig = plot_con_circle(con_mat)
-        circle_fig.savefig(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'con-figures', f'{condition}-con-circle.png'))
-        plt.close()
-
-    return None
-
-def con_pipeline_population(subject_list, population):
-
-    input_dir, o = get_paths()
-
-    for path in [os.path.join(input_dir, 'all_subj', 'N2pc', 'src-connectivity', population, 'con-matrices'),
-                 os.path.join(input_dir, 'all_subj', 'N2pc', 'src-connectivity', population, 'con-figures')]:
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-    conditions = ['dis_mid', 'dis_lat', 'no_dis']
-    mat_dict = dict()
-    for condition in conditions:
-        mat_dict[condition] = list()
-        for subject_id in subject_list:
-            mat_dict[condition].append(load_con_mat(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'con-matrices'), f'{condition}-con-mat'))
-        mat_dict[condition] = np.mean(mat_dict[condition], axis=0)
-        save_con_mat(mat_dict[condition], os.path.join(input_dir, 'all_subj', 'N2pc', 'src-connectivity', population, 'con-matrices'), f'{condition}-con-mat')
-        mat_fig = plot_con_mat(mat_dict[condition], f'{condition}-con-mat')
-        mat_fig.savefig(os.path.join(input_dir, 'all_subj', 'N2pc', 'src-connectivity', population, 'con-figures', f'{condition}-con-mat.png'))
-        plt.close()
-        circle_fig = plot_con_circle(mat_dict[condition])
-        circle_fig.savefig(os.path.join(input_dir, 'all_subj', 'N2pc', 'src-connectivity', population, 'con-figures', f'{condition}-con-circle.png'))
-        plt.close()
-
-    return None
-
-###################################################################################################
-# Functions to add PLV values to the trial by trial dataframe
-###################################################################################################
-
-def get_ROI_con_values_epochs(subject_id):
-
-#   'caudalmiddlefrontal_lh': 4,
-#   'caudalmiddlefrontal_rh': 5,
-#   'inferiorparietal_lh': 14,
-#   'inferiorparietal_rh': 15
-
-    input_dir, o = get_paths()
-    data = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'stc_epochs', f'sub-{subject_id}-stc_epochs.npy'))
-    if not os.path.exists(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices')):
-        os.makedirs(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices'))
-
-    fmin = 8.0
-    fmax = 13.0
-    freqs = np.arange(fmin, fmax)
-    sfreq = 512
-    indices = ([4, 4, 4, 5, 5, 14], [5, 14, 15, 14, 15, 15]) # Indices of the ROI's in the con matrix
-    con = spectral_connectivity_time(
-        data,
-        method=['plv', 'pli'],
-        mode="multitaper",
-        sfreq=sfreq,
-        indices=indices,
-        freqs=freqs,
-        faverage=True,
-        n_jobs=1,
-    )
-    plv_data = con[0].get_data()
-    pli_data = con[1].get_data()
-    np.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices', 'plv_data.npy'), plv_data)
-    np.save(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices', 'pli_data.npy'), pli_data)
-
-    return None
-
-def load_con_values_epochs(subject_id):
-
-    input_dir, o = get_paths()
-    plv_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices', 'plv_data.npy'))
-    pli_data = np.load(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', 'epoch-con-matrices', 'pli_data.npy'))
-
-    return plv_data, pli_data
-
-def create_ROI_con_values_df(subject_id):
-
-    input_dir, o = get_paths()
-    plv_data, pli_data = load_con_values_epochs(subject_id)
-    n2pc_df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'n2pc-values', f'sub-{subject_id}-amplitude-around-peak.csv'), index_col=0)
-    print(n2pc_df.head())
-    # check that the number of trials is the same
-    n_epochs = (n2pc_df['epoch_dropped'] == False).sum()
-    print(f'Number of epochs: {n_epochs}')
-    assert n_epochs == plv_data.shape[0]
-
-    # create the dataframe with a column for each ROI pair
-    df = pd.DataFrame(columns=['plv-cmflh-cmfrh', 'plv-cmflh-iplh', 'plv-cmflh-iprh', 'plv-cmfrh-iplh', 'plv-cmfrh-iprh', 'plv-iplh-iprh',
-                               'pli-cmflh-cmfrh', 'pli-cmflh-iplh', 'pli-cmflh-iprh', 'pli-cmfrh-iplh', 'pli-cmfrh-iprh', 'pli-iplh-iprh'],
-                               index=range(len(n2pc_df)))
-    
-    for i in range(len(n2pc_df)):
-        if n2pc_df.loc[i, 'epoch_dropped'] == False:
-            ii = int(n2pc_df.loc[i, 'index_reset'])
-            df.loc[i] = [plv_data[ii, 0][0], plv_data[ii, 1][0], plv_data[ii, 2][0], plv_data[ii, 3][0], plv_data[ii, 4][0], plv_data[ii, 5][0],
-                        pli_data[ii, 0][0], pli_data[ii, 1][0], pli_data[ii, 2][0], pli_data[ii, 3][0], pli_data[ii, 4][0], pli_data[ii, 5][0]]
-        else:
-            pass
-
-    print(f'========== Created PLV-PLI dataframe for subject {subject_id}')
-    df.to_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', f'sub-{subject_id}-con-values.csv'))
-
-    return None
-
-def con_df_ROI_pipeline(subject_id):
-
-    get_ROI_con_values_epochs(subject_id)
-    create_ROI_con_values_df(subject_id)
-
-    return None
-
-def add_ROI_conn_to_n2pc_df(subject_list):
-
-    input_dir, o = get_paths()
-    df_list = list()
-
-    for subject_id in sorted(subject_list):
-        try:
-            df = pd.read_csv(os.path.join(input_dir, f'sub-{subject_id}', 'N2pc', 'src-connectivity', f'sub-{subject_id}-con-values.csv'), index_col=0)
-            df_list.append(df)
-            print(f'Loaded con-values for subject {subject_id}')
-        except:
-            print(f'oh no subject {subject_id} failed')
-
-    df = pd.concat(df_list, ignore_index=True)
-    n2pc_df = pd.read_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peak',
-                                       'all_subjects_amp_power.csv'), index_col=0)
-
-    for column in df.columns:
-        n2pc_df[column] = df[column]
-    
-    n2pc_df.to_csv(os.path.join(input_dir, 'all_subj', 'N2pc', 'n2pc-values', 'n2pc-values-around-peak',
-                                'all_subjects_amp_power_conn.csv'))
-
-    return None
-
-###################################################################################################
-# Run the pipeline
-###################################################################################################
+    return con.get_data().reshape(n_chan, n_chan)
 
 
-#population_dict = {'old_control': ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23'],
-#                    'thal_control': ['52', '54', '55', '56', '58'],
-#                    'young_control': ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87'],
-#                    'pulvinar': ['51', '53', '59', '60']}
-
-full_subject_list = ['01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20', '21', '22', '23','70', '71', '72',
-                      '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87','52', '54', '55', '56', '58','51', '53', '59', '60']
-
-#subject_list = ['70', '71', '72', '73', '75', '76', '77', '78', '79', '80', '81', '82', '84', '85', '86', '87']
-
-
-#get_ROI_con_values_epochs('02')
-
-for subject_id in full_subject_list:
-    create_ROI_con_values_df(subject_id)
-
-add_ROI_conn_to_n2pc_df(full_subject_list)
-#    
-
-#for population, subject_list in population_dict.items():
- #   con_pipeline_population(subject_list, population)
