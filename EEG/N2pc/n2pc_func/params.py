@@ -13,3 +13,20 @@ subject_list = [
     '01', '02', '03', '04', '06', '07', '12', '13', '16', '17', '18', '19', '20',
     '21', '22', '23', '51', '52', '53','54', '55', '56', '58', '59', '60'
 ]
+
+swp_id = ['52', '55', '56', '60']
+
+
+target_r_mask = [
+    'dis_mid/target_r', 
+    'dis_bot/target_r', 
+    'no_dis/target_r', 
+    'dis_left/target_r'
+]
+
+target_l_mask = [
+    'dis_mid/target_l', 
+    'dis_bot/target_l', 
+    'no_dis/target_l', 
+    'dis_right/target_l'
+]

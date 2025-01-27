@@ -1,14 +1,18 @@
 from n2pc_func.conn import get_hemi_df
 from n2pc_func.set_paths import get_paths
-from n2pc_func.params import subject_list
+from n2pc_func.params import subject_list, swp_id
 import os
 import pandas as pd
 
-def get_all_subj_hemi_df(subject_list: list, i: str)-> pd.DataFrame:
+def get_all_subj_hemi_df(subject_list: list, swp_id:list, i: str)-> pd.DataFrame:
     ''' Get hemisphere dataframe for all subjects.'''
     for subject in subject_list:
         df_list = []
-        df = get_hemi_df(subject, i)
+        if subject in swp_id:
+            swp = True
+        else:    
+            swp = False
+        df = get_hemi_df(subject, swp, i)
         df_list.append(df)
 
     df_all = pd.concat(df_list)
@@ -18,4 +22,5 @@ def get_all_subj_hemi_df(subject_list: list, i: str)-> pd.DataFrame:
     return df_all
 
 i, o = get_paths()
-get_all_subj_hemi_df(subject_list, i)
+get_all_subj_hemi_df(subject_list, swp_id, i)
+# print(get_hemi_df('01', False, i))
