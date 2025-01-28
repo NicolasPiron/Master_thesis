@@ -10,8 +10,8 @@ import pandas as pd
 
 def get_all_subj_hemi_df(subject_list: list, swp_id:list, i: str)-> pd.DataFrame:
     ''' Get hemisphere dataframe for all subjects.'''
+    df_list = []
     for subject in subject_list:
-        df_list = []
         if subject in swp_id:
             swp = True
         else:    
