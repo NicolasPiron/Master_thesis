@@ -3,6 +3,10 @@ from n2pc_func.set_paths import get_paths
 from n2pc_func.params import subject_list, swp_id
 import os
 import pandas as pd
+# import mne
+
+# mne.set_config('MNE_MEMMAP_MIN_SIZE', '2M') 
+# mne.set_config('MNE_CACHE_DIR', '/dev/shm')
 
 def get_all_subj_hemi_df(subject_list: list, swp_id:list, i: str)-> pd.DataFrame:
     ''' Get hemisphere dataframe for all subjects.'''
