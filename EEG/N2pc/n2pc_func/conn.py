@@ -138,4 +138,23 @@ def cmpt_conn_mat(epochs:np.array)-> np.array:
 
     return con.get_data().reshape(n_chan, n_chan)
 
+def get_all_subj_hemi_df(subject_list: list, swp_id:list, input_dir: str)-> pd.DataFrame:
+    ''' Get hemisphere dataframe for all subjects.'''
+    dn = os.path.join(input_dir, 'all_subj', 'N2pc', 'sensor-connectivity')
+    fn = os.path.join(dn, 'all-subjects-hemi_df.csv')
+    if os.path.exists(fn):
+        return pd.read_csv(fn, index_col=0)
+    df_list = []
+    for subject in subject_list:
+        if subject in swp_id:
+            swp = True
+        else:
+            swp = False
+        df = get_hemi_df(subject, swp, input_dir)
+        df_list.append(df)
 
+    df_all = pd.concat(df_list)
+    if not os.path.exists(dn):
+        os.makedirs(dn)
+    df_all.to_csv(fn)
+    return df_all
