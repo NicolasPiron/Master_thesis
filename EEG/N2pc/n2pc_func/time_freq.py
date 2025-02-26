@@ -12,8 +12,8 @@ import seaborn as sns
 def run_f_test_latdiff(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, swp_id: list, thresh: float, crop:bool, input_dir: str):
     ''' runs a f-test on the time-frequency representations of two groups of subjects. Adjusted for contra-ipsi comparisons.'''
     freqs = np.arange(8, 13, 1)
-    tfr_l_epo1, tfr_r_epo1, times = stack_tfr_latdiff(sbj_list1, swp_id, freqs, input_dir)
-    tfr_l_epo2, tfr_r_epo2, _ = stack_tfr_latdiff(sbj_list2, swp_id, freqs, input_dir)
+    tfr_l_epo1, tfr_r_epo1, tfr_both_epo1, times = stack_tfr_latdiff(sbj_list1, swp_id, freqs, input_dir)
+    tfr_l_epo2, tfr_r_epo2, tfr_both_epo2, _ = stack_tfr_latdiff(sbj_list2, swp_id, freqs, input_dir)
     if crop:
         # crop time (axis=2) between 250 and 400 ms (given that basline -200 to 0 ms and sfreq 512 Hz)
         tmin = np.where(times >= 250)[0][0]
@@ -23,8 +23,10 @@ def run_f_test_latdiff(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str,
         tfr_r_epo1 = tfr_r_epo1[:, :, tmin:tmax]
         tfr_l_epo2 = tfr_l_epo2[:, :, tmin:tmax]
         tfr_r_epo2 = tfr_r_epo2[:, :, tmin:tmax]
+        tfr_both_epo1 = tfr_both_epo1[:, :, tmin:tmax]
+        tfr_both_epo2 = tfr_both_epo2[:, :, tmin:tmax]
 
-    target_side = {'left':[tfr_l_epo1, tfr_l_epo2], 'right':[tfr_r_epo1, tfr_r_epo2]}
+    target_side = {'left':[tfr_l_epo1, tfr_l_epo2], 'right':[tfr_r_epo1, tfr_r_epo2], 'both':[tfr_both_epo1, tfr_both_epo2]}
     figs = {}
     for side, (tfr_epo1, tfr_epo2) in target_side.items():
         F_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
@@ -136,17 +138,19 @@ def stack_tfr_latdiff(subject_list, swp_id, freqs, input_dir):
     '''
     tfr_l_list = []
     tfr_r_list = []
+    both_side_list = []
     for subject_id in subject_list:
         if subject_id in swp_id:
             epochs = load_data(subject_id, True, input_dir)
         else:
             epochs = load_data(subject_id, False, input_dir)
         times = epochs.times * 1e3
-        target_l_tfr, target_r_tfr = extract_latdiff(epochs, freqs)
+        target_l_tfr, target_r_tfr, both_tfr = extract_latdiff(epochs, freqs)
         tfr_l_list.append(target_l_tfr)
         tfr_r_list.append(target_r_tfr)
+        both_side_list.append(both_tfr)
     # concatenate the tfrs on axis 0
-    return np.concatenate(tfr_l_list), np.concatenate(tfr_r_list), times
+    return np.concatenate(tfr_l_list), np.concatenate(tfr_r_list), np.concatenate(both_side_list), times
 
 def load_data(subject_id, swp, input_dir):
     ''' Loads the epochs of a single subject. If the epochs were swapped (lesion in the left hemisphere),
@@ -194,12 +198,11 @@ def extract_latdiff(epochs, freqs):
     
     target_r_tfr = tfr_dict['target_r_contra'] - tfr_dict['target_r_ipsi']
     target_l_tfr = tfr_dict['target_l_contra'] - tfr_dict['target_l_ipsi']
-    print(tfr_dict['target_r_contra'].shape)
-    print(target_l_tfr.shape)
+    both_tfr = np.concatenate([target_l_tfr, target_r_tfr], axis=0)
     # target_l_tfr = np.mean(target_l_tfr, axis=0)
     # target_r_tfr = np.mean(target_r_tfr, axis=0)
 
-    return target_l_tfr, target_r_tfr
+    return target_l_tfr, target_r_tfr, both_tfr
 
 ############################################################################################################
 # funcs for statistical analysis of time-frequency representations
