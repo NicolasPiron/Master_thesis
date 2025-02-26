@@ -9,11 +9,21 @@ import seaborn as sns
 # additional functions for contra-ipsi comparisons
 ############################################################################################################
 
-def run_f_test_latdiff(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, swp_id: list, thresh: float, input_dir: str):
+def run_f_test_latdiff(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, swp_id: list, thresh: float, crop:bool, input_dir: str):
     ''' runs a f-test on the time-frequency representations of two groups of subjects. Adjusted for contra-ipsi comparisons.'''
     freqs = np.arange(8, 13, 1)
     tfr_l_epo1, tfr_r_epo1, times = stack_tfr_latdiff(sbj_list1, swp_id, freqs, input_dir)
     tfr_l_epo2, tfr_r_epo2, _ = stack_tfr_latdiff(sbj_list2, swp_id, freqs, input_dir)
+    if crop:
+        # crop time (axis=2) between 250 and 400 ms (given that basline -200 to 0 ms and sfreq 512 Hz)
+        tmin = np.where(times >= 250)[0][0]
+        tmax = np.where(times >= 400)[0][0]
+        times = times[tmin:tmax]
+        tfr_l_epo1 = tfr_l_epo1[:, :, tmin:tmax]
+        tfr_r_epo1 = tfr_r_epo1[:, :, tmin:tmax]
+        tfr_l_epo2 = tfr_l_epo2[:, :, tmin:tmax]
+        tfr_r_epo2 = tfr_r_epo2[:, :, tmin:tmax]
+
     target_side = {'left':[tfr_l_epo1, tfr_l_epo2], 'right':[tfr_r_epo1, tfr_r_epo2]}
     figs = {}
     for side, (tfr_epo1, tfr_epo2) in target_side.items():
@@ -44,7 +54,8 @@ def run_f_test_latdiff(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str,
     with open(f'{outdir}/shapes.txt', 'w') as shapes:
         shapes.write(f'{tfr_l_epo1.shape}\n{tfr_r_epo1.shape}\n{tfr_l_epo2.shape}\n{tfr_r_epo2.shape}\n')
     for side, fig in figs.items():
-        fname = os.path.join(outdir, f'{grpn1}_VS_{grpn2}_{side}_thresh{thresh}_tfr_stat.png')
+        if crop:
+            fname = os.path.join(outdir, f'crop_{grpn1}_VS_{grpn2}_{side}_thresh{thresh}_tfr_stat.png')
         fig.savefig(os.path.join(outdir, fname), dpi=300)
     return figs
 
@@ -140,7 +151,6 @@ def stack_tfr_latdiff(subject_list, swp_id, freqs, input_dir):
 def load_data(subject_id, swp, input_dir):
     ''' Loads the epochs of a single subject. If the epochs were swapped (lesion in the left hemisphere),
     the swapped epochs are loaded.
-    Will add the crop parameter to focus on the N2pc time window.
     '''
     if swp:
         fname = os.path.join(

@@ -38,5 +38,6 @@ if __name__ == '__main__':
             grpn2=grpn2,
             swp_id=swp_id,
             thresh=None,
+            crop=True,
             input_dir=i,
         )
