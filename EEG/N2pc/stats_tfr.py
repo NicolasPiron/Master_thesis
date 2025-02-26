@@ -1,4 +1,4 @@
-from n2pc_func.time_freq import run_f_test_latdiff
+from n2pc_func.time_freq import run_f_test_latdiff, run_f_test_tfr
 from n2pc_func.set_paths import get_paths
 
 i, o = get_paths()
@@ -25,7 +25,7 @@ comp_list = [
 
 # thresh_list = [2, 3, 4, 5, 6, 7, 8]
 swp_id = ['52', '55', '56', '60']
-# ch_names = ['PO7', 'PO8']
+ch_names = ['PO7', 'PO8']
 
 if __name__ == '__main__':
     for grpn1, grpn2 in comp_list:
@@ -41,3 +41,19 @@ if __name__ == '__main__':
             crop=True,
             input_dir=i,
         )
+
+    for grpn1, grpn2 in comp_list:
+        sbj1 = population_dict[grpn1]
+        sbj2 = population_dict[grpn2]
+        for ch in ch_names:
+            run_f_test_tfr(
+                sbj_list1=sbj1,
+                grpn1=grpn1,
+                sbj_list2=sbj2,
+                grpn2=grpn2,
+                ch_name=ch,
+                swp_id=swp_id,
+                thresh=None,
+                crop=True,
+                input_dir=i,
+            )

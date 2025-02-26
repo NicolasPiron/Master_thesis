@@ -206,7 +206,7 @@ def extract_latdiff(epochs, freqs):
 ############################################################################################################
 
 
-def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_name: str, swp_id: list, thresh: float, input_dir: str):
+def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_name: str, swp_id: list, thresh: float, crop:bool, input_dir: str):
     ''' runs a f-test on the time-frequency representations of two groups of subjects.
     The test is done on a single channel.
     The results are plotted and saved in the output directory.
@@ -237,6 +237,13 @@ def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_
 
     tfr_epo1, times = stack_tfr(sbj_list1, swp_id, freqs, ch_name, input_dir)
     tfr_epo2, _ = stack_tfr(sbj_list2, swp_id, freqs, ch_name, input_dir)
+    if crop:
+        # crop time (axis=2) between 250 and 400 ms (given that basline -200 to 0 ms and sfreq 512 Hz)
+        tmin = np.where(times >= 250)[0][0]
+        tmax = np.where(times >= 400)[0][0]
+        times = times[tmin:tmax]
+        tfr_epo1 = tfr_epo1[:, :, tmin:tmax]
+        tfr_epo2 = tfr_epo2[:, :, tmin:tmax]
     F_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
         [tfr_epo1, tfr_epo2],
         out_type="mask",
@@ -260,7 +267,10 @@ def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_
     outdir = os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'stats')
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    fname = os.path.join(outdir, f'{grpn1}_VS_{grpn2}_{ch_name}_thresh{thresh}_tfr_stat.png')
+    if crop:
+        fname = os.path.join(outdir, f'crop_{grpn1}_VS_{grpn2}_{ch_name}_thresh{thresh}_tfr_stat.png')
+    else:
+        fname = os.path.join(outdir, f'{grpn1}_VS_{grpn2}_{ch_name}_thresh{thresh}_tfr_stat.png')
     fig.savefig(os.path.join(outdir, fname), dpi=300)
     
 
