@@ -41,6 +41,8 @@ def run_f_test_latdiff(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str,
     outdir = os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'stats_latdiff')
     if not os.path.exists(outdir):
         os.makedirs(outdir)
+    with open(f'{outdir}/shapes.txt', 'w') as shapes:
+        shapes.write(f'{tfr_l_epo1.shape}\n{tfr_r_epo1.shape}\n{tfr_l_epo2.shape}\n{tfr_r_epo2.shape}\n')
     for side, fig in figs.items():
         fname = os.path.join(outdir, f'{grpn1}_VS_{grpn2}_{side}_thresh{thresh}_tfr_stat.png')
         fig.savefig(os.path.join(outdir, fname), dpi=300)
@@ -112,7 +114,6 @@ def plot_stat_tfr_latdiff(tfr_epo1, grpn1, tfr_epo2, grpn2, F_obs, clusters, clu
     ax.set_title(f"Induced power {grpn1} VS {grpn2} \n target {side}")
     sns.despine()
     plt.tight_layout()
-    plt.show()
     return fig
 
 def stack_tfr_latdiff(subject_list, swp_id, freqs, input_dir):
@@ -138,7 +139,9 @@ def stack_tfr_latdiff(subject_list, swp_id, freqs, input_dir):
 
 def load_data(subject_id, swp, input_dir):
     ''' Loads the epochs of a single subject. If the epochs were swapped (lesion in the left hemisphere),
-    the swapped epochs are loaded.'''
+    the swapped epochs are loaded.
+    Will add the crop parameter to focus on the N2pc time window.
+    '''
     if swp:
         fname = os.path.join(
             input_dir, f'sub-{subject_id}', 'N2pc', 'cleaned_epochs',
@@ -181,7 +184,8 @@ def extract_latdiff(epochs, freqs):
     
     target_r_tfr = tfr_dict['target_r_contra'] - tfr_dict['target_r_ipsi']
     target_l_tfr = tfr_dict['target_l_contra'] - tfr_dict['target_l_ipsi']
-
+    print(tfr_dict['target_r_contra'].shape)
+    print(target_l_tfr.shape)
     # target_l_tfr = np.mean(target_l_tfr, axis=0)
     # target_r_tfr = np.mean(target_r_tfr, axis=0)
 

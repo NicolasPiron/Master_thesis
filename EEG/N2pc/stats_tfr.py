@@ -11,6 +11,7 @@ population_dict = {
 }
 
 comp_list = [
+    ['Healthy', 'young_control'],
     ['Healthy', 'Pulvinar'],
     ['Healthy', 'Thalamus'],
     ['Thalamus', 'Pulvinar'],
@@ -20,7 +21,7 @@ comp_list = [
 #     'test': ['01', '02'],
 #     'test2': ['03', '03'],
 # }
-# comp_list = [['test', 'test2']]
+# comp_list = [['test', 'test2'],]
 
 # thresh_list = [2, 3, 4, 5, 6, 7, 8]
 swp_id = ['52', '55', '56', '60']
