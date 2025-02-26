@@ -25,7 +25,7 @@ def reorder_matrix(matrix, channel_order):
     matrix = matrix.loc[channel_order, channel_order]
     # get rid of the upper triangle
     matrix = pd.DataFrame(np.tril(matrix), index=matrix.index, columns=matrix.columns)
-    print(f'============= matrix reorganized =============')
+    print('============= matrix reorganized =============')
 
     return matrix
 
@@ -45,7 +45,7 @@ def plot_and_save_reorg_matrix(matrix, mat_name, mat_dir):
     fig.savefig(os.path.join(mat_dir, mat_name.split('.')[0] + '_reorg.png'), dpi=300)
     plt.close(fig)
     matrix.to_csv(os.path.join(mat_dir, mat_name.split('.')[0] + '_reorg.csv'))
-    print(f'============= matrix plotted and saved =============')
+    print('============= matrix plotted and saved =============')
 
 
 
@@ -57,11 +57,13 @@ def main():
     mat_dirs.remove('all_pvals')
 
 
-    channel_order = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3','FC1', 'C1',
-                 'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7',
-                 'PO3','O1', 'Fpz', 'AFz', 'Fz', 'FCz', 'Cz', 'CPz', 'Pz','POz', 'Oz','Iz',
-                 'Fp2','AF8','AF4', 'F2', 'F4', 'F6', 'F8', 'FT8', 'FC6', 'FC4', 'FC2', 'C2', 'C4',
-                 'C6', 'T8', 'TP8', 'CP6', 'CP4', 'CP2', 'P2', 'P4', 'P6', 'P8', 'P10', 'PO8', 'PO4', 'O2']
+    channel_order = [
+        'Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3','FC1', 'C1',
+        'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7',
+        'PO3','O1', 'Fpz', 'AFz', 'Fz', 'FCz', 'Cz', 'CPz', 'Pz','POz', 'Oz','Iz',
+        'Fp2','AF8','AF4', 'F2', 'F4', 'F6', 'F8', 'FT8', 'FC6', 'FC4', 'FC2', 'C2', 'C4',
+        'C6', 'T8', 'TP8', 'CP6', 'CP4', 'CP2', 'P2', 'P4', 'P6', 'P8', 'P10', 'PO8', 'PO4', 'O2'
+    ]
 
     for mat_dir in mat_dirs:
         mat_dict = find_significative_matrices(os.path.join(input_dir, mat_dir))
@@ -93,11 +95,13 @@ def main2():
 
     mat_dirs = ['old_control', 'young_control', 'thal_control', 'pulvinar']
 
-    channel_order = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3','FC1', 'C1',
-                 'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7',
-                 'PO3','O1', 'Fpz', 'AFz', 'Fz', 'FCz', 'Cz', 'CPz', 'Pz','POz', 'Oz','Iz',
-                 'Fp2','AF8','AF4', 'F2', 'F4', 'F6', 'F8', 'FT8', 'FC6', 'FC4', 'FC2', 'C2', 'C4',
-                 'C6', 'T8', 'TP8', 'CP6', 'CP4', 'CP2', 'P2', 'P4', 'P6', 'P8', 'P10', 'PO8', 'PO4', 'O2']
+    channel_order = [
+        'Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7', 'FC5', 'FC3','FC1', 'C1',
+        'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9', 'PO7',
+        'PO3','O1', 'Fpz', 'AFz', 'Fz', 'FCz', 'Cz', 'CPz', 'Pz','POz', 'Oz','Iz',
+        'Fp2','AF8','AF4', 'F2', 'F4', 'F6', 'F8', 'FT8', 'FC6', 'FC4', 'FC2', 'C2', 'C4',
+        'C6', 'T8', 'TP8', 'CP6', 'CP4', 'CP2', 'P2', 'P4', 'P6', 'P8', 'P10', 'PO8', 'PO4', 'O2'
+    ]
     
     for dir in mat_dirs:
         print(dir)

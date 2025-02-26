@@ -118,7 +118,10 @@ def plot_stat_tfr_latdiff(tfr_epo1, grpn1, tfr_epo2, grpn2, F_obs, clusters, clu
 def stack_tfr_latdiff(subject_list, swp_id, freqs, input_dir):
     ''' Stacks the time-frequency representations of a list of subjects so they
     can be compared to another group.
-    IMPORTANT : this time the epochs are averaged by subject before stacking.'''
+    ~IMPORTANT : this time the epochs are averaged by subject before stacking.~
+    EDIT: function has been changed and don't average over subjects anymore. Now concatenates instead 
+    of stacking on new axis.
+    '''
     tfr_l_list = []
     tfr_r_list = []
     for subject_id in subject_list:
@@ -130,8 +133,8 @@ def stack_tfr_latdiff(subject_list, swp_id, freqs, input_dir):
         target_l_tfr, target_r_tfr = extract_latdiff(epochs, freqs)
         tfr_l_list.append(target_l_tfr)
         tfr_r_list.append(target_r_tfr)
-    # stack -> axis 0 : subjects, axis 1 : freqs, axis 2 : times
-    return np.stack(tfr_l_list), np.stack(tfr_r_list), times
+    # concatenate the tfrs on axis 0
+    return np.concatenate(tfr_l_list), np.concatenate(tfr_r_list), times
 
 def load_data(subject_id, swp, input_dir):
     ''' Loads the epochs of a single subject. If the epochs were swapped (lesion in the left hemisphere),
@@ -152,7 +155,9 @@ def load_data(subject_id, swp, input_dir):
 def extract_latdiff(epochs, freqs):
     ''' Extracts the time-frequency representations for the contra and ipsi conditions of a single subject.
     Returns two tfr objects: one for target_l and one for target_r. 
-    IMPORTANT : this time the epochs are averaged by subject.'''
+    ~IMPORTANT : this time the epochs are averaged by subject~.
+    EDIT: function has been changed and don't average over subjects anymore.
+    '''
     target_l = epochs[
         'dis_mid/target_l', 
         'dis_bot/target_l', 
@@ -176,11 +181,9 @@ def extract_latdiff(epochs, freqs):
     
     target_r_tfr = tfr_dict['target_r_contra'] - tfr_dict['target_r_ipsi']
     target_l_tfr = tfr_dict['target_l_contra'] - tfr_dict['target_l_ipsi']
-    print(target_l_tfr.shape)
 
-    target_l_tfr = np.mean(target_l_tfr, axis=0)
-    target_r_tfr = np.mean(target_r_tfr, axis=0)
-    print(target_l_tfr.shape)
+    # target_l_tfr = np.mean(target_l_tfr, axis=0)
+    # target_r_tfr = np.mean(target_r_tfr, axis=0)
 
     return target_l_tfr, target_r_tfr
 

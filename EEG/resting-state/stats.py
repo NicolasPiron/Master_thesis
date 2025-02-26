@@ -1,5 +1,5 @@
 from resting_func.conn_stats import get_nbs_inputs, nbs_bct_corr_z, nbs_report, global_pval_df, plot_bin_mat
-from resting_func.static_connectivity import create_significant_conn_mat, plot_significant_conn_mat
+#from resting_func.static_connectivity import create_significant_conn_mat, plot_significant_conn_mat
 from resting_func.set_paths import get_paths
 import numpy as np
 from itertools import combinations
@@ -8,14 +8,17 @@ input_dir, output_dir = get_paths()
 
 def run_pairwise_nbs():
 
-    group_dict = {'old_control': [1, 2, 3, 4, 6, 7, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23],
-                    'thal_control': [52, 54, 55, 56, 58],
-                    'pulvinar': [51, 53, 59, 60]}
+    group_dict = {
+        'old_control': [1, 2, 3, 4, 6, 7, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23],
+        'thal_control': [52, 54, 55, 56, 58],
+        'pulvinar': [51, 53, 59, 60]
+    }
     
     pairs = list(combinations(group_dict.keys(), 2))
-    freqs_dict = {'alpha': np.arange(8, 13), 
-                'theta': np.arange(4, 9),
-                'low_beta': np.arange(12, 17),
+    freqs_dict = {
+        'alpha': np.arange(8, 13), 
+        'theta': np.arange(4, 9),
+        'low_beta': np.arange(12, 17),
     }
     condition_list = ['RESTINGSTATEOPEN','RESTINGSTATECLOSE']
     metrics=['ciplv']
@@ -29,16 +32,18 @@ def run_pairwise_nbs():
                     list_1 = group_dict[pair[0]]
                     list_2 = group_dict[pair[1]]
 
-                    pop_dict1 = {'subject_list': list_1,
-                                    'freqs': freqs,
-                                    'metric': metric,
-                                    'condition': condition
+                    pop_dict1 = {
+                        'subject_list': list_1,
+                        'freqs': freqs,
+                        'metric': metric,
+                        'condition': condition
                     }
 
-                    pop_dict2 = {'subject_list': list_2,
-                                    'freqs': freqs,
-                                    'metric': metric,
-                                    'condition': condition
+                    pop_dict2 = {
+                        'subject_list': list_2,
+                        'freqs': freqs,
+                        'metric': metric,
+                        'condition': condition
                     }
 
 

@@ -1,9 +1,5 @@
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-
 from n2pc_func.set_paths import get_paths
 from n2pc_func.ERP import get_snr
 
@@ -19,8 +15,8 @@ for subject in subjects_list:
     try:
         df = get_snr(subject_id=subject, input_dir=indir, output_dir=outdir)
         df_list.append(df)
-    except:
-        print(f'Error in subject {subject}')
+    except Exception as e:
+        print(f'Subject {subject} {e}')
         failed_subjects.append(subject)
         continue
 
@@ -48,11 +44,3 @@ if not os.path.exists(outpath):
 df.to_csv(os.path.join(outpath, 'allsubj_snr.csv'), index=False)
 
 
-fig, ax = plt.subplots(figsize=(3, 3))
-sns.boxplot(data=df[df['group']!='young'], x='group', y='SNR', color='grey', width=0.5,
-             ax=ax)
-sns.swarmplot(data=df[df['group']!='young'], x='group', y='SNR', color='black', size=5,
-                alpha=0.5, ax=ax)   
-sns.despine()
-plt.tight_layout()
-fig.savefig(os.path.join(outpath, 'allsubj_snr.png'), dpi=300)
