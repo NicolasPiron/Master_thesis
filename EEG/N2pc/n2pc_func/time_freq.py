@@ -53,11 +53,13 @@ def run_f_test_latdiff(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str,
     outdir = os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq', 'stats_latdiff')
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    with open(f'{outdir}/shapes.txt', 'w') as shapes:
-        shapes.write(f'{tfr_l_epo1.shape}\n{tfr_r_epo1.shape}\n{tfr_l_epo2.shape}\n{tfr_r_epo2.shape}\n')
+    # with open(f'{outdir}/shapes.txt', 'w') as shapes:
+    #     shapes.write(f'{tfr_l_epo1.shape}\n{tfr_r_epo1.shape}\n{tfr_l_epo2.shape}\n{tfr_r_epo2.shape}\n')
     for side, fig in figs.items():
         if crop:
             fname = os.path.join(outdir, f'crop_{grpn1}_VS_{grpn2}_{side}_thresh{thresh}_tfr_stat.png')
+        else:
+            fname = os.path.join(outdir, f'{grpn1}_VS_{grpn2}_{side}_thresh{thresh}_tfr_stat.png')
         fig.savefig(os.path.join(outdir, fname), dpi=300)
     return figs
 
@@ -208,6 +210,35 @@ def extract_latdiff(epochs, freqs):
 # funcs for statistical analysis of time-frequency representations
 ############################################################################################################
 
+def viz_mean_alpha_power(population_dict: list, swp_id: list, thresh: float, input_dir: str):
+    ''' Visualizes the mean alpha power of three groups of subjects for a channel.'''
+    freqs = np.arange(8, 12, 1)
+
+    sns.set_context('talk')
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4), sharey=True)
+
+    for ax, ch_name in zip(axes, ['PO7', 'PO8']):
+
+        for pop_name, sbj_list in population_dict.items():
+            tfr_epo, times = stack_tfr(sbj_list, swp_id, freqs, ch_name, input_dir)
+            freq_avg = np.mean(tfr_epo, axis=1)
+            pop_avg = np.mean(freq_avg, axis=0)
+            pop_std = np.std(freq_avg, axis=0)
+            ax.plot(times, pop_avg, label=pop_name)
+            ax.fill_between(times, pop_avg - pop_std, pop_avg + pop_std, alpha=0.2)
+
+        ax.set_title(f'{ch_name}')
+        ax.set_xlabel('Time (ms)')
+        ax.set_ylabel('Power')
+        ax.legend()
+    
+    plt.tight_layout()
+    sns.despine()
+    
+    outdir = os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq')
+    os.makedirs(outdir, exist_ok=True)
+    fname = os.path.join(outdir, 'mean_alpha_power.png')
+    fig.savefig(fname, dpi=300)
 
 def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_name: str, swp_id: list, thresh: float, crop:bool, input_dir: str):
     ''' runs a f-test on the time-frequency representations of two groups of subjects.
@@ -386,7 +417,7 @@ def f_test_tfr(tfr_epo1, tfr_epo2, thresh=None, nperm=1000):
 
     return F_obs, clusters, cluster_p_values, H0
 
-def plot_stat_tfr(tfr_epo1, grpn1, tfr_epo2, grpn2, F_obs, clusters, cluster_pval,  times, freqs, ch_name):
+def plot_stat_tfr(tfr_epo1, grpn1, tfr_epo2, grpn2, F_obs, clusters, cluster_pval, times, freqs, ch_name):
     ''' Plots the results of the f-test on the time-frequency representations.
 
     Parameters
@@ -455,6 +486,12 @@ def plot_stat_tfr(tfr_epo1, grpn1, tfr_epo2, grpn2, F_obs, clusters, cluster_pva
     plt.tight_layout()
 
     return fig
+
+
+def plot_tfr(tfr_epo, grpn, times, freqs, ch_name):
+
+    fig, ax = plt.subplots(figsize=(6, 4), layout="constrained")
+    ... # TODO: finish this function
 
 ############################################################################################################
 # exploratory tfr visualization 

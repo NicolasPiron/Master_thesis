@@ -1,4 +1,4 @@
-from n2pc_func.time_freq import run_f_test_latdiff, run_f_test_tfr
+from n2pc_func.time_freq import run_f_test_latdiff, run_f_test_tfr, viz_mean_alpha_power
 from n2pc_func.set_paths import get_paths
 
 i, o = get_paths()
@@ -28,6 +28,15 @@ swp_id = ['52', '55', '56', '60']
 ch_names = ['PO7', 'PO8']
 
 if __name__ == '__main__':
+
+
+    fig = viz_mean_alpha_power(
+        population_dict=population_dict,
+        swp_id=swp_id,
+        thresh=None,
+        input_dir=i,
+    )
+
     # contra-ipsi
     for grpn1, grpn2 in comp_list:
         sbj1 = population_dict[grpn1]
