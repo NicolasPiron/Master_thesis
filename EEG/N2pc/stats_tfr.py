@@ -39,22 +39,22 @@ if __name__ == '__main__':
             grpn2=grpn2,
             swp_id=swp_id,
             thresh=None,
-            crop=True,
+            crop=False,
             input_dir=i,
         )
-    # # just PO7 and PO8
-    # for grpn1, grpn2 in comp_list:
-    #     sbj1 = population_dict[grpn1]
-    #     sbj2 = population_dict[grpn2]
-    #     for ch in ch_names:
-    #         run_f_test_tfr(
-    #             sbj_list1=sbj1,
-    #             grpn1=grpn1,
-    #             sbj_list2=sbj2,
-    #             grpn2=grpn2,
-    #             ch_name=ch,
-    #             swp_id=swp_id,
-    #             thresh=None,
-    #             crop=True,
-    #             input_dir=i,
-    #         )
+    # just PO7 and PO8
+    for grpn1, grpn2 in comp_list:
+        sbj1 = population_dict[grpn1]
+        sbj2 = population_dict[grpn2]
+        for ch in ch_names:
+            run_f_test_tfr(
+                sbj_list1=sbj1,
+                grpn1=grpn1,
+                sbj_list2=sbj2,
+                grpn2=grpn2,
+                ch_name=ch,
+                swp_id=swp_id,
+                thresh=None,
+                crop=False,
+                input_dir=i,
+            )

@@ -11,7 +11,7 @@ import seaborn as sns
 
 def run_f_test_latdiff(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, swp_id: list, thresh: float, crop:bool, input_dir: str):
     ''' runs a f-test on the time-frequency representations of two groups of subjects. Adjusted for contra-ipsi comparisons.'''
-    freqs = np.arange(8, 13, 1)
+    freqs = np.arange(4, 30, 1)
     tfr_l_epo1, tfr_r_epo1, tfr_both_epo1, times = stack_tfr_latdiff(sbj_list1, swp_id, freqs, input_dir)
     tfr_l_epo2, tfr_r_epo2, tfr_both_epo2, _ = stack_tfr_latdiff(sbj_list2, swp_id, freqs, input_dir)
     if crop:
@@ -236,7 +236,7 @@ def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_
     None.
     '''
     
-    freqs = np.arange(8, 13, 1)
+    freqs = np.arange(4, 30, 1)
 
     tfr_epo1, times = stack_tfr(sbj_list1, swp_id, freqs, ch_name, input_dir)
     tfr_epo2, _ = stack_tfr(sbj_list2, swp_id, freqs, ch_name, input_dir)
