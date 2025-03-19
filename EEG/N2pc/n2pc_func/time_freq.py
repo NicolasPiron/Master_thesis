@@ -210,12 +210,12 @@ def extract_latdiff(epochs, freqs):
 # funcs for statistical analysis of time-frequency representations
 ############################################################################################################
 
-def viz_mean_alpha_power(population_dict: list, swp_id: list, thresh: float, input_dir: str):
+def viz_mean_alpha_power(population_dict: list, swp_id: list, input_dir: str):
     ''' Visualizes the mean alpha power of three groups of subjects for a channel.'''
     freqs = np.arange(8, 12, 1)
 
     sns.set_context('talk')
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
 
     for ax, ch_name in zip(axes, ['PO7', 'PO8']):
 
