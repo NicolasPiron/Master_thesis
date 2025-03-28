@@ -230,7 +230,6 @@ def viz_mean_alpha_power(population_dict: dict, comp: list, swp_id: list, input_
             ax.plot(times, pop_avg, label=pop_name)
             ax.fill_between(times, pop_avg - pop_std, pop_avg + pop_std, alpha=0.2)
 
-        print(f'{ch_name} : {val_dict["test"].shape}, {val_dict["test2"].shape}')
         F_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
             [val_dict[k] for k in subppop_dict.keys()],
             out_type="mask",
