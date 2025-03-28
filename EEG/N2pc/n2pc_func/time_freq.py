@@ -210,17 +210,18 @@ def extract_latdiff(epochs, freqs):
 # funcs for statistical analysis of time-frequency representations
 ############################################################################################################
 
-def viz_mean_alpha_power(population_dict: list, swp_id: list, input_dir: str):
+def viz_mean_alpha_power(population_dict: dict, comp: list, swp_id: list, input_dir: str):
     ''' Visualizes the mean alpha power of three groups of subjects for a channel.
     Added stats.'''
     freqs = np.arange(8, 12, 1)
+    subppop_dict = {key: v for key, v in population_dict.items() if key in comp}
 
     sns.set_context('talk')
     fig, axes = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
 
     for ax, ch_name in zip(axes, ['PO7', 'PO8']):
-        val_dict = {key: [] for key in population_dict.keys()}
-        for pop_name, sbj_list in population_dict.items():
+        val_dict = {key: [] for key in subppop_dict.keys()}
+        for pop_name, sbj_list in subppop_dict.items():
             tfr_epo, times = stack_tfr(sbj_list, swp_id, freqs, ch_name, input_dir)
             freq_avg = np.mean(tfr_epo, axis=1)
             val_dict[pop_name] = freq_avg
@@ -231,7 +232,7 @@ def viz_mean_alpha_power(population_dict: list, swp_id: list, input_dir: str):
 
         print(f'{ch_name} : {val_dict["test"].shape}, {val_dict["test2"].shape}')
         F_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
-            [val_dict[k] for k in population_dict.keys()],
+            [val_dict[k] for k in subppop_dict.keys()],
             out_type="mask",
             n_permutations=1000,
             tail=0,
@@ -255,7 +256,8 @@ def viz_mean_alpha_power(population_dict: list, swp_id: list, input_dir: str):
     
     outdir = os.path.join(input_dir, 'all_subj', 'N2pc', 'time_freq')
     os.makedirs(outdir, exist_ok=True)
-    fname = os.path.join(outdir, 'mean_alpha_power.png')
+    pop1, pop2 = comp
+    fname = os.path.join(outdir, f'{pop1}_VS_{pop2}_mean_alpha_power.png')
     fig.savefig(fname, dpi=300)
 
 def run_f_test_tfr(sbj_list1: list, grpn1: str, sbj_list2: list, grpn2: str, ch_name: str, swp_id: list, thresh: float, crop:bool, input_dir: str):
