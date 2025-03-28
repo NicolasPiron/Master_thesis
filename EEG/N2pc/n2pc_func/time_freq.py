@@ -240,7 +240,7 @@ def viz_mean_alpha_power(population_dict: dict, comp: list, swp_id: list, input_
         print
         if cluster_p_values.size > 0:
             for c, p_val in zip(clusters, cluster_p_values):
-                thresh = 0.05
+                thresh = 0.001
                 if p_val <= thresh:
                     time_inds = c[0]
                     times_sig = times[time_inds]

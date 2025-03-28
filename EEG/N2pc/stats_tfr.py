@@ -15,6 +15,7 @@ comp_list = [
     ['Healthy', 'Pulvinar'],
     ['Healthy', 'Thalamus'],
     ['Thalamus', 'Pulvinar'],
+    ['Healthy', 'Pulvinar', 'Thalamus'],
 ]
 
 # population_dict = {
