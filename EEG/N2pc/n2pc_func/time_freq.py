@@ -211,22 +211,40 @@ def extract_latdiff(epochs, freqs):
 ############################################################################################################
 
 def viz_mean_alpha_power(population_dict: list, swp_id: list, input_dir: str):
-    ''' Visualizes the mean alpha power of three groups of subjects for a channel.'''
+    ''' Visualizes the mean alpha power of three groups of subjects for a channel.
+    Added stats.'''
     freqs = np.arange(8, 12, 1)
 
     sns.set_context('talk')
     fig, axes = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
 
     for ax, ch_name in zip(axes, ['PO7', 'PO8']):
-
+        val_dict = {key: [] for key in population_dict.keys()}
         for pop_name, sbj_list in population_dict.items():
             tfr_epo, times = stack_tfr(sbj_list, swp_id, freqs, ch_name, input_dir)
             freq_avg = np.mean(tfr_epo, axis=1)
+            val_dict[pop_name] = freq_avg
             pop_avg = np.mean(freq_avg, axis=0)
             pop_std = np.std(freq_avg, axis=0)
             ax.plot(times, pop_avg, label=pop_name)
             ax.fill_between(times, pop_avg - pop_std, pop_avg + pop_std, alpha=0.2)
 
+        print(f'{ch_name} : {val_dict["test"].shape}, {val_dict["test2"].shape}')
+        F_obs, clusters, cluster_p_values, H0 = permutation_cluster_test(
+            [val_dict[k] for k in population_dict.keys()],
+            out_type="mask",
+            n_permutations=1000,
+            tail=0,
+            seed=np.random.default_rng(seed=8675309),
+        )
+        print
+        if cluster_p_values.size > 0:
+            for c, p_val in zip(clusters, cluster_p_values):
+                thresh = 0.05
+                if p_val <= thresh:
+                    time_inds = c[0]
+                    times_sig = times[time_inds]
+                    ax.hlines(y=-5, xmin=times_sig[0], xmax=times_sig[-1], color='red', linewidth=5, alpha=0.6)
         ax.set_title(f'{ch_name}')
         ax.set_xlabel('Time (ms)')
         ax.set_ylabel('Power')
